@@ -1,0 +1,103 @@
+.app-wrapper {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.bg-geometry {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0.6;
+}
+
+.radar-svg {
+  width: 100%;
+  height: 100%;
+}
+
+.page-container {
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  padding: 24px;
+  padding-bottom: 96px; /* Space for navbar */
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+}
+
+.page-container:has(.home-container) {
+  padding: 10px;
+  padding-bottom: 68px;
+}
+
+/* Hide scrollbar for page container */
+.page-container::-webkit-scrollbar {
+  display: none;
+}
+.page-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.glitch-transition {
+  animation: pageGlitch 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+}
+
+@keyframes pageGlitch {
+  0% { transform: translate(0); opacity: 1; filter: blur(0); }
+  20% { transform: translate(-5px, 2px); opacity: 0.8; filter: blur(2px) hue-rotate(90deg); }
+  40% { transform: translate(5px, -2px); opacity: 0.4; filter: blur(1px) hue-rotate(-90deg); }
+  60% { transform: translate(-2px, 5px); opacity: 0.8; filter: blur(2px) hue-rotate(45deg); }
+  80% { transform: translate(2px, -5px); opacity: 0.9; filter: blur(0); }
+  100% { transform: translate(0); opacity: 1; filter: blur(0); }
+}
+
+/* Navbar */
+.navbar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
+  background: rgba(5, 5, 5, 0.85);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid var(--text-dark);
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  z-index: 50;
+}
+
+.nav-item {
+  color: var(--text-muted);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font-size: 10px;
+  gap: 4px;
+  text-decoration: none;
+  transition: all 0.2s ease;
+}
+
+.nav-item:hover, .nav-item.active {
+  color: var(--primary-cyan);
+  text-shadow: 0 0 8px var(--primary-cyan-glow);
+}
+
+.nav-item svg {
+  width: 24px;
+  height: 24px;
+}
