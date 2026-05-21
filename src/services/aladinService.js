@@ -1,6 +1,7 @@
 import { ALADIN_QUERY_CHANNELS, GENRE_RULES, SF_SECTORS } from '../data/sfTaxonomy';
 
 const API_KEY = import.meta.env.VITE_ALADIN_TTB_KEY;
+const USE_DEPLOY_PROXY = import.meta.env.PROD;
 
 const SF_GENRE_NAMES = SF_SECTORS.map(sector => sector.name);
 
@@ -102,7 +103,18 @@ const FALLBACK_BOOKS = [
 const fallbackSFBooks = () => FALLBACK_BOOKS.map(transformToSFData);
 
 const readAladinChannel = async (channel) => {
-  const url = `/aladin-api/ItemSearch.aspx?ttbkey=${API_KEY}&Query=${encodeURIComponent(channel.query)}&QueryType=Keyword&MaxResults=25&start=1&SearchTarget=Book&output=js&Version=20131101`;
+  const params = new URLSearchParams({
+    Query: channel.query,
+    QueryType: 'Keyword',
+    MaxResults: '25',
+    start: '1',
+    SearchTarget: 'Book',
+    output: 'js',
+    Version: '20131101',
+  });
+  const url = USE_DEPLOY_PROXY
+    ? `/api/aladin?${params.toString()}`
+    : `/aladin-api/ItemSearch.aspx?ttbkey=${API_KEY}&${params.toString()}`;
 
   const response = await fetch(url);
   if (!response.ok) throw new Error(`API Network Error: ${response.status}`);
@@ -235,7 +247,7 @@ const transformToSFData = (book) => {
 
 export const fetchSFBooks = async () => {
   try {
-    if (!API_KEY) {
+    if (!API_KEY && !USE_DEPLOY_PROXY) {
       console.warn("Aladin API Key is missing. Using fallback SF signal data.");
       return {
         books: fallbackSFBooks(),

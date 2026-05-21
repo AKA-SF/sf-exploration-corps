@@ -70,6 +70,14 @@ export const ZoomableMap = forwardRef(({
     targetRef.current = normalize({ ...targetRef.current, ...next });
   }, [normalize]);
 
+  const setCameraImmediate = useCallback((next) => {
+    const normalized = normalize({ ...targetRef.current, ...next });
+    targetRef.current = normalized;
+    cameraRef.current = normalized;
+    setCamera(normalized);
+    onCameraChange?.(normalized);
+  }, [normalize, onCameraChange]);
+
   const zoomAt = useCallback((point, nextScale) => {
     const rect = containerRef.current?.getBoundingClientRect();
     if (!rect) return;
@@ -88,13 +96,20 @@ export const ZoomableMap = forwardRef(({
     });
   }, [height, maxScale, minScale, setTarget, width]);
 
-  const focusWorldPoint = useCallback(({ x, y, scale = targetRef.current.scale }) => {
-    setTarget({
+  const focusWorldPoint = useCallback(({ x, y, scale = targetRef.current.scale, immediate = false }) => {
+    const nextCamera = {
       x: width / 2 - x * scale,
       y: height / 2 - y * scale,
       scale,
-    });
-  }, [height, setTarget, width]);
+    };
+
+    if (immediate) {
+      setCameraImmediate(nextCamera);
+      return;
+    }
+
+    setTarget(nextCamera);
+  }, [height, setCameraImmediate, setTarget, width]);
 
   const zoomBy = useCallback((factor) => {
     const rect = containerRef.current?.getBoundingClientRect();

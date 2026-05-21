@@ -94,6 +94,60 @@
   font-size: 7px;
 }
 
+.quick-log-console {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  padding: 12px;
+  background:
+    linear-gradient(90deg, rgba(0, 255, 255, 0.08), transparent),
+    rgba(0, 0, 0, 0.46);
+}
+
+.mode-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.mode-tabs button {
+  min-height: 40px;
+  color: var(--text-muted);
+  border: 1px solid rgba(0, 255, 255, 0.16);
+  background: rgba(0, 255, 255, 0.035);
+  font-size: 9px;
+}
+
+.mode-tabs button.active {
+  color: var(--bg-color);
+  background: var(--primary-cyan);
+  border-color: var(--primary-cyan);
+  box-shadow: 0 0 16px var(--primary-cyan-glow);
+}
+
+.quick-checklist {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.quick-checklist span {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  padding: 6px 7px;
+  font-size: 8px;
+}
+
+.quick-checklist span.done {
+  color: var(--accent-amber);
+  border-color: rgba(255, 176, 0, 0.28);
+  background: rgba(255, 176, 0, 0.045);
+}
+
 .form-group {
   flex-direction: column;
   align-items: flex-start;
@@ -121,7 +175,7 @@
 }
 
 .sf-textarea {
-  min-height: 100px;
+  min-height: 88px;
   resize: none;
 }
 
@@ -262,6 +316,40 @@
   overflow: hidden;
 }
 
+.log-control-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.compact-control {
+  gap: 9px;
+  padding: 12px;
+}
+
+.segmented {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.segmented button {
+  min-height: 38px;
+  padding: 0 7px;
+  color: var(--text-muted);
+  border: 1px solid rgba(0, 255, 255, 0.16);
+  background: rgba(0, 0, 0, 0.28);
+  font-size: 7px;
+}
+
+.segmented button.active {
+  color: var(--accent-amber);
+  border-color: rgba(255, 176, 0, 0.42);
+  background: rgba(255, 176, 0, 0.065);
+  box-shadow: inset 0 0 14px rgba(255, 176, 0, 0.05);
+}
+
 .sticky-submit-bar.panel {
   position: fixed;
   left: 50%;
@@ -285,7 +373,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  color: var(--text-muted);
+  color: var(--text-main);
   font-size: 8px;
 }
 
@@ -313,6 +401,9 @@
   opacity: 0.42;
   cursor: not-allowed;
   filter: grayscale(1);
+  color: var(--text-muted);
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow: none;
 }
 
 .submit-btn:disabled {
@@ -363,5 +454,9 @@
 
   .sticky-submit-btn {
     width: 100%;
+  }
+
+  .quick-checklist {
+    grid-template-columns: 1fr;
   }
 }

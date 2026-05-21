@@ -28,10 +28,13 @@ const LogEntry = () => {
     },
     emotions: prefilled.prefilledEmotions || [],
     ideas: prefilled.prefilledIdeas || [],
-    memo: ''
+    memo: '',
+    visibility: 'ANON_NETWORK',
+    spoiler: 'CLEAR_SIGNAL',
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [reportMode, setReportMode] = useState('quick');
   const coords = useMemo(() => {
     const x = (formData.experiences.immersion * 0.45).toFixed(3);
     const y = (formData.experiences.scale * 0.81).toFixed(3);
@@ -89,17 +92,26 @@ const LogEntry = () => {
     { key: 'scale', labelKr: '세계관 규모감', labelEn: 'WORLD_SCALE', color: 'cyan' }
   ];
 
-  const reportReadiness = useMemo(() => {
-    const score = [
-      formData.title.trim().length > 0,
-      formData.type.trim().length > 0,
-      formData.emotions.length > 0,
-      formData.ideas.length > 0,
-      formData.memo.trim().length > 8,
-    ].filter(Boolean).length;
+  const reportChecklist = useMemo(() => [
+    { id: 'target', label: '탐사 대상', done: formData.title.trim().length > 0 },
+    { id: 'emotion', label: '감정 신호', done: formData.emotions.length > 0 },
+    { id: 'immersion', label: '몰입값', done: formData.experiences.immersion > 0 },
+    { id: 'memo', label: '한 줄 메모', done: formData.memo.trim().length > 0 },
+  ], [formData.emotions.length, formData.experiences.immersion, formData.memo, formData.title]);
 
-    return Math.round((score / 5) * 100);
-  }, [formData.emotions.length, formData.ideas.length, formData.memo, formData.title, formData.type]);
+  const reportReadiness = useMemo(() => {
+    const score = reportChecklist.filter(item => item.done).length;
+    return Math.round((score / reportChecklist.length) * 100);
+  }, [reportChecklist]);
+
+  const canSubmit = formData.title.trim().length > 0 && !isSubmitting;
+  const submitStatus = isSubmitting
+    ? 'UPLINKING_SIGNAL...'
+    : formData.title.trim().length === 0
+      ? '작품명을 입력하면 제출 가능'
+      : reportReadiness < 75
+        ? '빠른 로그 제출 가능 / 감정과 메모를 추가하면 분석 정확도 상승'
+        : '송신 준비 완료 / SIGNAL_READY';
 
   return (
     <PageTransition className={`log-entry-container ${isSubmitting ? 'submitting' : ''}`}>
@@ -113,12 +125,27 @@ const LogEntry = () => {
       <section className="uplink-brief panel">
         <div>
           <span className="mono brief-kicker"><RadioTower size={12} /> REPORT_UPLINK</span>
-          <h3>탐사 보고서 작성 중</h3>
-          <p>제출하면 개인 아카이브와 LIVE_SIGNAL_NET에 동시에 송신됩니다.</p>
+          <h3>{prefilled.prefilledTitle ? '선택한 작품 신호를 기록 중' : '빠른 탐사 보고서 작성'}</h3>
+          <p>첫 기록은 가볍게 남기고, 상세 분석은 필요할 때만 확장하세요. 제출하면 DOSSIER와 LIVE_SIGNAL_NET에 반영됩니다.</p>
         </div>
         <div className="readiness-ring mono" style={{ '--ready': `${reportReadiness}%` }}>
           <strong>{reportReadiness}</strong>
           <span>READY</span>
+        </div>
+      </section>
+
+      <section className="quick-log-console panel">
+        <div className="mode-tabs mono">
+          <button className={reportMode === 'quick' ? 'active' : ''} onClick={() => setReportMode('quick')} type="button">QUICK_LOG</button>
+          <button className={reportMode === 'detail' ? 'active' : ''} onClick={() => setReportMode('detail')} type="button">DEEP_ANALYSIS</button>
+        </div>
+        <div className="quick-checklist mono">
+          {reportChecklist.map(item => (
+            <span key={item.id} className={item.done ? 'done' : ''}>
+              <CheckCircle2 size={11} />
+              {item.label}
+            </span>
+          ))}
         </div>
       </section>
 
@@ -151,7 +178,7 @@ const LogEntry = () => {
         <div className="form-group panel">
           <label className="mono text-cyan"><Activity size={14} /> 경험 수치 <span className="text-muted">/ EXPERIENTIAL_METRICS</span></label>
           <div className="sliders-grid">
-            {Sliders.map(s => (
+            {(reportMode === 'quick' ? Sliders.filter(s => ['immersion', 'derealization', 'scale'].includes(s.key)) : Sliders).map(s => (
               <div key={s.key} className="slider-item">
                 <div className="slider-labels">
                   <span className="kr-label">{s.labelKr}</span>
@@ -188,6 +215,7 @@ const LogEntry = () => {
           </div>
         </div>
 
+        {reportMode === 'detail' && (
         <div className="form-group panel">
           <label className="mono text-cyan"><Lightbulb size={14} /> 획득 이데아 <span className="text-muted">/ ACQUIRED_IDEAS</span></label>
           <div className="tag-grid small">
@@ -203,11 +231,12 @@ const LogEntry = () => {
             ))}
           </div>
         </div>
+        )}
 
         <div className="form-group panel">
           <label className="mono text-cyan">탐사 노트 <span className="text-muted">/ FIELD_NOTES</span></label>
           <textarea 
-            placeholder="기록을 남기세요..." 
+            placeholder={reportMode === 'quick' ? '한 줄만 남겨도 송신할 수 있습니다...' : '세부 감상, 세계관 해석, 스포일러 주의 내용을 기록하세요...'} 
             className="sf-textarea mono"
             value={formData.memo}
             onChange={e => setFormData({...formData, memo: e.target.value})}
@@ -215,10 +244,43 @@ const LogEntry = () => {
           ></textarea>
         </div>
 
+        <div className="log-control-grid">
+          <div className="form-group panel compact-control">
+            <label className="mono text-cyan">공개 범위 <span className="text-muted">/ VISIBILITY</span></label>
+            <div className="segmented mono">
+              {['PRIVATE_ARCHIVE', 'ANON_NETWORK', 'PUBLIC_SIGNAL'].map(option => (
+                <button
+                  key={option}
+                  type="button"
+                  className={formData.visibility === option ? 'active' : ''}
+                  onClick={() => setFormData({ ...formData, visibility: option })}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="form-group panel compact-control">
+            <label className="mono text-cyan">스포일러 <span className="text-muted">/ SIGNAL_CLASS</span></label>
+            <div className="segmented mono">
+              {['CLEAR_SIGNAL', 'CLASSIFIED_SIGNAL'].map(option => (
+                <button
+                  key={option}
+                  type="button"
+                  className={formData.spoiler === option ? 'active' : ''}
+                  onClick={() => setFormData({ ...formData, spoiler: option })}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
         <button 
           type="submit" 
           className="submit-btn panel glitch-hover"
-          disabled={!formData.title || isSubmitting}
+          disabled={!canSubmit}
         >
           <Save size={18} />
           <span className="mono">{isSubmitting ? 'TRANSMITTING_TO_ARCHIVE...' : '탐사 완료 / COMMIT_LOG'}</span>
@@ -228,15 +290,15 @@ const LogEntry = () => {
         <div className="sticky-submit-bar panel">
           <div className="sticky-readout mono">
             <CheckCircle2 size={13} />
-            <span>{formData.title ? `TARGET_LOCKED // ${formData.title}` : 'TARGET_REQUIRED'}</span>
+            <span>{submitStatus}</span>
           </div>
           <button
             type="submit"
             className="sticky-submit-btn"
-            disabled={!formData.title || isSubmitting}
+            disabled={!canSubmit}
           >
             <Save size={16} />
-            <span className="mono">{isSubmitting ? '송신 중...' : '탐사보고서 제출'}</span>
+            <span className="mono">{isSubmitting ? '송신 중...' : formData.title ? '탐사보고서 제출' : '작품명 필요'}</span>
           </button>
         </div>
       </form>

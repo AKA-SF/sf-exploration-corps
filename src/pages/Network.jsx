@@ -14,7 +14,14 @@ const LOG_TYPES = {
   LOST_TRANSMISSION: { color: '#ef4444', icon: Skull } // Red
 };
 
-const SIGNAL_ACTIONS = ['동조 신호', '경고 증폭', '항로 연결', '추가 탐사 요청', '해석 대기'];
+const SIGNAL_ACTIONS = ['RESONATE', 'DECODE_REQ', 'ECHO', 'DISTORT', 'ARCHIVE'];
+const NETWORK_REACTIONS = [
+  { code: 'RESONATE', label: '공명' },
+  { code: 'DECODE', label: '해석 요청' },
+  { code: 'ECHO', label: '비슷한 반응' },
+  { code: 'DISTORT', label: '다른 해석' },
+  { code: 'ARCHIVE', label: '저장' },
+];
 
 const getSignalLine = (log, index) => {
   const emotion = log.emotions?.[0] || '미확인 감정';
@@ -141,8 +148,16 @@ const Network = () => {
         <h2 className="mono title-glitch" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-cyan)' }}>
           <Radar size={20} className="spin-slow" /> LIVE_SIGNAL_NET
         </h2>
-        <p className="mono text-muted text-xs">탐사자 교신망: {spatialLogs.length} SIGNALS DETECTED</p>
+        <p className="mono text-muted text-xs">탐사자 교신망: 같은 작품, 같은 감정, 같은 섹터의 반응 신호를 연결합니다.</p>
       </header>
+
+      <section className="network-primer panel">
+        <div>
+          <span className="mono">NETWORK_FUNCTION</span>
+          <strong>탐사 로그가 신호망으로 송신되고, 유사 감정/섹터/개념을 가진 로그와 연결됩니다.</strong>
+        </div>
+        <button className="mono" onClick={() => navigate('/log')}>NEW_SIGNAL_LOG</button>
+      </section>
 
       <div className="network-viewport">
         <div className="signal-sweep"></div>
@@ -266,6 +281,15 @@ const Network = () => {
                 );
               })}
 
+              {spatialLogs.length === 0 && (
+                <div className="network-empty-state panel">
+                  <span className="mono">NO_LIVE_SIGNAL</span>
+                  <strong>아직 수신된 탐사 신호가 없습니다</strong>
+                  <p>첫 탐사 보고서를 송신하면 이 공간에 감정 반응, 유사 탐사자, 연결 작품 신호가 나타납니다.</p>
+                  <button className="mono" onClick={() => navigate('/log')}>첫 탐사 보고서 작성</button>
+                </div>
+              )}
+
             </div>
         </ZoomableMap>
         
@@ -309,6 +333,14 @@ const Network = () => {
               <Zap size={11} />
               <span>{edges.length * 2} PACKETS</span>
             </div>
+          </div>
+          <div className="reaction-grid mono">
+            {NETWORK_REACTIONS.map(action => (
+              <button key={action.code} type="button">
+                <span>{action.code}</span>
+                <em>{action.label}</em>
+              </button>
+            ))}
           </div>
           <div className="relay-stream">
             {transmissionStream.map((signal, index) => (

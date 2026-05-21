@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Scan, RadioReceiver, ShieldAlert, SatelliteDish, Crosshair, X, PlayCircle, Orbit, Plus, Minus, Navigation } from 'lucide-react';
+import { Scan, RadioReceiver, ShieldAlert, SatelliteDish, Crosshair, X, PlayCircle, Orbit, Plus, Minus, Navigation, Search, MapPinned } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import { ZoomableMap } from '../components/ZoomableMap';
 import { useLogs } from '../context/LogContext';
@@ -56,6 +56,7 @@ const Home = () => {
   const navigate = useNavigate();
   const { logs, setCurrentSystemState } = useLogs();
   const mapRef = useRef(null);
+  const miniMapRef = useRef(null);
   
   const [genres, setGenres] = useState(MAP_SECTORS);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,6 +64,7 @@ const Home = () => {
   const [mapCamera, setMapCamera] = useState({ x: 0, y: 0, scale: 1 });
   const [selectedArtifact, setSelectedArtifact] = useState(null);
   const [activeGenreId, setActiveGenreId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [apiStatus, setApiStatus] = useState({
     source: 'booting',
     status: 'scanning',
@@ -257,6 +259,21 @@ const Home = () => {
     mapGenres.find(genre => genre.id === activeGenreId)?.mapWorks || []
   ), [activeGenreId, mapGenres]);
 
+  const filteredActiveWorks = useMemo(() => {
+    if (!activeGenre) return [];
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return activeGenre.works;
+
+    return activeGenre.works.filter(book => [
+      book.title,
+      book.author,
+      book.publisher,
+      book.sfGenre,
+      ...(book.tags?.emotions || []),
+      ...(book.tags?.concepts || []),
+    ].filter(Boolean).join(' ').toLowerCase().includes(query));
+  }, [activeGenre, searchQuery]);
+
   const activeGenreLogs = useMemo(() => {
     if (!activeGenre) return [];
     return logs.filter(log => log.type === activeGenre.name || log.type === activeGenre.en);
@@ -315,11 +332,32 @@ const Home = () => {
     y: Math.max(0, Math.min(2000, (1000 - mapCamera.y) / Math.max(mapCamera.scale, 0.001))),
   }), [mapCamera.scale, mapCamera.x, mapCamera.y]);
 
-  const handleMiniJump = (genre) => {
-    setActiveGenreId(genre.id);
+  const jumpToMapPoint = (x, y, scale = Math.max(mapCamera.scale, 1.18)) => {
+    mapRef.current?.focusWorldPoint({ x, y, scale, immediate: true });
+  };
+
+  const handleMiniMapClick = (event) => {
+    const rect = miniMapRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const x = ((event.clientX - rect.left) / rect.width) * 3000;
+    const y = ((event.clientY - rect.top) / rect.height) * 2000;
+    const nearestGenre = genres.reduce((nearest, genre) => {
+      const currentDistance = Math.hypot(genre.x - x, genre.y - y);
+      if (!nearest || currentDistance < nearest.distance) return { genre, distance: currentDistance };
+      return nearest;
+    }, null);
+
     setSelectedArtifact(null);
-    mapRef.current?.focusWorldPoint({ x: genre.x, y: genre.y, scale: Math.max(mapCamera.scale, 1.18) });
-    setCurrentSystemState(prev => ({ ...prev, selectedGenre: genre.en }));
+    if (nearestGenre?.distance < 260) {
+      setActiveGenreId(nearestGenre.genre.id);
+      setCurrentSystemState(prev => ({ ...prev, selectedGenre: nearestGenre.genre.en }));
+      jumpToMapPoint(nearestGenre.genre.x, nearestGenre.genre.y);
+      return;
+    }
+
+    setActiveGenreId(null);
+    jumpToMapPoint(x, y);
   };
 
   const getConnectionReasons = (book) => {
@@ -355,6 +393,21 @@ const Home = () => {
         </strong>
         {apiStatus.error && <em className="mono">{apiStatus.error}</em>}
       </div>
+
+      {!activeGenre && (
+        <section className="mission-onboarding panel">
+          <div className="mission-onboarding-main">
+            <span className="mono"><MapPinned size={12} /> FIRST_CONTACT_SEQUENCE</span>
+            <strong>관심 SF 섹터를 선택하세요</strong>
+            <p>장르 노드를 누르면 작품 신호가 펼쳐지고, 아래 목록에서 타겟을 고르면 분석 패널과 탐사 로그로 이어집니다.</p>
+          </div>
+          <div className="mission-onboarding-steps mono">
+            <span>1 SECTOR_SELECT</span>
+            <span>2 SIGNAL_SCAN</span>
+            <span>3 FIELD_LOG</span>
+          </div>
+        </section>
+      )}
 
       {/* Layer 1: Parallax Stars */}
       <div className="starfield-container">
@@ -652,21 +705,27 @@ const Home = () => {
             <Navigation size={12} />
             <span>ASTRO_NAV</span>
           </div>
-          <div className="mini-map" aria-label="sector mini map">
+          <button
+            ref={miniMapRef}
+            type="button"
+            className="mini-map"
+            aria-label="sector mini map"
+            onClick={handleMiniMapClick}
+            onPointerDown={(event) => event.stopPropagation()}
+          >
             <div
               className="mini-map-reticle"
               style={{ left: `${(cameraWorld.x / 3000) * 100}%`, top: `${(cameraWorld.y / 2000) * 100}%` }}
             />
             {genres.map(genre => (
-              <button
+              <span
                 key={genre.id}
                 className={`mini-sector ${activeGenreId === genre.id ? 'active' : ''}`}
                 style={{ left: `${(genre.x / 3000) * 100}%`, top: `${(genre.y / 2000) * 100}%` }}
-                onClick={() => handleMiniJump(genre)}
                 title={genre.en}
               />
             ))}
-          </div>
+          </button>
           <div className="nav-readout mono">
             <span>X {cameraWorld.x.toFixed(0)}</span>
             <span>Y {cameraWorld.y.toFixed(0)}</span>
@@ -681,6 +740,21 @@ const Home = () => {
             </button>
           </div>
         </div>
+
+        {activeGenre && (
+          <div className="sector-command-panel panel">
+            <div className="sector-command-head">
+              <span className="mono">SECTOR_LOCKED</span>
+              <strong>{activeGenre.name}</strong>
+            </div>
+            <p>{activeGenre.works.length}개 작품 신호 감지. 아래 목록에서 작품을 선택하면 전체 분석 화면이 열립니다.</p>
+            <div className="sector-command-stats mono">
+              <span>RISK {activeGenre.risk}%</span>
+              <span>LOGS {activeGenreLogs.length}</span>
+              <span>MAP {activeMapWorks.length}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       <AnimatePresence>
@@ -702,8 +776,17 @@ const Home = () => {
               <span>SCAN_LOOP</span>
               <p>장르 선택 → 신호 포착 → 타겟 분석 → 탐사보고서 제출 → NETWORK 반영</p>
             </div>
+            <label className="signal-search mono">
+              <Search size={13} />
+              <input
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="SIGNAL_SEARCH: 작품명 / 작가 / 감정 / 개념"
+              />
+              <span>{filteredActiveWorks.length}</span>
+            </label>
             <div className="artifact-dock-list">
-              {activeGenre.works.map(book => (
+              {filteredActiveWorks.map(book => (
                 <button
                   key={book.id}
                   className={`dock-artifact ${selectedArtifact?.book.id === book.id ? 'active' : ''}`}
@@ -716,6 +799,12 @@ const Home = () => {
                   </span>
                 </button>
               ))}
+              {filteredActiveWorks.length === 0 && (
+                <div className="dock-empty mono">
+                  <strong>NO_SIGNAL_MATCH</strong>
+                  <span>검색어를 지우거나 다른 감정/작가 신호를 입력하세요.</span>
+                </div>
+              )}
             </div>
           </motion.section>
         )}

@@ -58,7 +58,14 @@ const Profile = () => {
     acc[log.type] = (acc[log.type] || 0) + 1;
     return acc;
   }, {});
+  const countForSector = (sector) => (
+    (sectorCounts[sector.name] || 0) + (sectorCounts[sector.en] || 0)
+  );
   const primarySector = Object.keys(sectorCounts).sort((a,b) => sectorCounts[b] - sectorCounts[a])[0] || 'UNKNOWN';
+  const topSectors = PROFILE_SECTORS
+    .map(sector => ({ ...sector, count: countForSector(sector) }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3);
 
   // Determine Most felt emotion
   const emotionCounts = logs.reduce((acc, log) => {
@@ -96,9 +103,21 @@ const Profile = () => {
         ? '현실감 상실 평균 75 이상을 넘기면 ANOMALY READER 권한이 열립니다.'
         : '고위험 탐사 로그를 네트워크에 공유해 특수 해석 권한을 유지하십시오.';
 
-  const countForSector = (sector) => (
-    (sectorCounts[sector.name] || 0) + (sectorCounts[sector.en] || 0)
-  );
+  const highRiskLogs = logs.filter(log => ((log.experiences?.derealization || 0) + (log.experiences?.complexity || 0)) / 2 >= 70).length;
+
+  const nextClass = role === 'SIGNAL ANALYST'
+    ? { name: 'EMOTION DIVER', condition: '몰입감 평균 72 이상 또는 로그 3개', progress: Math.max(averages.immersion, totalLogs * 34) }
+    : role === 'EMOTION DIVER'
+      ? { name: 'WORLD CARTOGRAPHER', condition: '세계관 규모감 평균 72 이상', progress: averages.scale }
+      : role === 'WORLD CARTOGRAPHER'
+        ? { name: 'ANOMALY READER', condition: '현실감 상실 평균 75 이상', progress: averages.derealization }
+        : { name: 'BLACK_ARCHIVE_DECODER', condition: '고위험 로그 5개와 네트워크 응답 3회', progress: Math.min(100, highRiskLogs * 16 + commCount * 8) };
+
+  const classEvidence = [
+    `${topSectors[0]?.name || '미탐사'} 섹터 반응 ${topSectors[0]?.count || 0}회`,
+    `주요 감정대 ${topEmotion}`,
+    `몰입 ${Math.round(averages.immersion)} / 세계관 ${Math.round(averages.scale)} / 현실감 상실 ${Math.round(averages.derealization)}`,
+  ];
 
   const emotionTotal = (names) => names.reduce((sum, name) => sum + (emotionCounts[name] || 0), 0);
   const dystopiaCount = countForSector(PROFILE_SECTORS.find(s => s.id === 'dystopia'));
@@ -113,7 +132,6 @@ const Profile = () => {
   ];
 
   const unexploredSector = PROFILE_SECTORS.find(sector => countForSector(sector) === 0);
-  const highRiskLogs = logs.filter(log => ((log.experiences?.derealization || 0) + (log.experiences?.complexity || 0)) / 2 >= 70).length;
   const missions = [
     {
       id: 'mission-logs',
@@ -194,6 +212,21 @@ const Profile = () => {
           <span />
         </div>
         <p className="mono">{nextRoleHint}</p>
+      </div>
+
+      <div className="class-briefing panel">
+        <h3 className="mono text-xs text-muted section-title"><Activity size={12}/> 클래스 판정 근거 <span className="text-cyan">/ CLASS_EVIDENCE</span></h3>
+        <div className="evidence-list mono">
+          {classEvidence.map(item => <span key={item}>{item}</span>)}
+        </div>
+        <div className="next-class mono">
+          <div>
+            <span>NEXT_CLASS</span>
+            <strong>{nextClass.name}</strong>
+            <p>{nextClass.condition}</p>
+          </div>
+          <em>{Math.round(clamp(nextClass.progress))}%</em>
+        </div>
       </div>
 
       <div className="corps-pass panel">
@@ -277,6 +310,26 @@ const Profile = () => {
               </div>
             );
           })}
+        </div>
+      </div>
+
+      <div className="taste-vector panel">
+        <h3 className="mono text-xs text-muted section-title"><Compass size={12}/> 다음 탐사 신호 <span className="text-cyan">/ NEXT_SIGNAL</span></h3>
+        <div className="vector-grid mono">
+          {topSectors.map(sector => (
+            <div key={sector.id}>
+              <span>{sector.count > 0 ? 'ACTIVE_SECTOR' : 'UNTOUCHED_SECTOR'}</span>
+              <strong>{sector.name}</strong>
+              <em>{sector.count} LOGS</em>
+            </div>
+          ))}
+          {unexploredSector && (
+            <div className="recommended">
+              <span>RECOMMENDED_DRIFT</span>
+              <strong>{unexploredSector.name}</strong>
+              <em>미탐사 구역 진입 권장</em>
+            </div>
+          )}
         </div>
       </div>
 

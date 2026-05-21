@@ -99,6 +99,56 @@
   font-style: normal;
 }
 
+.mission-onboarding {
+  position: relative;
+  z-index: 12;
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 12px;
+  background:
+    linear-gradient(90deg, rgba(255, 176, 0, 0.1), transparent 48%),
+    rgba(0, 0, 0, 0.68);
+  border-color: rgba(255, 176, 0, 0.28);
+}
+
+.mission-onboarding-main {
+  min-width: 0;
+}
+
+.mission-onboarding-main span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--accent-amber);
+  font-size: 8px;
+  margin-bottom: 5px;
+}
+
+.mission-onboarding-main strong {
+  display: block;
+  color: var(--primary-cyan);
+  font-size: 15px;
+  margin-bottom: 4px;
+}
+
+.mission-onboarding-main p {
+  color: var(--text-main);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.mission-onboarding-steps {
+  display: grid;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: 8px;
+  white-space: nowrap;
+}
+
 /* Starfield Parallax */
 .starfield-container {
   position: absolute;
@@ -684,6 +734,60 @@
   pointer-events: none;
 }
 
+.sector-command-panel.panel {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  z-index: 112;
+  width: min(300px, calc(100% - 170px));
+  padding: 12px;
+  background:
+    linear-gradient(135deg, rgba(0, 255, 255, 0.12), transparent 42%),
+    rgba(0, 0, 0, 0.82);
+  border-color: rgba(0, 255, 255, 0.34);
+  pointer-events: none;
+}
+
+.sector-command-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.sector-command-head span {
+  color: var(--accent-amber);
+  font-size: 8px;
+}
+
+.sector-command-head strong {
+  color: var(--primary-cyan);
+  font-size: 16px;
+  font-weight: 300;
+}
+
+.sector-command-panel p {
+  color: var(--text-main);
+  font-size: 11px;
+  line-height: 1.55;
+}
+
+.sector-command-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 9px;
+}
+
+.sector-command-stats span {
+  color: var(--accent-amber);
+  border: 1px solid rgba(255, 176, 0, 0.18);
+  background: rgba(255, 176, 0, 0.045);
+  padding: 4px 6px;
+  font-size: 8px;
+}
+
 .nav-console.panel {
   position: absolute;
   right: 10px;
@@ -710,8 +814,12 @@
 
 .mini-map {
   position: relative;
+  display: block;
+  width: 100%;
   height: 86px;
+  padding: 0;
   border: 1px solid rgba(0, 255, 255, 0.34);
+  color: inherit;
   background:
     radial-gradient(circle at 50% 50%, rgba(0, 255, 255, 0.24), transparent 34%),
     linear-gradient(rgba(0, 255, 255, 0.08) 1px, transparent 1px),
@@ -720,6 +828,13 @@
   background-size: auto, 18px 18px, 18px 18px;
   overflow: hidden;
   box-shadow: inset 0 0 20px rgba(0, 255, 255, 0.08);
+  cursor: crosshair;
+  touch-action: manipulation;
+}
+
+.mini-map:hover {
+  border-color: rgba(255, 176, 0, 0.48);
+  box-shadow: inset 0 0 20px rgba(0, 255, 255, 0.08), 0 0 16px rgba(255, 176, 0, 0.12);
 }
 
 .mini-map::after {
@@ -859,6 +974,38 @@
   line-height: 1.4;
 }
 
+.signal-search {
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  padding: 8px 9px;
+  color: var(--primary-cyan);
+  border: 1px solid rgba(0, 255, 255, 0.22);
+  background: rgba(0, 0, 0, 0.34);
+}
+
+.signal-search input {
+  min-width: 0;
+  color: var(--text-main);
+  background: transparent;
+  border: none;
+  outline: none;
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.signal-search input::placeholder {
+  color: var(--text-muted);
+}
+
+.signal-search span {
+  color: var(--accent-amber);
+  font-size: 9px;
+}
+
 .dock-kicker {
   display: block;
   color: var(--accent-amber);
@@ -941,6 +1088,28 @@
   color: var(--text-muted);
   font-size: 7px;
   margin-top: 4px;
+}
+
+.dock-empty {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+  justify-content: center;
+  min-height: 74px;
+  border: 1px dashed rgba(255, 176, 0, 0.24);
+  color: var(--text-muted);
+  background: rgba(255, 176, 0, 0.035);
+}
+
+.dock-empty strong {
+  color: var(--accent-amber);
+  font-size: 10px;
+}
+
+.dock-empty span {
+  font-size: 9px;
 }
 
 .artifact-analysis-panel.panel {
@@ -1200,6 +1369,15 @@
 }
 
 @media (max-width: 760px) {
+  .mission-onboarding {
+    grid-template-columns: 1fr;
+  }
+
+  .mission-onboarding-steps {
+    grid-template-columns: repeat(3, 1fr);
+    white-space: normal;
+  }
+
   .map-viewport-container {
     flex-basis: min(58vh, 520px);
     min-height: 390px;
@@ -1224,6 +1402,13 @@
     left: 10px;
     right: auto;
     bottom: 10px;
+  }
+
+  .sector-command-panel.panel {
+    width: calc(100% - 20px);
+    top: 10px;
+    left: 10px;
+    padding: 10px;
   }
 
   .artifact-analysis-panel.panel {
