@@ -76,7 +76,22 @@ export default async function handler(request, response) {
   });
 
   if (!notionResponse.ok) {
-    return response.status(notionResponse.status).json({ works: [], error: 'Notion request failed' });
+    let notionError;
+    try {
+      notionError = await notionResponse.json();
+    } catch {
+      notionError = { message: await notionResponse.text() };
+    }
+
+    return response.status(notionResponse.status).json({
+      works: [],
+      error: 'Notion request failed',
+      status: notionResponse.status,
+      notion: {
+        code: notionError?.code,
+        message: notionError?.message,
+      },
+    });
   }
 
   const data = await notionResponse.json();
