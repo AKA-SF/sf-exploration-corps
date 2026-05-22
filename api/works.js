@@ -1,4 +1,5 @@
 const NOTION_VERSION = '2022-06-28';
+const NOTION_PAGE_SIZE = 100;
 
 function plainText(value) {
   if (!value) return '';
@@ -74,45 +75,48 @@ export default async function handler(request, response) {
     });
   }
 
-  const notionResponse = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'Notion-Version': NOTION_VERSION,
-    },
-    body: JSON.stringify({
-      page_size: 12,
-      sorts: [
-        {
-          timestamp: 'created_time',
-          direction: 'descending',
-        },
-      ],
-    }),
-  });
+  const results = [];
+  let startCursor;
 
-  if (!notionResponse.ok) {
-    let notionError;
-    try {
-      notionError = await notionResponse.json();
-    } catch {
-      notionError = { message: await notionResponse.text() };
+  do {
+    const notionResponse = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+        'Notion-Version': NOTION_VERSION,
+      },
+      body: JSON.stringify({
+        page_size: NOTION_PAGE_SIZE,
+        ...(startCursor ? { start_cursor: startCursor } : {}),
+      }),
+    });
+
+    if (!notionResponse.ok) {
+      let notionError;
+      try {
+        notionError = await notionResponse.json();
+      } catch {
+        notionError = { message: await notionResponse.text() };
+      }
+
+      return response.status(notionResponse.status).json({
+        works: [],
+        error: 'Notion request failed',
+        status: notionResponse.status,
+        notion: {
+          code: notionError?.code,
+          message: notionError?.message,
+        },
+      });
     }
 
-    return response.status(notionResponse.status).json({
-      works: [],
-      error: 'Notion request failed',
-      status: notionResponse.status,
-      notion: {
-        code: notionError?.code,
-        message: notionError?.message,
-      },
-    });
-  }
+    const data = await notionResponse.json();
+    results.push(...data.results);
+    startCursor = data.has_more ? data.next_cursor : null;
+  } while (startCursor);
 
-  const data = await notionResponse.json();
-  const works = data.results
+  const works = results
     .map(mapPageToWork)
     .filter(work => work.title)
     .map((work, index) => ({
