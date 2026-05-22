@@ -9,9 +9,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <LogProvider>
       <BrowserRouter>
-        <div className="mobile-container">
-          <App />
-        </div>
+        <App />
       </BrowserRouter>
     </LogProvider>
   </React.StrictMode>,

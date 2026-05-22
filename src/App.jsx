@@ -14,23 +14,26 @@ import InteractiveBackground from './components/InteractiveBackground';
 
 function App() {
   const location = useLocation();
+  const isHome = location.pathname === '/';
 
   return (
-    <div className="app-wrapper">
-      <InteractiveBackground />
-      <div className="page-container">
-        <AnimatePresence mode="wait">
-          <Routes location={location} key={location.pathname}>
-            <Route path="/" element={<Home />} />
-            <Route path="/log" element={<LogEntry />} />
-            <Route path="/result/:id" element={<LogResult />} />
-            <Route path="/network" element={<Network />} />
-            <Route path="/network/:id" element={<NetworkDetail />} />
-            <Route path="/profile" element={<Profile />} />
-          </Routes>
-        </AnimatePresence>
+    <div className={isHome ? 'mobile-container desktop-home' : 'mobile-container'}>
+      <div className="app-wrapper">
+        <InteractiveBackground />
+        <div className="page-container">
+          <AnimatePresence mode="wait">
+            <Routes location={location} key={location.pathname}>
+              <Route path="/" element={<Home />} />
+              <Route path="/log" element={<LogEntry />} />
+              <Route path="/result/:id" element={<LogResult />} />
+              <Route path="/network" element={<Network />} />
+              <Route path="/network/:id" element={<NetworkDetail />} />
+              <Route path="/profile" element={<Profile />} />
+            </Routes>
+          </AnimatePresence>
+        </div>
+        <Navbar />
       </div>
-      <Navbar />
     </div>
   );
 }
