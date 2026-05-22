@@ -138,25 +138,46 @@ const contactChannels = [
 ];
 
 const genreNodes = [
-  { id: 'cyberpunk', label: '사이버펑크', x: 69, y: 34, orbit: 2, tone: 'cyan' },
-  { id: 'space-opera', label: '스페이스 오페라', x: 76, y: 62, orbit: 3, tone: 'blue' },
-  { id: 'post-apocalypse', label: '포스트 아포칼립스', x: 49, y: 76, orbit: 3, tone: 'amber' },
-  { id: 'time-travel', label: '시간여행', x: 24, y: 59, orbit: 2, tone: 'cyan' },
-  { id: 'alien-intelligence', label: '외계지성', x: 31, y: 31, orbit: 2, tone: 'blue' },
-  { id: 'dystopia', label: '디스토피아', x: 50, y: 22, orbit: 1, tone: 'amber' },
-  { id: 'eco-sf', label: '생태 SF', x: 18, y: 43, orbit: 3, tone: 'cyan' },
-  { id: 'new-wave', label: '뉴웨이브', x: 82, y: 45, orbit: 1, tone: 'blue' },
+  { id: 'cyberpunk', label: '사이버펑크', en: 'CYBERPUNK', x: 24, y: 31, orbit: 2, tone: 'cyan', signals: 12 },
+  { id: 'space-opera', label: '스페이스 오페라', en: 'SPACE OPERA', x: 32, y: 65, orbit: 3, tone: 'blue', signals: 18 },
+  { id: 'hard-sf', label: '하드 SF', en: 'HARD SF', x: 58, y: 27, orbit: 1, tone: 'cyan', signals: 9 },
+  { id: 'dystopia', label: '디스토피아', en: 'DYSTOPIA', x: 61, y: 59, orbit: 2, tone: 'amber', signals: 16 },
+  { id: 'posthuman', label: '포스트휴먼', en: 'POST-HUMAN', x: 74, y: 42, orbit: 3, tone: 'amber', signals: 14 },
+  { id: 'ai-sf', label: 'AI SF', en: 'A.I', x: 20, y: 78, orbit: 2, tone: 'blue', signals: 10 },
+  { id: 'time-travel', label: '시간여행', en: 'TIME TRAVEL', x: 70, y: 78, orbit: 1, tone: 'cyan', signals: 11 },
+  { id: 'cosmic', label: '코즈믹 호러', en: 'COSMIC HORROR', x: 83, y: 23, orbit: 3, tone: 'blue', signals: 7 },
+  { id: 'apocalypse', label: '아포칼립스', en: 'APOCALYPSE', x: 87, y: 61, orbit: 3, tone: 'amber', signals: 13 },
+  { id: 'eco-sf', label: '생태 SF', en: 'ECO SF', x: 14, y: 50, orbit: 1, tone: 'cyan', signals: 8 },
 ];
 
 const mapConnections = [
   ['cyberpunk', 'dystopia'],
-  ['cyberpunk', 'new-wave'],
-  ['space-opera', 'alien-intelligence'],
+  ['cyberpunk', 'ai-sf'],
+  ['hard-sf', 'posthuman'],
+  ['hard-sf', 'cosmic'],
+  ['space-opera', 'hard-sf'],
   ['space-opera', 'eco-sf'],
-  ['post-apocalypse', 'dystopia'],
-  ['time-travel', 'new-wave'],
-  ['alien-intelligence', 'eco-sf'],
-  ['time-travel', 'post-apocalypse'],
+  ['dystopia', 'apocalypse'],
+  ['posthuman', 'ai-sf'],
+  ['time-travel', 'dystopia'],
+  ['time-travel', 'apocalypse'],
+  ['cosmic', 'space-opera'],
+  ['eco-sf', 'apocalypse'],
+];
+
+const mapSignalDots = [
+  { x: 18, y: 24, size: 2, delay: 0.1 },
+  { x: 28, y: 43, size: 3, delay: 0.4 },
+  { x: 42, y: 18, size: 2, delay: 0.8 },
+  { x: 52, y: 72, size: 3, delay: 1.1 },
+  { x: 67, y: 35, size: 2, delay: 1.4 },
+  { x: 79, y: 50, size: 3, delay: 1.7 },
+  { x: 35, y: 82, size: 2, delay: 2.0 },
+  { x: 90, y: 33, size: 2, delay: 2.3 },
+  { x: 11, y: 69, size: 3, delay: 2.6 },
+  { x: 48, y: 46, size: 2, delay: 2.9 },
+  { x: 56, y: 12, size: 2, delay: 3.2 },
+  { x: 73, y: 87, size: 3, delay: 3.5 },
 ];
 
 function RadarDisplay() {
@@ -433,6 +454,17 @@ export default function Home() {
 
           <div className="coordinate-map-layout">
             <div className="genre-map" aria-label="SF 장르 노드 맵">
+              <div className="map-hud map-hud-top">
+                <span>SECTOR VIEW</span>
+                <strong>ARCHIVE CARTOGRAPHY</strong>
+              </div>
+              <div className="map-hud map-hud-bottom">
+                <span>CAMERA</span>
+                <strong>X 3986.21 / Y -210.93</strong>
+              </div>
+              <div className="map-grid-cross" aria-hidden="true" />
+              <div className="map-nebula map-nebula-a" aria-hidden="true" />
+              <div className="map-nebula map-nebula-b" aria-hidden="true" />
               <svg className="map-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
                 {mapConnections.map(([from, to]) => {
                   const start = genreNodes.find(node => node.id === from);
@@ -454,6 +486,20 @@ export default function Home() {
                 <span>CORE</span>
               </div>
 
+              {mapSignalDots.map(dot => (
+                <span
+                  className="map-signal-dot"
+                  key={`${dot.x}-${dot.y}`}
+                  style={{
+                    left: `${dot.x}%`,
+                    top: `${dot.y}%`,
+                    width: dot.size,
+                    height: dot.size,
+                    animationDelay: `${dot.delay}s`,
+                  }}
+                />
+              ))}
+
               {genreNodes.map(node => (
                 <button
                   className={`genre-node tone-${node.tone}`}
@@ -462,7 +508,10 @@ export default function Home() {
                   style={{ left: `${node.x}%`, top: `${node.y}%`, '--orbit': node.orbit }}
                 >
                   <i />
-                  <span>{node.label}</span>
+                  <span>
+                    <b>{node.label}</b>
+                    <em>{node.en} / {node.signals} SIGNALS</em>
+                  </span>
                 </button>
               ))}
             </div>
@@ -477,17 +526,33 @@ export default function Home() {
               <dl>
                 <div>
                   <dt>NODES</dt>
-                  <dd>08 장르 좌표</dd>
+                  <dd>10 장르 좌표</dd>
                 </div>
                 <div>
                   <dt>LINKS</dt>
-                  <dd>08 개념 연결선</dd>
+                  <dd>11 개념 연결선</dd>
                 </div>
                 <div>
                   <dt>MODE</dt>
                   <dd>Archive Mapping</dd>
                 </div>
               </dl>
+              <div className="coordinate-minimap" aria-label="탐사 좌표 미니맵">
+                <div className="coordinate-minimap-top">
+                  <span>MINI MAP</span>
+                  <strong>+</strong>
+                </div>
+                <div className="coordinate-mini-space">
+                  {genreNodes.map(node => (
+                    <i
+                      key={node.id}
+                      className={`mini-node tone-${node.tone}`}
+                      style={{ left: `${node.x}%`, top: `${node.y}%` }}
+                    />
+                  ))}
+                  <b />
+                </div>
+              </div>
             </aside>
           </div>
         </div>
