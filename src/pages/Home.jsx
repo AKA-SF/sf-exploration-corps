@@ -137,6 +137,28 @@ const contactChannels = [
   },
 ];
 
+const genreNodes = [
+  { id: 'cyberpunk', label: '사이버펑크', x: 69, y: 34, orbit: 2, tone: 'cyan' },
+  { id: 'space-opera', label: '스페이스 오페라', x: 76, y: 62, orbit: 3, tone: 'blue' },
+  { id: 'post-apocalypse', label: '포스트 아포칼립스', x: 49, y: 76, orbit: 3, tone: 'amber' },
+  { id: 'time-travel', label: '시간여행', x: 24, y: 59, orbit: 2, tone: 'cyan' },
+  { id: 'alien-intelligence', label: '외계지성', x: 31, y: 31, orbit: 2, tone: 'blue' },
+  { id: 'dystopia', label: '디스토피아', x: 50, y: 22, orbit: 1, tone: 'amber' },
+  { id: 'eco-sf', label: '생태 SF', x: 18, y: 43, orbit: 3, tone: 'cyan' },
+  { id: 'new-wave', label: '뉴웨이브', x: 82, y: 45, orbit: 1, tone: 'blue' },
+];
+
+const mapConnections = [
+  ['cyberpunk', 'dystopia'],
+  ['cyberpunk', 'new-wave'],
+  ['space-opera', 'alien-intelligence'],
+  ['space-opera', 'eco-sf'],
+  ['post-apocalypse', 'dystopia'],
+  ['time-travel', 'new-wave'],
+  ['alien-intelligence', 'eco-sf'],
+  ['time-travel', 'post-apocalypse'],
+];
+
 function RadarDisplay() {
   const orbitDots = useMemo(() => (
     Array.from({ length: 44 }, (_, index) => {
@@ -289,7 +311,7 @@ export default function Home() {
               인간 이후의 세계와 미래 사회를 연구하는 인터스텔라 아카이브입니다.
             </p>
             <div className="hero-actions">
-              <a className="primary-action" href="#archive-links">
+              <a className="primary-action" href="#coordinates">
                 탐사 시작 <ChevronRight aria-hidden="true" />
               </a>
               <a className="secondary-action" href="#archive-links">
@@ -326,10 +348,10 @@ export default function Home() {
           })}
         </section>
 
-        <div className="coordinates" id="coordinates">
+        <div className="archive-status">
           <Database aria-hidden="true" />
-          <span>COORDINATES</span>
-          <strong>X: 3986.21&nbsp;&nbsp;Y: -210.93&nbsp;&nbsp;Z: 1250.78</strong>
+          <span>ARCHIVE STATUS</span>
+          <strong>WORKS 111&nbsp;&nbsp;NODES 08&nbsp;&nbsp;SIGNAL READY</strong>
         </div>
       </main>
 
@@ -394,6 +416,79 @@ export default function Home() {
                 </article>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="coordinates-section" id="coordinates">
+        <div className="section-shell">
+          <div className="section-heading">
+            <span>EXPLORATION NODE MAP</span>
+            <h2>탐사 좌표</h2>
+            <p>
+              SF 장르와 개념을 노드 기반 지도로 배치한 탐사 좌표입니다.
+              각 노드는 작품 아카이브의 신호가 모이는 방향이며, 서로 다른 상상력의 경로를 연결합니다.
+            </p>
+          </div>
+
+          <div className="coordinate-map-layout">
+            <div className="genre-map" aria-label="SF 장르 노드 맵">
+              <svg className="map-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+                {mapConnections.map(([from, to]) => {
+                  const start = genreNodes.find(node => node.id === from);
+                  const end = genreNodes.find(node => node.id === to);
+                  return (
+                    <line
+                      key={`${from}-${to}`}
+                      x1={start.x}
+                      y1={start.y}
+                      x2={end.x}
+                      y2={end.y}
+                    />
+                  );
+                })}
+              </svg>
+
+              <div className="map-core">
+                <strong>SF</strong>
+                <span>CORE</span>
+              </div>
+
+              {genreNodes.map(node => (
+                <button
+                  className={`genre-node tone-${node.tone}`}
+                  type="button"
+                  key={node.id}
+                  style={{ left: `${node.x}%`, top: `${node.y}%`, '--orbit': node.orbit }}
+                >
+                  <i />
+                  <span>{node.label}</span>
+                </button>
+              ))}
+            </div>
+
+            <aside className="coordinate-brief">
+              <span>MAP PROTOCOL</span>
+              <h3>장르를 고정하지 않고 연결하기</h3>
+              <p>
+                탐사 좌표는 작품을 하나의 장르에 가두지 않습니다. 사이버펑크는 디스토피아와,
+                생태 SF는 스페이스 오페라와, 시간여행은 뉴웨이브와 겹치며 새로운 질문을 만듭니다.
+              </p>
+              <dl>
+                <div>
+                  <dt>NODES</dt>
+                  <dd>08 장르 좌표</dd>
+                </div>
+                <div>
+                  <dt>LINKS</dt>
+                  <dd>08 개념 연결선</dd>
+                </div>
+                <div>
+                  <dt>MODE</dt>
+                  <dd>Archive Mapping</dd>
+                </div>
+              </dl>
+            </aside>
           </div>
         </div>
       </section>
