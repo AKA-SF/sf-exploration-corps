@@ -196,6 +196,14 @@ const conceptEntries = [
 
 const mediaCategories = ['고전 SF 영화', 'SF 작가 인터뷰', 'SF 관련 기사'];
 
+function normalizeMediaCategory(category = '') {
+  const normalized = category.replace(/\s/g, '').toLowerCase();
+  if (normalized.includes('고전') && (normalized.includes('영화') || normalized.includes('sf'))) return '고전 SF 영화';
+  if (normalized.includes('작가') || normalized.includes('인터뷰')) return 'SF 작가 인터뷰';
+  if (normalized.includes('기사') || normalized.includes('article')) return 'SF 관련 기사';
+  return category;
+}
+
 const genreNodes = [
   { id: 'cyberpunk', label: '사이버펑크', en: 'CYBERPUNK', x: 24, y: 31, orbit: 2, tone: 'cyan', signals: 12 },
   { id: 'space-opera', label: '스페이스 오페라', en: 'SPACE OPERA', x: 32, y: 65, orbit: 3, tone: 'blue', signals: 18 },
@@ -440,7 +448,7 @@ export default function Home() {
   const displayedWorks = archiveMode === 'all'
     ? works
     : works.filter(work => randomWorkCodes.includes(work.code)).slice(0, 6);
-  const displayedMedia = mediaItems.filter(item => item.category === activeMediaCategory);
+  const displayedMedia = mediaItems.filter(item => normalizeMediaCategory(item.category) === activeMediaCategory);
 
   return (
     <PageTransition className="archive-home">

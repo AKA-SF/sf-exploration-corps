@@ -41,6 +41,14 @@ function getYouTubeId(link) {
   }
 }
 
+function normalizeMediaCategory(category = '') {
+  const normalized = category.replace(/\s/g, '').toLowerCase();
+  if (normalized.includes('고전') && (normalized.includes('영화') || normalized.includes('sf'))) return '고전 SF 영화';
+  if (normalized.includes('작가') || normalized.includes('인터뷰')) return 'SF 작가 인터뷰';
+  if (normalized.includes('기사') || normalized.includes('article')) return 'SF 관련 기사';
+  return category;
+}
+
 function mapPageToMedia(page, index) {
   const properties = page.properties ?? {};
   const title = plainText(pick(properties, ['제목', 'Title', 'Name', '이름']));
@@ -56,7 +64,7 @@ function mapPageToMedia(page, index) {
   return {
     code: `MED-${String(index + 1).padStart(3, '0')}`,
     title,
-    category: category || '미분류',
+    category: normalizeMediaCategory(category || '미분류'),
     medium: medium || (youtubeId ? 'YouTube' : 'Article'),
     link,
     description,
