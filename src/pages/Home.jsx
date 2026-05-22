@@ -194,6 +194,8 @@ const conceptEntries = [
   },
 ];
 
+const mediaCategories = ['고전 SF 영화', 'SF 작가 인터뷰', 'SF 관련 기사'];
+
 const genreNodes = [
   { id: 'cyberpunk', label: '사이버펑크', en: 'CYBERPUNK', x: 24, y: 31, orbit: 2, tone: 'cyan', signals: 12 },
   { id: 'space-opera', label: '스페이스 오페라', en: 'SPACE OPERA', x: 32, y: 65, orbit: 3, tone: 'blue', signals: 18 },
@@ -369,6 +371,8 @@ export default function Home() {
   const [activeGenreId, setActiveGenreId] = useState(null);
   const [archiveMode, setArchiveMode] = useState('random');
   const [randomWorkCodes, setRandomWorkCodes] = useState(() => getRandomWorks(fallbackWorks, 6).map(work => work.code));
+  const [mediaItems, setMediaItems] = useState([]);
+  const [activeMediaCategory, setActiveMediaCategory] = useState(mediaCategories[0]);
 
   useEffect(() => {
     let isMounted = true;
@@ -386,6 +390,28 @@ export default function Home() {
       })
       .catch(() => {
         if (isMounted) setWorks(fallbackWorks);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch('/api/media', { cache: 'no-store' })
+      .then(response => {
+        if (!response.ok) throw new Error('Notion media unavailable');
+        return response.json();
+      })
+      .then(data => {
+        if (isMounted && Array.isArray(data.media)) {
+          setMediaItems(data.media);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setMediaItems([]);
       });
 
     return () => {
@@ -414,6 +440,7 @@ export default function Home() {
   const displayedWorks = archiveMode === 'all'
     ? works
     : works.filter(work => randomWorkCodes.includes(work.code)).slice(0, 6);
+  const displayedMedia = mediaItems.filter(item => item.category === activeMediaCategory);
 
   return (
     <PageTransition className="archive-home">
@@ -625,6 +652,58 @@ export default function Home() {
                 </article>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="media-section" id="media-archive">
+        <div className="section-shell">
+          <div className="section-heading">
+            <span>ARCHIVE NODE 03</span>
+            <h2>미디어 아카이브</h2>
+            <p>
+              고전 SF 영화, SF 작가 인터뷰, SF 관련 기사 링크를 모아두는 영상과 읽을거리 저장소입니다.
+            </p>
+          </div>
+
+          <div className="media-tabs" aria-label="미디어 분류">
+            {mediaCategories.map(category => (
+              <button
+                className={activeMediaCategory === category ? 'is-active' : ''}
+                key={category}
+                onClick={() => setActiveMediaCategory(category)}
+                type="button"
+              >
+                {category}
+              </button>
+            ))}
+          </div>
+
+          <div className="media-grid">
+            {displayedMedia.length > 0 ? displayedMedia.map(item => (
+              <a className="media-card" href={item.link} key={item.code} rel="noreferrer" target="_blank">
+                <div className="media-thumb">
+                  {item.thumbnail ? <img src={item.thumbnail} alt={`${item.title} 썸네일`} loading="lazy" /> : <Play aria-hidden="true" />}
+                </div>
+                <div className="media-card-body">
+                  <span>{item.code} / {item.medium}</span>
+                  <h3>{item.title}</h3>
+                  <p>{item.description || item.publisher || item.category}</p>
+                  <div className="media-meta">
+                    {item.publisher && <em>{item.publisher}</em>}
+                    {item.year && <em>{item.year}</em>}
+                  </div>
+                  <div className="media-tags">
+                    {item.tags.map(tag => <span key={tag}>{tag}</span>)}
+                  </div>
+                </div>
+              </a>
+            )) : (
+              <div className="media-empty">
+                <strong>NO SIGNALS</strong>
+                <span>{activeMediaCategory} 데이터가 아직 없습니다.</span>
+              </div>
+            )}
           </div>
         </div>
       </section>
