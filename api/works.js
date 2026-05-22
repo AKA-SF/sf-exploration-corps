@@ -20,6 +20,10 @@ function pick(properties, names) {
   return names.map(name => properties[name]).find(Boolean);
 }
 
+function normalizeNotionId(value) {
+  return value?.replace(/-/g, '').match(/[0-9a-f]{32}/i)?.[0] ?? '';
+}
+
 function mapPageToWork(page, index) {
   const properties = page.properties ?? {};
   const title = plainText(pick(properties, ['작품명', 'Title', 'Name', '이름']));
@@ -44,7 +48,7 @@ export default async function handler(request, response) {
   }
 
   const token = process.env.NOTION_TOKEN;
-  const databaseId = process.env.NOTION_WORKS_DATABASE_ID;
+  const databaseId = normalizeNotionId(process.env.NOTION_WORKS_DATABASE_ID);
 
   if (!token || !databaseId) {
     return response.status(503).json({
