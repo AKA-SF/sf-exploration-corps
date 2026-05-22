@@ -21,7 +21,10 @@ function pick(properties, names) {
 }
 
 function normalizeNotionId(value) {
-  return value?.replace(/-/g, '').match(/[0-9a-f]{32}/i)?.[0] ?? '';
+  const source = value?.trim() ?? '';
+  const compactId = source.match(/(?:^|[^0-9a-f])([0-9a-f]{32})(?:[^0-9a-f]|$)/i)?.[1];
+  const dashedId = source.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0];
+  return (compactId ?? dashedId ?? '').replace(/-/g, '');
 }
 
 function mapPageToWork(page, index) {
