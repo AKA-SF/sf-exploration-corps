@@ -218,17 +218,73 @@
 }
 
 .hero-panel {
+  position: relative;
+  isolation: isolate;
   display: grid;
   grid-template-columns: minmax(440px, 0.95fr) minmax(430px, 1fr) 205px;
   gap: clamp(20px, 3.6vw, 46px);
   min-height: calc(100vh - 284px);
   padding: 44px 0 22px 98px;
   border-bottom: 1px solid var(--line);
+  overflow: hidden;
+}
+
+.hero-panel::before {
+  content: "";
+  position: absolute;
+  z-index: -2;
+  top: -22%;
+  left: 4%;
+  width: min(620px, 54vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  opacity: 0.54;
+  background:
+    radial-gradient(circle at 67% 50%, rgba(195, 244, 255, 0.4), transparent 0.8%, transparent 100%),
+    radial-gradient(circle at 76% 52%, rgba(25, 247, 241, 0.16), transparent 0.9%, transparent 100%),
+    radial-gradient(circle at 71% 34%, rgba(139, 214, 232, 0.2), transparent 1%, transparent 100%),
+    radial-gradient(circle at 42% 47%, rgba(196, 231, 240, 0.14), transparent 0.55%, transparent 100%),
+    radial-gradient(circle at 64% 38%, rgba(190, 240, 255, 0.17), transparent 0.45%, transparent 100%),
+    radial-gradient(circle at 72% 22%, rgba(25, 247, 241, 0.11), transparent 0.4%, transparent 100%),
+    radial-gradient(circle at 64% 46%, rgba(76, 164, 183, 0.3), transparent 18%),
+    radial-gradient(circle at 78% 45%, rgba(185, 236, 247, 0.28), transparent 35%),
+    radial-gradient(circle at 53% 48%, rgba(5, 24, 34, 0.18), transparent 47%),
+    radial-gradient(circle at 54% 50%, rgba(0, 9, 14, 0.02), rgba(0, 9, 14, 0.68) 64%, rgba(0, 0, 0, 0.98) 73%);
+  box-shadow:
+    inset -34px 0 68px rgba(173, 239, 255, 0.18),
+    inset 72px 8px 90px rgba(0, 0, 0, 0.8),
+    0 0 90px rgba(25, 247, 241, 0.12);
+  filter: blur(0.2px);
+}
+
+.hero-panel::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: -26%;
+  left: 2%;
+  width: min(660px, 58vw);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  opacity: 0.34;
+  background:
+    linear-gradient(90deg, transparent 47%, rgba(153, 231, 250, 0.2) 50%, transparent 54%),
+    radial-gradient(circle at 77% 50%, rgba(164, 232, 250, 0.28), transparent 43%),
+    radial-gradient(circle, transparent 61%, rgba(25, 247, 241, 0.2) 62%, transparent 64%);
+  mask-image: radial-gradient(circle, transparent 57%, #000 59%, #000 63%, transparent 66%);
+  pointer-events: none;
 }
 
 .hero-copy {
+  position: relative;
+  z-index: 1;
   align-self: center;
   max-width: 570px;
+}
+
+.radar-shell,
+.home-side {
+  z-index: 1;
 }
 
 .signal-label {
