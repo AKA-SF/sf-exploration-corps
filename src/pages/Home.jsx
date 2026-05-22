@@ -5,6 +5,7 @@ import {
   ChevronRight,
   Database,
   FileText,
+  Mail,
   MessageSquare,
   Play,
   Satellite,
@@ -19,6 +20,7 @@ const navItems = [
   { label: 'SF 개념 사전', href: '#concept-dictionary' },
   { label: '미디어 아카이브', href: '#media-archive' },
   { label: '토론 질문 저장소', href: '#question-vault' },
+  { label: 'Contact', href: '#contact' },
   { label: '탐사 좌표', href: '#coordinates' },
 ];
 
@@ -53,6 +55,12 @@ const archiveCards = [
     text: '탐구하고 토론할 질문을 모아둔 아카이브',
     href: '#question-vault',
   },
+  {
+    icon: Mail,
+    title: 'Contact',
+    text: '협업·문의·아카이브 제안을 위한 통신 채널',
+    href: '#contact',
+  },
 ];
 
 const logLines = [
@@ -77,7 +85,7 @@ const workCategories = [
   { label: 'CINEMA', title: '영화', count: '027 SIGNALS' },
   { label: 'GAME', title: '게임', count: '018 SIGNALS' },
   { label: 'SOUND', title: '음악', count: '013 SIGNALS' },
-  { label: 'MEDIA ART', title: '미디어아트', count: '009 SIGNALS' },
+  { label: 'ANIMATION', title: '애니메이션', count: '011 SIGNALS' },
 ];
 
 const featuredWorks = [
@@ -108,6 +116,24 @@ const featuredWorks = [
     title: '공각기동대',
     subtitle: '네트워크, 의식, 사이버네틱 신체의 경계 탐사',
     tags: ['사이버펑크', '정체성', '네트워크'],
+  },
+];
+
+const contactChannels = [
+  {
+    label: 'ARCHIVE PROPOSAL',
+    title: '작품/개념 제안',
+    text: 'SF 탐사단에 추가하고 싶은 작품, 개념, 질문을 제안합니다.',
+  },
+  {
+    label: 'COLLABORATION',
+    title: '강의·전시·워크숍',
+    text: 'SF와 기술문화, 영상, 게임, 미래사회 연구를 함께 기획합니다.',
+  },
+  {
+    label: 'MESSAGE',
+    title: '일반 문의',
+    text: '프로젝트 소개, 운영, 업데이트에 관한 메시지를 남깁니다.',
   },
 ];
 
@@ -259,7 +285,7 @@ export default function Home() {
             <h1>SF<br />탐사단</h1>
             <p className="hero-kicker">INTERSTELLAR ARCHIVE VESSEL</p>
             <p className="hero-description">
-              SF 탐사단은 소설, 영화, 게임, 철학, 음악, 미디어아트를 탐사하며
+              SF 탐사단은 소설, 영화, 게임, 애니메이션, 음악을 탐사하며
               인간 이후의 세계와 미래 사회를 연구하는 인터스텔라 아카이브입니다.
             </p>
             <div className="hero-actions">
@@ -368,6 +394,36 @@ export default function Home() {
                 </article>
               ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="contact-section" id="contact">
+        <div className="section-shell contact-shell">
+          <div className="section-heading contact-heading">
+            <span>COMMUNICATION NODE</span>
+            <h2>Contact</h2>
+            <p>
+              SF 탐사단은 작품 추천, 개념 제안, 강의와 워크숍, 전시 협업을 위한
+              열린 통신 채널을 준비하고 있습니다.
+            </p>
+          </div>
+
+          <div className="contact-grid">
+            <div className="contact-signal">
+              <Mail aria-hidden="true" />
+              <span>PRIMARY CHANNEL</span>
+              <strong>contact@sf-tamsadan.archive</strong>
+              <em>임시 주소입니다. 실제 운영 이메일로 교체 예정</em>
+            </div>
+
+            {contactChannels.map(channel => (
+              <article className="contact-card" key={channel.label}>
+                <span>{channel.label}</span>
+                <h3>{channel.title}</h3>
+                <p>{channel.text}</p>
+              </article>
+            ))}
           </div>
         </div>
       </section>

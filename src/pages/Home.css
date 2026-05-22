@@ -710,9 +710,9 @@
   bottom: 0;
   left: 90px;
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   margin-left: 0;
-  padding: 29px 0 8px 78px;
+  padding: 24px 0 8px 52px;
   border-left: 1px solid var(--line);
   border-right: 1px solid var(--line);
   border-top: 1px solid var(--line);
@@ -722,11 +722,11 @@
 
 .dock-card {
   display: grid;
-  grid-template-columns: 40px 1fr 18px;
-  gap: 18px;
+  grid-template-columns: 34px 1fr 16px;
+  gap: 14px;
   align-items: start;
-  min-height: 118px;
-  padding: 14px 26px;
+  min-height: 112px;
+  padding: 12px 18px;
   color: #f2fbff;
   text-align: left;
   background: transparent;
@@ -741,8 +741,8 @@
 }
 
 .dock-card > svg:first-child {
-  width: 35px;
-  height: 35px;
+  width: 31px;
+  height: 31px;
   color: var(--cyan);
   stroke-width: 1.7;
 }
@@ -754,14 +754,14 @@
 }
 
 .dock-card strong {
-  margin-bottom: 14px;
-  font-size: 17px;
+  margin-bottom: 10px;
+  font-size: 15px;
   font-weight: 900;
 }
 
 .dock-card em {
   color: #a9bcc3;
-  font-size: 13px;
+  font-size: 12px;
   font-style: normal;
   font-weight: 700;
   line-height: 1.55;
@@ -1028,6 +1028,100 @@
   font-weight: 800;
 }
 
+.contact-section {
+  position: relative;
+  z-index: 2;
+  padding: 88px 22px 118px;
+  border-top: 1px solid rgba(25, 247, 241, 0.2);
+  background:
+    radial-gradient(circle at 20% 20%, rgba(25, 247, 241, 0.1), transparent 28%),
+    linear-gradient(180deg, rgba(1, 4, 7, 0.98), #010305);
+}
+
+.contact-shell {
+  border: 1px solid rgba(25, 247, 241, 0.2);
+  padding: 34px;
+  background: rgba(0, 12, 18, 0.55);
+}
+
+.contact-heading {
+  margin-bottom: 28px;
+}
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: minmax(300px, 0.9fr) repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.contact-signal,
+.contact-card {
+  border: 1px solid rgba(25, 247, 241, 0.26);
+  background:
+    linear-gradient(135deg, rgba(25, 247, 241, 0.08), transparent 48%),
+    rgba(0, 13, 19, 0.65);
+}
+
+.contact-signal {
+  display: grid;
+  align-content: center;
+  min-height: 206px;
+  padding: 24px;
+}
+
+.contact-signal svg {
+  width: 34px;
+  height: 34px;
+  margin-bottom: 18px;
+  color: var(--cyan);
+}
+
+.contact-signal span,
+.contact-signal em,
+.contact-card span {
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.3px;
+}
+
+.contact-signal strong {
+  margin: 10px 0;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 900;
+  word-break: break-word;
+}
+
+.contact-signal em {
+  color: #8fb0bc;
+  font-style: normal;
+  line-height: 1.5;
+}
+
+.contact-card {
+  min-height: 206px;
+  padding: 22px;
+}
+
+.contact-card h3 {
+  margin: 24px 0 12px;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.contact-card p {
+  margin: 0;
+  color: #b8cbd2;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.7;
+}
+
 @keyframes radarSweep {
   to {
     transform: rotate(360deg);
@@ -1111,6 +1205,14 @@
 
   .works-layout {
     grid-template-columns: 1fr;
+  }
+
+  .contact-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .contact-signal {
+    grid-column: 1 / -1;
   }
 }
 
@@ -1251,6 +1353,23 @@
   .work-card h3 {
     font-size: 24px;
   }
+
+  .contact-section {
+    padding: 62px 14px 78px;
+  }
+
+  .contact-shell {
+    padding: 20px;
+  }
+
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .contact-signal,
+  .contact-card {
+    min-height: 178px;
+  }
 }
 
 @media (min-width: 981px) and (max-height: 780px) {
@@ -1328,6 +1447,7 @@
 
   .archive-dock {
     padding-top: 18px;
+    padding-left: 36px;
   }
 
   .dock-card {
