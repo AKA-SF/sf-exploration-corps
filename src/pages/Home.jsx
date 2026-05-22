@@ -143,6 +143,57 @@ const contactChannels = [
   },
 ];
 
+const conceptEntries = [
+  {
+    code: 'CON-001',
+    term: '사이버펑크',
+    english: 'Cyberpunk',
+    category: '장르 / 세계관',
+    summary: '고도화된 기술과 붕괴한 사회 질서가 동시에 존재하는 도시적 SF 감각.',
+    keywords: ['해커', '거대기업', '신체개조'],
+  },
+  {
+    code: 'CON-002',
+    term: '하드 SF',
+    english: 'Hard SF',
+    category: '과학적 상상력',
+    summary: '과학 이론, 물리 법칙, 기술적 개연성을 서사의 핵심 조건으로 삼는 SF.',
+    keywords: ['물리학', '우주공학', '과학적 개연성'],
+  },
+  {
+    code: 'CON-003',
+    term: '스페이스 오페라',
+    english: 'Space Opera',
+    category: '우주 서사',
+    summary: '은하 규모의 정치, 전쟁, 모험, 문명 충돌을 장대한 서사로 펼치는 장르.',
+    keywords: ['은하제국', '함대', '문명'],
+  },
+  {
+    code: 'CON-004',
+    term: '포스트휴먼',
+    english: 'Posthuman',
+    category: '인간 이후',
+    summary: '인간의 신체, 의식, 정체성이 기술과 결합하며 달라지는 조건을 탐구하는 개념.',
+    keywords: ['의식 업로드', '인공생명', '정체성'],
+  },
+  {
+    code: 'CON-005',
+    term: '디스토피아',
+    english: 'Dystopia',
+    category: '사회 비판',
+    summary: '통제, 감시, 불평등, 생태 위기 등 미래 사회의 어두운 가능성을 드러내는 상상력.',
+    keywords: ['감시사회', '통제', '저항'],
+  },
+  {
+    code: 'CON-006',
+    term: '퍼스트 콘택트',
+    english: 'First Contact',
+    category: '조우의 서사',
+    summary: '인류가 외계 지성 또는 낯선 존재와 처음 마주할 때 생기는 인식의 충격.',
+    keywords: ['외계지성', '언어', '타자성'],
+  },
+];
+
 const genreNodes = [
   { id: 'cyberpunk', label: '사이버펑크', en: 'CYBERPUNK', x: 24, y: 31, orbit: 2, tone: 'cyan', signals: 12 },
   { id: 'space-opera', label: '스페이스 오페라', en: 'SPACE OPERA', x: 32, y: 65, orbit: 3, tone: 'blue', signals: 18 },
@@ -535,6 +586,44 @@ export default function Home() {
                   );
                 })}
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="concept-section" id="concept-dictionary">
+        <div className="section-shell">
+          <div className="section-heading">
+            <span>ARCHIVE NODE 02</span>
+            <h2>SF 개념 사전</h2>
+            <p>
+              SF 작품을 읽을 때 반복해서 나타나는 장르, 세계관, 기술, 사회적 질문을
+              작은 탐사 용어로 정리합니다.
+            </p>
+          </div>
+
+          <div className="concept-layout">
+            <aside className="concept-index">
+              <span>DICTIONARY INDEX</span>
+              <strong>{conceptEntries.length} TERMS</strong>
+              <p>작품 아카이브와 탐사 좌표 사이를 연결하는 개념 신호 목록입니다.</p>
+            </aside>
+
+            <div className="concept-grid">
+              {conceptEntries.map(entry => (
+                <article className="concept-card" key={entry.code}>
+                  <div className="concept-card-top">
+                    <span>{entry.code}</span>
+                    <em>{entry.category}</em>
+                  </div>
+                  <h3>{entry.term}</h3>
+                  <strong>{entry.english}</strong>
+                  <p>{entry.summary}</p>
+                  <div className="concept-tags">
+                    {entry.keywords.map(keyword => <span key={keyword}>{keyword}</span>)}
+                  </div>
+                </article>
+              ))}
             </div>
           </div>
         </div>

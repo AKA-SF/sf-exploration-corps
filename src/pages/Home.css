@@ -1210,6 +1210,125 @@
   height: 16px;
 }
 
+.concept-section {
+  position: relative;
+  z-index: 2;
+  padding: 92px 22px 110px;
+  border-top: 1px solid rgba(25, 247, 241, 0.2);
+  background:
+    radial-gradient(circle at 18% 18%, rgba(124, 199, 255, 0.1), transparent 24%),
+    linear-gradient(180deg, rgba(1, 4, 7, 0.98), rgba(1, 8, 12, 0.95));
+}
+
+.concept-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.28fr) minmax(0, 1fr);
+  gap: 24px;
+  align-items: start;
+}
+
+.concept-index,
+.concept-card {
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(135deg, rgba(25, 247, 241, 0.08), transparent 44%),
+    rgba(0, 12, 18, 0.72);
+}
+
+.concept-index {
+  position: sticky;
+  top: 96px;
+  padding: 24px;
+}
+
+.concept-index span,
+.concept-card-top {
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.4px;
+}
+
+.concept-index strong {
+  display: block;
+  margin: 16px 0;
+  color: #fff;
+  font-size: 26px;
+  font-weight: 1000;
+}
+
+.concept-index p {
+  margin: 0;
+  color: #bfd0d6;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.7;
+}
+
+.concept-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.concept-card {
+  min-height: 260px;
+  padding: 20px;
+}
+
+.concept-card-top {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.concept-card-top em {
+  color: #8fb0bc;
+  font-style: normal;
+  text-align: right;
+}
+
+.concept-card h3 {
+  margin: 26px 0 5px;
+  color: #fff;
+  font-size: 28px;
+  font-weight: 1000;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.concept-card > strong {
+  display: block;
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1.1px;
+}
+
+.concept-card p {
+  margin: 18px 0 20px;
+  color: #b8cbd2;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.7;
+}
+
+.concept-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.concept-tags span {
+  padding: 6px 8px;
+  border: 1px solid rgba(25, 247, 241, 0.22);
+  color: #9eeff2;
+  font-size: 11px;
+  font-weight: 800;
+}
+
 .coordinates-section {
   position: relative;
   z-index: 2;
@@ -1825,6 +1944,18 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .concept-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .concept-index {
+    position: static;
+  }
+
+  .concept-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .contact-signal {
     grid-column: 1 / -1;
   }
@@ -1958,7 +2089,8 @@
   }
 
   .archive-category-grid,
-  .featured-work-grid {
+  .featured-work-grid,
+  .concept-grid {
     grid-template-columns: 1fr;
   }
 
