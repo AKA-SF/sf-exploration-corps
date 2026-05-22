@@ -88,6 +88,12 @@ const workCategories = [
   { label: 'ANIMATION', title: '애니메이션', count: '011 SIGNALS' },
 ];
 
+function getRandomWorks(items, count) {
+  return [...items]
+    .sort(() => Math.random() - 0.5)
+    .slice(0, count);
+}
+
 const fallbackWorks = [
   {
     code: 'SFA-001',
@@ -310,6 +316,8 @@ function SidePanel() {
 export default function Home() {
   const [works, setWorks] = useState(fallbackWorks);
   const [activeGenreId, setActiveGenreId] = useState(null);
+  const [archiveMode, setArchiveMode] = useState('random');
+  const [randomWorkCodes, setRandomWorkCodes] = useState(() => getRandomWorks(fallbackWorks, 6).map(work => work.code));
 
   useEffect(() => {
     let isMounted = true;
@@ -322,6 +330,7 @@ export default function Home() {
       .then(data => {
         if (isMounted && Array.isArray(data.works) && data.works.length > 0) {
           setWorks(data.works);
+          setRandomWorkCodes(getRandomWorks(data.works, 6).map(work => work.code));
         }
       })
       .catch(() => {
@@ -351,6 +360,9 @@ export default function Home() {
       setActiveGenreId(node.id);
     }
   };
+  const displayedWorks = archiveMode === 'all'
+    ? works
+    : works.filter(work => randomWorkCodes.includes(work.code)).slice(0, 6);
 
   return (
     <PageTransition className="archive-home">
@@ -447,11 +459,16 @@ export default function Home() {
 
           <div className="archive-category-grid" aria-label="작품 매체 분류">
             {workCategories.map(category => (
-              <article className="category-tile" key={category.label}>
+              <button
+                className={`category-tile ${category.label === 'NOVEL' && archiveMode === 'all' ? 'is-active' : ''}`}
+                key={category.label}
+                onClick={() => category.label === 'NOVEL' && setArchiveMode(mode => (mode === 'all' ? 'random' : 'all'))}
+                type="button"
+              >
                 <span>{category.label}</span>
                 <strong>{category.title}</strong>
-                <em>{category.count}</em>
-              </article>
+                <em>{category.label === 'NOVEL' ? `${works.length} SIGNALS` : category.count}</em>
+              </button>
             ))}
           </div>
 
@@ -480,8 +497,13 @@ export default function Home() {
               </dl>
             </div>
 
+            <div className="archive-view-status">
+              <span>{archiveMode === 'all' ? 'FULL NOVEL ARCHIVE' : 'RANDOM SIGNALS'}</span>
+              <strong>{displayedWorks.length} / {works.length} WORKS</strong>
+            </div>
+
             <div className="featured-work-grid" aria-label="대표 작품 신호">
-              {works.map(work => {
+              {displayedWorks.map(work => {
                 const WorkCard = work.link ? 'a' : 'article';
                 return (
                   <WorkCard
