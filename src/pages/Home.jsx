@@ -165,6 +165,20 @@ const mapConnections = [
   ['eco-sf', 'apocalypse'],
 ];
 
+const genreSubmaps = {
+  'hard-sf': {
+    description: '하드 SF는 과학적 가설, 기술적 가능성, 물리 법칙의 제약을 중심으로 다시 여러 탐사 경로로 갈라집니다.',
+    nodes: [
+      { id: 'near-future', label: '근미래 기술 SF', en: 'NEAR FUTURE', x: 50, y: 19, orbit: 2, tone: 'cyan', signals: 8 },
+      { id: 'space-engineering', label: '우주 공학 SF', en: 'SPACE ENGINEERING', x: 75, y: 34, orbit: 3, tone: 'blue', signals: 7 },
+      { id: 'planetary-science', label: '행성과학 SF', en: 'PLANETARY SCIENCE', x: 77, y: 64, orbit: 2, tone: 'cyan', signals: 6 },
+      { id: 'first-contact', label: '퍼스트 콘택트', en: 'FIRST CONTACT', x: 50, y: 82, orbit: 2, tone: 'amber', signals: 9 },
+      { id: 'simulation', label: '시뮬레이션 SF', en: 'SIMULATION', x: 24, y: 64, orbit: 1, tone: 'blue', signals: 5 },
+      { id: 'astrobiology', label: '우주생물학', en: 'ASTROBIOLOGY', x: 24, y: 34, orbit: 1, tone: 'amber', signals: 6 },
+    ],
+  },
+};
+
 const mapSignalDots = [
   { x: 18, y: 24, size: 2, delay: 0.1 },
   { x: 28, y: 43, size: 3, delay: 0.4 },
@@ -295,6 +309,7 @@ function SidePanel() {
 
 export default function Home() {
   const [works, setWorks] = useState(fallbackWorks);
+  const [activeGenreId, setActiveGenreId] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -317,6 +332,25 @@ export default function Home() {
       isMounted = false;
     };
   }, []);
+
+  const activeGenre = activeGenreId ? genreNodes.find(node => node.id === activeGenreId) : null;
+  const activeSubmap = activeGenreId ? genreSubmaps[activeGenreId] : null;
+  const visibleNodes = activeSubmap?.nodes ?? genreNodes;
+  const visibleConnections = activeSubmap
+    ? activeSubmap.nodes.map(node => [activeGenreId, node.id])
+    : mapConnections;
+  const mapPositions = [
+    ...(activeGenre ? [{ ...activeGenre, x: 50, y: 50 }] : []),
+    ...visibleNodes,
+  ];
+  const mapDescription = activeSubmap?.description
+    ?? '탐사 좌표는 작품을 하나의 장르에 가두지 않습니다. 사이버펑크는 디스토피아와, 생태 SF는 스페이스 오페라와, 시간여행은 뉴웨이브와 겹치며 새로운 질문을 만듭니다.';
+
+  const handleGenreNodeClick = node => {
+    if (genreSubmaps[node.id]) {
+      setActiveGenreId(node.id);
+    }
+  };
 
   return (
     <PageTransition className="archive-home">
@@ -479,8 +513,8 @@ export default function Home() {
           <div className="coordinate-map-layout">
             <div className="genre-map" aria-label="SF 장르 노드 맵">
               <div className="map-hud map-hud-top">
-                <span>SECTOR VIEW</span>
-                <strong>ARCHIVE CARTOGRAPHY</strong>
+                <span>{activeGenre ? 'SUB-SECTOR VIEW' : 'SECTOR VIEW'}</span>
+                <strong>{activeGenre ? activeGenre.en : 'ARCHIVE CARTOGRAPHY'}</strong>
               </div>
               <div className="map-hud map-hud-bottom">
                 <span>CAMERA</span>
@@ -490,9 +524,10 @@ export default function Home() {
               <div className="map-nebula map-nebula-a" aria-hidden="true" />
               <div className="map-nebula map-nebula-b" aria-hidden="true" />
               <svg className="map-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-                {mapConnections.map(([from, to]) => {
-                  const start = genreNodes.find(node => node.id === from);
-                  const end = genreNodes.find(node => node.id === to);
+                {visibleConnections.map(([from, to]) => {
+                  const start = mapPositions.find(node => node.id === from);
+                  const end = mapPositions.find(node => node.id === to);
+                  if (!start || !end) return null;
                   return (
                     <line
                       key={`${from}-${to}`}
@@ -505,10 +540,15 @@ export default function Home() {
                 })}
               </svg>
 
-              <div className="map-core">
-                <strong>SF</strong>
-                <span>CORE</span>
-              </div>
+              <button
+                className={`map-core ${activeGenre ? 'is-returnable' : ''}`}
+                type="button"
+                onClick={() => activeGenre && setActiveGenreId(null)}
+                aria-label={activeGenre ? '상위 SF 장르 지도로 돌아가기' : 'SF 중심 좌표'}
+              >
+                <strong>{activeGenre ? activeGenre.label : 'SF'}</strong>
+                <span>{activeGenre ? 'BACK TO ROOT' : 'CORE'}</span>
+              </button>
 
               {mapSignalDots.map(dot => (
                 <span
@@ -524,12 +564,14 @@ export default function Home() {
                 />
               ))}
 
-              {genreNodes.map(node => (
+              {visibleNodes.map(node => (
                 <button
-                  className={`genre-node tone-${node.tone}`}
+                  className={`genre-node tone-${node.tone} ${genreSubmaps[node.id] ? 'has-submap' : ''}`}
                   type="button"
                   key={node.id}
+                  onClick={() => handleGenreNodeClick(node)}
                   style={{ left: `${node.x}%`, top: `${node.y}%`, '--orbit': node.orbit }}
+                  aria-label={`${node.label} 좌표 ${genreSubmaps[node.id] ? '하위 지도 열기' : '탐사 신호'}`}
                 >
                   <i />
                   <span>
@@ -542,23 +584,20 @@ export default function Home() {
 
             <aside className="coordinate-brief">
               <span>MAP PROTOCOL</span>
-              <h3>장르를 고정하지 않고 연결하기</h3>
-              <p>
-                탐사 좌표는 작품을 하나의 장르에 가두지 않습니다. 사이버펑크는 디스토피아와,
-                생태 SF는 스페이스 오페라와, 시간여행은 뉴웨이브와 겹치며 새로운 질문을 만듭니다.
-              </p>
+              <h3>{activeGenre ? `${activeGenre.label} 하위 좌표` : '장르를 고정하지 않고 연결하기'}</h3>
+              <p>{mapDescription}</p>
               <dl>
                 <div>
                   <dt>NODES</dt>
-                  <dd>10 장르 좌표</dd>
+                  <dd>{visibleNodes.length} 장르 좌표</dd>
                 </div>
                 <div>
                   <dt>LINKS</dt>
-                  <dd>11 개념 연결선</dd>
+                  <dd>{visibleConnections.length} 개념 연결선</dd>
                 </div>
                 <div>
                   <dt>MODE</dt>
-                  <dd>Archive Mapping</dd>
+                  <dd>{activeGenre ? 'Subgenre Mapping' : 'Archive Mapping'}</dd>
                 </div>
               </dl>
               <div className="coordinate-minimap" aria-label="탐사 좌표 미니맵">
@@ -567,7 +606,7 @@ export default function Home() {
                   <strong>+</strong>
                 </div>
                 <div className="coordinate-mini-space">
-                  {genreNodes.map(node => (
+                  {visibleNodes.map(node => (
                     <i
                       key={node.id}
                       className={`mini-node tone-${node.tone}`}
