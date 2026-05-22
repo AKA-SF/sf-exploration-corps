@@ -485,7 +485,7 @@ export default function Home() {
                 const WorkCard = work.link ? 'a' : 'article';
                 return (
                   <WorkCard
-                    className={`work-card ${work.link ? 'is-linked' : ''}`}
+                    className={`work-card ${work.link ? 'is-linked' : ''} ${work.cover ? 'has-cover' : ''}`}
                     href={work.link || undefined}
                     key={work.code}
                     rel={work.link ? 'noreferrer' : undefined}
@@ -495,6 +495,11 @@ export default function Home() {
                       <span>{work.code}</span>
                       <em>{work.medium}</em>
                     </div>
+                    {work.cover && (
+                      <figure className="work-cover">
+                        <img src={work.cover} alt={`${work.title} 표지`} loading="lazy" />
+                      </figure>
+                    )}
                     <h3>{work.title}</h3>
                     <p>{work.subtitle}</p>
                     {work.recommender && <span className="work-recommender">추천자 {work.recommender}</span>}

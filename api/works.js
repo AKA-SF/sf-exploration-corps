@@ -1,5 +1,6 @@
 const NOTION_VERSION = '2022-06-28';
 const NOTION_PAGE_SIZE = 100;
+const ALADIN_LOOKUP_ENDPOINT = 'http://www.aladin.co.kr/ttb/api/ItemLookUp.aspx';
 
 function plainText(value) {
   if (!value) return '';
@@ -27,6 +28,40 @@ function normalizeNotionId(value) {
   const compactId = source.match(/(?:^|[^0-9a-f])([0-9a-f]{32})(?:[^0-9a-f]|$)/i)?.[1];
   const dashedId = source.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0];
   return (compactId ?? dashedId ?? '').replace(/-/g, '');
+}
+
+function getAladinItemId(link) {
+  if (!link) return '';
+  try {
+    const url = new URL(link);
+    return url.searchParams.get('ItemId') ?? '';
+  } catch {
+    return link.match(/ItemId=(\d+)/i)?.[1] ?? '';
+  }
+}
+
+async function fetchAladinCover(link, apiKey) {
+  const itemId = getAladinItemId(link);
+  if (!itemId || !apiKey) return '';
+
+  const params = new URLSearchParams({
+    ttbkey: apiKey,
+    ItemId: itemId,
+    ItemIdType: 'ItemId',
+    Cover: 'Big',
+    output: 'js',
+    Version: '20131101',
+  });
+
+  try {
+    const upstream = await fetch(`${ALADIN_LOOKUP_ENDPOINT}?${params.toString()}`);
+    if (!upstream.ok) return '';
+    const text = await upstream.text();
+    const data = JSON.parse(text.trim().replace(/;$/, ''));
+    return data.item?.[0]?.cover ?? '';
+  } catch {
+    return '';
+  }
 }
 
 function mapPageToWork(page, index) {
@@ -63,6 +98,7 @@ export default async function handler(request, response) {
 
   const token = process.env.NOTION_TOKEN;
   const databaseId = normalizeNotionId(process.env.NOTION_WORKS_DATABASE_ID);
+  const aladinApiKey = process.env.ALADIN_TTB_KEY || process.env.VITE_ALADIN_TTB_KEY;
 
   if (!token || !databaseId) {
     return response.status(503).json({
@@ -116,13 +152,17 @@ export default async function handler(request, response) {
     startCursor = data.has_more ? data.next_cursor : null;
   } while (startCursor);
 
-  const works = results
+  const worksWithoutCovers = results
     .map(mapPageToWork)
     .filter(work => work.title)
     .map((work, index) => ({
       ...work,
       code: work.code.startsWith('SFA-') ? `SFA-${String(index + 1).padStart(3, '0')}` : work.code,
     }));
+  const works = await Promise.all(worksWithoutCovers.map(async work => ({
+    ...work,
+    cover: await fetchAladinCover(work.link, aladinApiKey),
+  })));
 
   return response.status(200).json({ works });
 }

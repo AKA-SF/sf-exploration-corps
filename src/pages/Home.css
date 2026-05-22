@@ -1030,6 +1030,10 @@
   transition: border-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
 }
 
+.work-card.has-cover {
+  padding-right: 150px;
+}
+
 .work-card::after {
   content: "";
   position: absolute;
@@ -1052,6 +1056,8 @@
 }
 
 .work-card-top {
+  position: relative;
+  z-index: 1;
   display: flex;
   justify-content: space-between;
   gap: 18px;
@@ -1063,6 +1069,8 @@
 }
 
 .work-card h3 {
+  position: relative;
+  z-index: 1;
   margin: 28px 0 12px;
   color: #fff;
   font-size: 28px;
@@ -1072,6 +1080,8 @@
 }
 
 .work-card p {
+  position: relative;
+  z-index: 1;
   max-width: 420px;
   margin: 0;
   color: #b8cbd2;
@@ -1080,7 +1090,28 @@
   line-height: 1.7;
 }
 
+.work-cover {
+  position: absolute;
+  z-index: 1;
+  top: 62px;
+  right: 22px;
+  width: 96px;
+  margin: 0;
+  border: 1px solid rgba(25, 247, 241, 0.28);
+  background: rgba(0, 8, 12, 0.72);
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.42), 0 0 24px rgba(25, 247, 241, 0.08);
+}
+
+.work-cover img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+}
+
 .work-recommender {
+  position: relative;
+  z-index: 1;
   display: block;
   margin-top: 12px;
   color: #8fb0bc;
@@ -1089,6 +1120,8 @@
 }
 
 .work-tags {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
