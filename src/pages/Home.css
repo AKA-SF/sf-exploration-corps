@@ -1015,14 +1015,14 @@
 
 .featured-work-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
 }
 
 .work-card {
   display: block;
-  min-height: 226px;
-  padding: 22px;
+  min-height: 270px;
+  padding: 18px;
   position: relative;
   overflow: hidden;
   color: inherit;
@@ -1031,16 +1031,16 @@
 }
 
 .work-card.has-cover {
-  padding-right: 150px;
+  padding-right: 112px;
 }
 
 .work-card::after {
   content: "";
   position: absolute;
-  right: 18px;
-  bottom: 18px;
-  width: 54px;
-  height: 54px;
+  right: 16px;
+  bottom: 16px;
+  width: 44px;
+  height: 44px;
   border: 1px solid rgba(25, 247, 241, 0.25);
   border-radius: 50%;
   background:
@@ -1060,20 +1060,22 @@
   z-index: 1;
   display: flex;
   justify-content: space-between;
-  gap: 18px;
+  gap: 12px;
 }
 
 .work-card-top em {
   color: #8fb0bc;
   font-style: normal;
+  font-size: 10px;
+  text-align: right;
 }
 
 .work-card h3 {
   position: relative;
   z-index: 1;
-  margin: 28px 0 12px;
+  margin: 22px 0 10px;
   color: #fff;
-  font-size: 28px;
+  font-size: 23px;
   font-weight: 1000;
   letter-spacing: 0;
   text-transform: none;
@@ -1085,7 +1087,7 @@
   max-width: 420px;
   margin: 0;
   color: #b8cbd2;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 650;
   line-height: 1.7;
 }
@@ -1093,9 +1095,9 @@
 .work-cover {
   position: absolute;
   z-index: 1;
-  top: 62px;
-  right: 22px;
-  width: 96px;
+  top: 68px;
+  right: 18px;
+  width: 74px;
   margin: 0;
   border: 1px solid rgba(25, 247, 241, 0.28);
   background: rgba(0, 8, 12, 0.72);
@@ -1113,7 +1115,7 @@
   position: relative;
   z-index: 1;
   display: block;
-  margin-top: 12px;
+  margin-top: 10px;
   color: #8fb0bc;
   font-size: 12px;
   font-weight: 800;
@@ -1124,15 +1126,15 @@
   z-index: 1;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 22px;
+  gap: 6px;
+  margin-top: 18px;
 }
 
 .work-tags span {
-  padding: 6px 9px;
+  padding: 5px 7px;
   border: 1px solid rgba(25, 247, 241, 0.22);
   color: #9eeff2;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 800;
 }
 
@@ -1143,12 +1145,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-top: 26px;
-  padding-top: 14px;
+  margin-top: 18px;
+  padding-top: 12px;
   border-top: 1px solid rgba(25, 247, 241, 0.14);
   color: var(--cyan);
   font-family: "Courier New", monospace;
-  font-size: 10px;
+  font-size: 9px;
   font-weight: 900;
   letter-spacing: 1.4px;
 }
@@ -1759,6 +1761,10 @@
 
   .works-layout {
     grid-template-columns: 1fr;
+  }
+
+  .featured-work-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .contact-grid {
