@@ -72,6 +72,45 @@ const blips = [
   { x: 32, y: 70, size: 5, delay: 1.5 },
 ];
 
+const workCategories = [
+  { label: 'NOVEL', title: '소설', count: '042 SIGNALS' },
+  { label: 'CINEMA', title: '영화', count: '027 SIGNALS' },
+  { label: 'GAME', title: '게임', count: '018 SIGNALS' },
+  { label: 'SOUND', title: '음악', count: '013 SIGNALS' },
+  { label: 'MEDIA ART', title: '미디어아트', count: '009 SIGNALS' },
+];
+
+const featuredWorks = [
+  {
+    code: 'SFA-001',
+    medium: 'NOVEL',
+    title: '듄',
+    subtitle: '생태, 제국, 예언, 행성 규모의 정치학',
+    tags: ['생태 SF', '제국', '메시아'],
+  },
+  {
+    code: 'SFA-014',
+    medium: 'CINEMA',
+    title: '블레이드 러너',
+    subtitle: '기억과 신체, 인공 생명의 권리를 묻는 도시 신호',
+    tags: ['안드로이드', '기억', '느와르'],
+  },
+  {
+    code: 'SFA-027',
+    medium: 'GAME',
+    title: '시그널리스',
+    subtitle: '반복되는 꿈과 우주적 고립 속에서 흔들리는 정체성',
+    tags: ['우주 공포', '기억', '루프'],
+  },
+  {
+    code: 'SFA-039',
+    medium: 'ANIMATION',
+    title: '공각기동대',
+    subtitle: '네트워크, 의식, 사이버네틱 신체의 경계 탐사',
+    tags: ['사이버펑크', '정체성', '네트워크'],
+  },
+];
+
 function RadarDisplay() {
   const orbitDots = useMemo(() => (
     Array.from({ length: 44 }, (_, index) => {
@@ -249,7 +288,7 @@ export default function Home() {
           {archiveCards.map(card => {
             const Icon = card.icon;
             return (
-              <a className="dock-card" id={card.href.slice(1)} href={card.href} key={card.title}>
+              <a className="dock-card" href={card.href} key={card.title}>
                 <Icon aria-hidden="true" />
                 <span>
                   <strong>{card.title}</strong>
@@ -267,6 +306,71 @@ export default function Home() {
           <strong>X: 3986.21&nbsp;&nbsp;Y: -210.93&nbsp;&nbsp;Z: 1250.78</strong>
         </div>
       </main>
+
+      <section className="works-archive-section" id="works-archive">
+        <div className="section-shell">
+          <div className="section-heading">
+            <span>ARCHIVE NODE 01</span>
+            <h2>작품 아카이브</h2>
+            <p>
+              SF 탐사단의 작품 아카이브는 작품을 단순 목록으로 보관하지 않고,
+              세계관, 매체, 핵심 질문, 감각적 밀도에 따라 탐사 가능한 신호로 분류합니다.
+            </p>
+          </div>
+
+          <div className="archive-category-grid" aria-label="작품 매체 분류">
+            {workCategories.map(category => (
+              <article className="category-tile" key={category.label}>
+                <span>{category.label}</span>
+                <strong>{category.title}</strong>
+                <em>{category.count}</em>
+              </article>
+            ))}
+          </div>
+
+          <div className="works-layout">
+            <div className="works-brief">
+              <span>CLASSIFICATION METHOD</span>
+              <h3>작품을 좌표로 읽기</h3>
+              <p>
+                각 작품은 장르보다 먼저 질문으로 기록됩니다. 이 작품이 어떤 인간 이후의 조건을
+                상상하는지, 어떤 기술과 감각을 호출하는지, 그리고 지금 우리의 세계와 어디에서
+                접속되는지를 추적합니다.
+              </p>
+              <dl>
+                <div>
+                  <dt>AXIS 01</dt>
+                  <dd>세계관과 사회 구조</dd>
+                </div>
+                <div>
+                  <dt>AXIS 02</dt>
+                  <dd>기술, 신체, 의식의 변화</dd>
+                </div>
+                <div>
+                  <dt>AXIS 03</dt>
+                  <dd>토론 가능한 핵심 질문</dd>
+                </div>
+              </dl>
+            </div>
+
+            <div className="featured-work-grid" aria-label="대표 작품 신호">
+              {featuredWorks.map(work => (
+                <article className="work-card" key={work.code}>
+                  <div className="work-card-top">
+                    <span>{work.code}</span>
+                    <em>{work.medium}</em>
+                  </div>
+                  <h3>{work.title}</h3>
+                  <p>{work.subtitle}</p>
+                  <div className="work-tags">
+                    {work.tags.map(tag => <span key={tag}>{tag}</span>)}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
     </PageTransition>
   );
 }
