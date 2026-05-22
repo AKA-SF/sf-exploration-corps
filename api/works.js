@@ -6,6 +6,7 @@ function plainText(value) {
     return value[value.type]?.map(part => part.plain_text).join('') ?? '';
   }
   if (value.type === 'select') return value.select?.name ?? '';
+  if (value.type === 'multi_select') return value.multi_select.map(tag => tag.name).join(', ');
   if (value.type === 'number') return String(value.number ?? '');
   if (value.type === 'url') return value.url ?? '';
   return '';
@@ -29,17 +30,20 @@ function normalizeNotionId(value) {
 
 function mapPageToWork(page, index) {
   const properties = page.properties ?? {};
-  const title = plainText(pick(properties, ['작품명', 'Title', 'Name', '이름']));
-  const medium = plainText(pick(properties, ['매체', 'Medium', 'Type', '분류']));
-  const subtitle = plainText(pick(properties, ['설명', 'Subtitle', 'Description', '메모']));
+  const title = plainText(pick(properties, ['제목', '작품명', 'Title', 'Name', '이름']));
+  const author = plainText(pick(properties, ['저자', 'Author', 'Creator']));
+  const publisher = plainText(pick(properties, ['출판사', 'Publisher', 'Studio']));
+  const medium = plainText(pick(properties, ['매체', '카테고리', 'Medium', 'Type', '분류']));
+  const subtitle = plainText(pick(properties, ['설명', '메모', 'Subtitle', 'Description']));
   const code = plainText(pick(properties, ['코드', 'Code', 'Archive Code'])) || `SFA-${String(index + 1).padStart(3, '0')}`;
   const tags = multiSelect(pick(properties, ['태그', 'Tags', '키워드', 'Keywords']));
+  const description = subtitle || [author, publisher].filter(Boolean).join(' / ');
 
   return {
     code,
     medium: medium || 'ARCHIVE',
     title: title || '제목 미정',
-    subtitle: subtitle || '노션 작품 아카이브에서 동기화된 신호',
+    subtitle: description || '노션 작품 아카이브에서 동기화된 신호',
     tags: tags.length > 0 ? tags : ['Notion Sync'],
   };
 }
