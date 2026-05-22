@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Box,
@@ -88,7 +88,7 @@ const workCategories = [
   { label: 'ANIMATION', title: '애니메이션', count: '011 SIGNALS' },
 ];
 
-const featuredWorks = [
+const fallbackWorks = [
   {
     code: 'SFA-001',
     medium: 'NOVEL',
@@ -294,6 +294,30 @@ function SidePanel() {
 }
 
 export default function Home() {
+  const [works, setWorks] = useState(fallbackWorks);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch('/api/works')
+      .then(response => {
+        if (!response.ok) throw new Error('Notion archive unavailable');
+        return response.json();
+      })
+      .then(data => {
+        if (isMounted && Array.isArray(data.works) && data.works.length > 0) {
+          setWorks(data.works);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setWorks(fallbackWorks);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <PageTransition className="archive-home">
       <header className="home-topbar">
@@ -423,7 +447,7 @@ export default function Home() {
             </div>
 
             <div className="featured-work-grid" aria-label="대표 작품 신호">
-              {featuredWorks.map(work => (
+              {works.map(work => (
                 <article className="work-card" key={work.code}>
                   <div className="work-card-top">
                     <span>{work.code}</span>

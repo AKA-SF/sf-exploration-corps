@@ -1,5 +1,3 @@
-/* global process */
-
 const ALADIN_ENDPOINT = 'http://www.aladin.co.kr/ttb/api/ItemSearch.aspx';
 
 const pickFirst = (value) => (Array.isArray(value) ? value[0] : value);
