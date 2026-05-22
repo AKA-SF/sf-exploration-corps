@@ -42,7 +42,7 @@ function mapPageToWork(page, index) {
   return {
     code,
     medium: medium || 'ARCHIVE',
-    title: title || '제목 미정',
+    title,
     subtitle: description || '노션 작품 아카이브에서 동기화된 신호',
     tags: tags.length > 0 ? tags : ['Notion Sync'],
   };
@@ -106,7 +106,13 @@ export default async function handler(request, response) {
   }
 
   const data = await notionResponse.json();
-  const works = data.results.map(mapPageToWork);
+  const works = data.results
+    .map(mapPageToWork)
+    .filter(work => work.title)
+    .map((work, index) => ({
+      ...work,
+      code: work.code.startsWith('SFA-') ? `SFA-${String(index + 1).padStart(3, '0')}` : work.code,
+    }));
 
   return response.status(200).json({ works });
 }
