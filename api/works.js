@@ -1,6 +1,7 @@
 const NOTION_VERSION = '2022-06-28';
 const NOTION_PAGE_SIZE = 100;
 const ALADIN_LOOKUP_ENDPOINT = 'http://www.aladin.co.kr/ttb/api/ItemLookUp.aspx';
+const ALADIN_SEARCH_ENDPOINT = 'http://www.aladin.co.kr/ttb/api/ItemSearch.aspx';
 
 function plainText(value) {
   if (!value) return '';
@@ -34,13 +35,21 @@ function getAladinItemId(link) {
   if (!link) return '';
   try {
     const url = new URL(link);
-    return url.searchParams.get('ItemId') ?? '';
+    return url.searchParams.get('ItemId')
+      ?? url.searchParams.get('itemId')
+      ?? url.pathname.match(/\/(\d+)(?:\D*)$/)?.[1]
+      ?? '';
   } catch {
-    return link.match(/ItemId=(\d+)/i)?.[1] ?? '';
+    return link.match(/ItemId=(\d+)/i)?.[1] ?? link.match(/\/(\d+)(?:\D*)$/)?.[1] ?? '';
   }
 }
 
-async function fetchAladinCover(link, apiKey) {
+function normalizeCoverUrl(cover) {
+  return cover ? cover.replace('coversum', 'cover200') : '';
+}
+
+async function fetchAladinCover(work, apiKey) {
+  const { link, title, subtitle } = work;
   const itemId = getAladinItemId(link);
   if (!itemId || !apiKey) return '';
 
@@ -55,10 +64,39 @@ async function fetchAladinCover(link, apiKey) {
 
   try {
     const upstream = await fetch(`${ALADIN_LOOKUP_ENDPOINT}?${params.toString()}`);
+    if (!upstream.ok) throw new Error('Aladin lookup failed');
+    const text = await upstream.text();
+    const data = JSON.parse(text.trim().replace(/;$/, ''));
+    const cover = normalizeCoverUrl(data.item?.[0]?.cover);
+    if (cover) return cover;
+  } catch {
+    // Fall through to title search below.
+  }
+
+  if (!title || !apiKey) return '';
+
+  const searchParams = new URLSearchParams({
+    ttbkey: apiKey,
+    Query: title,
+    QueryType: 'Title',
+    MaxResults: '5',
+    start: '1',
+    SearchTarget: 'Book',
+    Cover: 'Big',
+    output: 'js',
+    Version: '20131101',
+  });
+
+  try {
+    const upstream = await fetch(`${ALADIN_SEARCH_ENDPOINT}?${searchParams.toString()}`);
     if (!upstream.ok) return '';
     const text = await upstream.text();
     const data = JSON.parse(text.trim().replace(/;$/, ''));
-    return data.item?.[0]?.cover ?? '';
+    const [author] = subtitle.split(' / ');
+    const matched = data.item?.find(item => (
+      !author || item.author?.includes(author) || author.includes(item.author)
+    )) ?? data.item?.[0];
+    return normalizeCoverUrl(matched?.cover);
   } catch {
     return '';
   }
@@ -161,7 +199,7 @@ export default async function handler(request, response) {
     }));
   const works = await Promise.all(worksWithoutCovers.map(async work => ({
     ...work,
-    cover: await fetchAladinCover(work.link, aladinApiKey),
+    cover: await fetchAladinCover(work, aladinApiKey),
   })));
 
   return response.status(200).json({ works });
