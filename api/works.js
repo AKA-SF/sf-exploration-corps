@@ -51,26 +51,28 @@ function normalizeCoverUrl(cover) {
 async function fetchAladinCover(work, apiKey) {
   const { link, title, subtitle } = work;
   const itemId = getAladinItemId(link);
-  if (!itemId || !apiKey) return '';
+  if (!apiKey) return '';
 
-  const params = new URLSearchParams({
-    ttbkey: apiKey,
-    ItemId: itemId,
-    ItemIdType: 'ItemId',
-    Cover: 'Big',
-    output: 'js',
-    Version: '20131101',
-  });
+  if (itemId) {
+    const params = new URLSearchParams({
+      ttbkey: apiKey,
+      ItemId: itemId,
+      ItemIdType: 'ItemId',
+      Cover: 'Big',
+      output: 'js',
+      Version: '20131101',
+    });
 
-  try {
-    const upstream = await fetch(`${ALADIN_LOOKUP_ENDPOINT}?${params.toString()}`);
-    if (!upstream.ok) throw new Error('Aladin lookup failed');
-    const text = await upstream.text();
-    const data = JSON.parse(text.trim().replace(/;$/, ''));
-    const cover = normalizeCoverUrl(data.item?.[0]?.cover);
-    if (cover) return cover;
-  } catch {
-    // Fall through to title search below.
+    try {
+      const upstream = await fetch(`${ALADIN_LOOKUP_ENDPOINT}?${params.toString()}`);
+      if (!upstream.ok) throw new Error('Aladin lookup failed');
+      const text = await upstream.text();
+      const data = JSON.parse(text.trim().replace(/;$/, ''));
+      const cover = normalizeCoverUrl(data.item?.[0]?.cover);
+      if (cover) return cover;
+    } catch {
+      // Fall through to title search below.
+    }
   }
 
   if (!title || !apiKey) return '';
