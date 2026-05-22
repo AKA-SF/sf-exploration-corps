@@ -1453,15 +1453,29 @@
   letter-spacing: 1.3px;
 }
 
-.contact-signal strong {
-  margin: 10px 0;
+.contact-signal a {
+  display: block;
+  margin: 10px 0 0;
   color: #fff;
   font-size: 20px;
   font-weight: 900;
+  text-decoration: none;
   word-break: break-word;
 }
 
+.contact-signal a + a {
+  margin-top: 8px;
+  color: #9eeff2;
+  font-size: 16px;
+}
+
+.contact-signal a:hover {
+  color: var(--cyan);
+}
+
 .contact-signal em {
+  display: block;
+  margin-top: 14px;
   color: #8fb0bc;
   font-style: normal;
   line-height: 1.5;

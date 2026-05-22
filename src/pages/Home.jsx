@@ -58,7 +58,7 @@ const archiveCards = [
   {
     icon: Mail,
     title: 'Contact',
-    text: '협업·문의·아카이브 제안을 위한 통신 채널',
+    text: '협업·협찬·강의·일반 문의 채널',
     href: '#contact',
   },
 ];
@@ -121,17 +121,17 @@ const featuredWorks = [
 
 const contactChannels = [
   {
-    label: 'ARCHIVE PROPOSAL',
-    title: '작품/개념 제안',
-    text: 'SF 탐사단에 추가하고 싶은 작품, 개념, 질문을 제안합니다.',
+    label: 'PARTNERSHIP',
+    title: '협업, 협찬 제안',
+    text: '프로젝트 협업, 콘텐츠 제휴, 후원과 협찬 제안을 받습니다.',
   },
   {
-    label: 'COLLABORATION',
-    title: '강의·전시·워크숍',
-    text: 'SF와 기술문화, 영상, 게임, 미래사회 연구를 함께 기획합니다.',
+    label: 'LECTURE / WORKSHOP',
+    title: '강의 및 워크숍',
+    text: 'SF, 미래사회, 작품 아카이브를 주제로 한 강의와 워크숍을 논의합니다.',
   },
   {
-    label: 'MESSAGE',
+    label: 'GENERAL MESSAGE',
     title: '일반 문의',
     text: '프로젝트 소개, 운영, 업데이트에 관한 메시지를 남깁니다.',
   },
@@ -564,8 +564,8 @@ export default function Home() {
             <span>COMMUNICATION NODE</span>
             <h2>Contact</h2>
             <p>
-              SF 탐사단은 작품 추천, 개념 제안, 강의와 워크숍, 전시 협업을 위한
-              열린 통신 채널을 준비하고 있습니다.
+              SF 탐사단의 협업, 협찬, 강의, 워크숍, 일반 문의를 위한 공식 연락
+              채널입니다. 아래 이메일 또는 인스타그램으로 메시지를 보내주세요.
             </p>
           </div>
 
@@ -573,8 +573,11 @@ export default function Home() {
             <div className="contact-signal">
               <Mail aria-hidden="true" />
               <span>PRIMARY CHANNEL</span>
-              <strong>contact@sf-tamsadan.archive</strong>
-              <em>임시 주소입니다. 실제 운영 이메일로 교체 예정</em>
+              <a href="mailto:brokenfuzz@gmail.com">brokenfuzz@gmail.com</a>
+              <a href="https://www.instagram.com/aka_book_/" target="_blank" rel="noreferrer">
+                instagram.com/aka_book_
+              </a>
+              <em>협업, 협찬, 강의, 워크숍, 일반 문의</em>
             </div>
 
             {contactChannels.map(channel => (
