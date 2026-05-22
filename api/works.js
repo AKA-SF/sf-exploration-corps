@@ -47,7 +47,14 @@ export default async function handler(request, response) {
   const databaseId = process.env.NOTION_WORKS_DATABASE_ID;
 
   if (!token || !databaseId) {
-    return response.status(503).json({ works: [], error: 'Notion environment variables are not configured' });
+    return response.status(503).json({
+      works: [],
+      error: 'Notion environment variables are not configured',
+      missing: [
+        !token ? 'NOTION_TOKEN' : null,
+        !databaseId ? 'NOTION_WORKS_DATABASE_ID' : null,
+      ].filter(Boolean),
+    });
   }
 
   const notionResponse = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
