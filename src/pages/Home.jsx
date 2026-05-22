@@ -500,41 +500,41 @@ export default function Home() {
             <div className="archive-view-status">
               <span>{archiveMode === 'all' ? 'FULL NOVEL ARCHIVE' : 'RANDOM SIGNALS'}</span>
               <strong>{displayedWorks.length} / {works.length} WORKS</strong>
-            </div>
 
-            <div className="featured-work-grid" aria-label="대표 작품 신호">
-              {displayedWorks.map(work => {
-                const WorkCard = work.link ? 'a' : 'article';
-                return (
-                  <WorkCard
-                    className={`work-card ${work.link ? 'is-linked' : ''} ${work.cover ? 'has-cover' : ''}`}
-                    href={work.link || undefined}
-                    key={work.code}
-                    rel={work.link ? 'noreferrer' : undefined}
-                    target={work.link ? '_blank' : undefined}
-                  >
-                    <div className="work-card-top">
-                      <span>{work.code}</span>
-                      <em>{work.medium}</em>
-                    </div>
-                    {work.cover && (
-                      <figure className="work-cover">
-                        <img src={work.cover} alt={`${work.title} 표지`} loading="lazy" />
-                      </figure>
-                    )}
-                    <h3>{work.title}</h3>
-                    <p>{work.subtitle}</p>
-                    {work.recommender && <span className="work-recommender">추천자 {work.recommender}</span>}
-                    <div className="work-tags">
-                      {work.tags.map(tag => <span key={tag}>{tag}</span>)}
-                    </div>
-                    <div className="work-card-footer">
-                      <span>{work.link ? 'ARCHIVE LINK' : 'ARCHIVE SIGNAL'}</span>
-                      <ChevronRight aria-hidden="true" />
-                    </div>
-                  </WorkCard>
-                );
-              })}
+              <div className="featured-work-grid" aria-label="대표 작품 신호">
+                {displayedWorks.map(work => {
+                  const WorkCard = work.link ? 'a' : 'article';
+                  return (
+                    <WorkCard
+                      className={`work-card ${work.link ? 'is-linked' : ''} ${work.cover ? 'has-cover' : ''}`}
+                      href={work.link || undefined}
+                      key={work.code}
+                      rel={work.link ? 'noreferrer' : undefined}
+                      target={work.link ? '_blank' : undefined}
+                    >
+                      <div className="work-card-top">
+                        <span>{work.code}</span>
+                        <em>{work.medium}</em>
+                      </div>
+                      {work.cover && (
+                        <figure className="work-cover">
+                          <img src={work.cover} alt={`${work.title} 표지`} loading="lazy" />
+                        </figure>
+                      )}
+                      <h3>{work.title}</h3>
+                      <p>{work.subtitle}</p>
+                      {work.recommender && <span className="work-recommender">추천자 {work.recommender}</span>}
+                      <div className="work-tags">
+                        {work.tags.map(tag => <span key={tag}>{tag}</span>)}
+                      </div>
+                      <div className="work-card-footer">
+                        <span>{work.link ? 'ARCHIVE LINK' : 'ARCHIVE SIGNAL'}</span>
+                        <ChevronRight aria-hidden="true" />
+                      </div>
+                    </WorkCard>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
