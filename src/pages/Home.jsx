@@ -314,7 +314,7 @@ export default function Home() {
   useEffect(() => {
     let isMounted = true;
 
-    fetch('/api/works')
+    fetch('/api/works', { cache: 'no-store' })
       .then(response => {
         if (!response.ok) throw new Error('Notion archive unavailable');
         return response.json();
