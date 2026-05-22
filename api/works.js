@@ -36,6 +36,8 @@ function mapPageToWork(page, index) {
   const medium = plainText(pick(properties, ['매체', '카테고리', 'Medium', 'Type', '분류']));
   const subtitle = plainText(pick(properties, ['설명', '메모', 'Subtitle', 'Description']));
   const code = plainText(pick(properties, ['코드', 'Code', 'Archive Code'])) || `SFA-${String(index + 1).padStart(3, '0')}`;
+  const link = plainText(pick(properties, ['링크', 'Link', 'URL', 'Url']));
+  const recommender = plainText(pick(properties, ['추천자', 'Recommender', '추천']));
   const tags = multiSelect(pick(properties, ['태그', 'Tags', '키워드', 'Keywords']));
   const description = subtitle || [author, publisher].filter(Boolean).join(' / ');
 
@@ -44,6 +46,8 @@ function mapPageToWork(page, index) {
     medium: medium || 'ARCHIVE',
     title,
     subtitle: description || '노션 작품 아카이브에서 동기화된 신호',
+    link,
+    recommender,
     tags: tags.length > 0 ? tags : ['Notion Sync'],
   };
 }
