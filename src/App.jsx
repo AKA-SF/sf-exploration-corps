@@ -4,6 +4,7 @@ import './App.css';
 
 // Components & Pages
 import Home from './pages/Home';
+import ExplorationLog from './pages/ExplorationLog';
 import LogEntry from './pages/LogEntry';
 import LogResult from './pages/LogResult';
 import Profile from './pages/Profile';
@@ -24,6 +25,7 @@ function App() {
           <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>
               <Route path="/" element={<Home />} />
+              <Route path="/exploration-log" element={<ExplorationLog />} />
               <Route path="/log" element={<LogEntry />} />
               <Route path="/result/:id" element={<LogResult />} />
               <Route path="/network" element={<Network />} />

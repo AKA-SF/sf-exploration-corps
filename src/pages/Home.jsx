@@ -16,7 +16,7 @@ import './Home.css';
 
 const navItems = [
   { label: '작품 아카이브', href: '#works-archive' },
-  { label: '탐사 로그', href: '#exploration-log' },
+  { label: '탐사 로그', href: '/exploration-log' },
   { label: 'SF 개념 사전', href: '#concept-dictionary' },
   { label: '미디어 아카이브', href: '#media-archive' },
   { label: '토론 질문 저장소', href: '#question-vault' },
@@ -35,7 +35,7 @@ const archiveCards = [
     icon: FileText,
     title: '탐사 로그',
     text: '탐사 과정과 발견한 아이디어 기록',
-    href: '#exploration-log',
+    href: '/exploration-log',
   },
   {
     icon: Satellite,
