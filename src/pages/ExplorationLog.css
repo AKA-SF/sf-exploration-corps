@@ -112,8 +112,8 @@
 }
 
 .log-masonry {
-  columns: 4 230px;
-  column-gap: 16px;
+  columns: 5 210px;
+  column-gap: 18px;
   max-width: 1280px;
   margin: 0 auto;
 }
@@ -121,7 +121,7 @@
 .log-card {
   display: inline-block;
   width: 100%;
-  margin: 0 0 16px;
+  margin: 0 0 18px;
   padding: 18px;
   color: inherit;
   text-decoration: none;
@@ -137,22 +137,36 @@
 }
 
 .log-card.tall {
-  min-height: 420px;
+  min-height: 500px;
 }
 
 .log-card.compact {
-  min-height: 270px;
+  min-height: 235px;
 }
 
 .log-card.quote {
-  min-height: 340px;
+  min-height: 390px;
   background:
     linear-gradient(180deg, rgba(25, 247, 241, 0.1), transparent),
     rgba(0, 12, 18, 0.72);
 }
 
 .log-card.wide {
-  min-height: 310px;
+  min-height: 330px;
+}
+
+.log-card.rating {
+  min-height: 285px;
+  background:
+    linear-gradient(135deg, rgba(124, 199, 255, 0.16), transparent 44%),
+    rgba(0, 12, 18, 0.72);
+}
+
+.log-card.note {
+  min-height: 360px;
+  background:
+    linear-gradient(180deg, rgba(240, 184, 90, 0.12), transparent 58%),
+    rgba(0, 12, 18, 0.72);
 }
 
 .log-card-top,
@@ -180,6 +194,27 @@
   overflow-wrap: anywhere;
 }
 
+.log-card.compact h2 {
+  font-size: 24px;
+}
+
+.log-card.rating h2,
+.log-card.note h2 {
+  margin-top: 18px;
+}
+
+.log-stars {
+  display: inline-flex;
+  margin-top: 22px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  color: #00161a;
+  background: var(--cyan);
+  font-size: 13px;
+  font-weight: 1000;
+  letter-spacing: 2px;
+}
+
 .log-card p {
   margin: 0;
   color: #c4d4da;
@@ -187,6 +222,15 @@
   font-weight: 650;
   line-height: 1.75;
   white-space: pre-line;
+}
+
+.log-card.quote p {
+  font-size: 16px;
+  line-height: 1.85;
+}
+
+.log-card.tall p {
+  line-height: 1.9;
 }
 
 .log-card-meta,

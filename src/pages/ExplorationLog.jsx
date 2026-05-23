@@ -17,7 +17,7 @@ const fallbackLogs = [
 ];
 
 function getShape(index) {
-  const shapes = ['tall', 'compact', 'quote', 'wide', 'compact', 'tall'];
+  const shapes = ['tall', 'rating', 'quote', 'compact', 'note', 'wide', 'compact', 'tall'];
   return shapes[index % shapes.length];
 }
 
@@ -87,33 +87,39 @@ export default function ExplorationLog() {
       </nav>
 
       <section className="log-masonry" aria-label="인스타 리뷰 탐사 로그">
-        {visibleLogs.map((log, index) => (
-          <a
-            className={`log-card ${getShape(index)}`}
-            href={log.instagramUrl}
-            key={`${log.code}-${log.workTitle}`}
-            rel="noreferrer"
-            target="_blank"
-          >
-            <div className="log-card-top">
-              <span>{log.code}</span>
-              <Radio aria-hidden="true" />
-            </div>
-            <h2>{log.workTitle}</h2>
-            <p>{log.review}</p>
-            <div className="log-card-meta">
-              {log.date && <em>{log.date}</em>}
-              <em>{log.category}</em>
-            </div>
-            <div className="log-tags">
-              {log.tags.map(tag => <span key={tag}>{tag}</span>)}
-            </div>
-            <div className="log-card-link">
-              <span>OPEN REVIEW</span>
-              <ExternalLink aria-hidden="true" />
-            </div>
-          </a>
-        ))}
+        {visibleLogs.map((log, index) => {
+          const shape = getShape(index);
+          return (
+            <a
+              className={`log-card ${shape}`}
+              href={log.instagramUrl}
+              key={`${log.code}-${log.workTitle}`}
+              rel="noreferrer"
+              target="_blank"
+            >
+              <div className="log-card-top">
+                <span>{log.code}</span>
+                <Radio aria-hidden="true" />
+              </div>
+              {(shape === 'rating' || shape === 'note') && (
+                <div className="log-stars" aria-label="review signal strength">★★★★★</div>
+              )}
+              <h2>{log.workTitle}</h2>
+              <p>{shape === 'compact' ? log.review.slice(0, 92) : log.review}</p>
+              <div className="log-card-meta">
+                {log.date && <em>{log.date}</em>}
+                <em>{log.category}</em>
+              </div>
+              <div className="log-tags">
+                {log.tags.map(tag => <span key={tag}>{tag}</span>)}
+              </div>
+              <div className="log-card-link">
+                <span>OPEN REVIEW</span>
+                <ExternalLink aria-hidden="true" />
+              </div>
+            </a>
+          );
+        })}
       </section>
     </PageTransition>
   );
