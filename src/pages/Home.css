@@ -1754,70 +1754,171 @@
 }
 
 .coordinate-brief {
+  position: relative;
+  min-height: 690px;
   border: 1px solid var(--line);
-  padding: 28px;
+  padding: 30px 28px 28px;
+  overflow: hidden;
+  color: #263646;
   background:
-    linear-gradient(135deg, rgba(25, 247, 241, 0.08), transparent 46%),
-    rgba(0, 12, 18, 0.72);
+    linear-gradient(90deg, rgba(56, 129, 177, 0.18) 1px, transparent 1px) 0 212px / 100% 48px,
+    linear-gradient(rgba(56, 129, 177, 0.22) 1px, transparent 1px) 0 212px / 100% 48px,
+    linear-gradient(90deg, rgba(64, 89, 118, 0.12) 1px, transparent 1px) 36% 212px / 26% 48px,
+    radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.68), transparent 28%),
+    linear-gradient(180deg, #f2eddd, #dfd7c2);
+  box-shadow: 0 22px 50px rgba(0, 0, 0, 0.32), inset 0 0 80px rgba(93, 70, 42, 0.12);
 }
 
-.coordinate-brief > span,
-.coordinate-brief dt {
-  color: var(--cyan);
+.coordinate-brief::before,
+.coordinate-brief::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.coordinate-brief::before {
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(94, 70, 39, 0.14), transparent 10%, transparent 90%, rgba(94, 70, 39, 0.15)),
+    repeating-linear-gradient(0deg, rgba(66, 48, 28, 0.035) 0 1px, transparent 1px 7px);
+  mix-blend-mode: multiply;
+}
+
+.coordinate-brief::after {
+  inset: 12px;
+  border: 1px solid rgba(42, 104, 148, 0.18);
+}
+
+.library-card-head,
+.library-card-title,
+.library-card-stamp,
+.library-card-grid,
+.coordinate-minimap {
+  position: relative;
+  z-index: 1;
+}
+
+.library-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 54px;
+  color: rgba(29, 36, 48, 0.74);
   font-family: "Courier New", monospace;
-  font-size: 10px;
+  font-size: 21px;
   font-weight: 900;
-  letter-spacing: 1.5px;
+  letter-spacing: 1.8px;
 }
 
-.coordinate-brief h3 {
-  margin: 16px 0 18px;
-  color: #fff;
-  font-size: 28px;
-  font-weight: 900;
-  line-height: 1.2;
-  letter-spacing: 0;
-  text-transform: none;
+.library-card-head span {
+  transform: rotate(-1.6deg);
 }
 
-.coordinate-brief p {
-  margin: 0 0 28px;
-  color: #bfd0d6;
-  font-size: 15px;
-  font-weight: 650;
-  line-height: 1.75;
+.library-card-head strong {
+  color: rgba(33, 41, 53, 0.7);
+  font-size: 24px;
+  transform: rotate(2deg);
 }
 
-.coordinate-brief dl {
+.library-card-title {
+  padding-right: 8px;
+}
+
+.library-card-title dl {
   display: grid;
-  gap: 14px;
+  gap: 18px;
   margin: 0;
 }
 
-.coordinate-brief dl div {
-  padding-top: 14px;
-  border-top: 1px solid rgba(25, 247, 241, 0.16);
+.library-card-title div {
+  display: grid;
+  grid-template-columns: 86px 1fr;
+  gap: 16px;
+  align-items: start;
+  padding-bottom: 14px;
+  border-bottom: 2px solid rgba(42, 104, 148, 0.58);
 }
 
-.coordinate-brief dd {
-  margin: 5px 0 0;
-  color: #e5f4f7;
-  font-size: 14px;
+.library-card-title dt {
+  color: rgba(42, 104, 148, 0.72);
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.24em;
+  word-break: keep-all;
+}
+
+.library-card-title dd {
+  margin: 0;
+  color: #263646;
+  font-family: "Courier New", monospace;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.65;
+  letter-spacing: 0.02em;
+}
+
+.library-card-title div:first-child dd {
+  font-size: 24px;
+  line-height: 1.35;
+}
+
+.library-card-stamp {
+  width: max-content;
+  margin: 26px 0 22px auto;
+  border: 2px solid rgba(32, 45, 58, 0.62);
+  padding: 7px 12px;
+  color: rgba(32, 45, 58, 0.74);
+  font-family: "Courier New", monospace;
+  font-size: 22px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  transform: rotate(-2deg);
+  opacity: 0.78;
+}
+
+.library-card-grid {
+  border-top: 2px solid rgba(42, 104, 148, 0.62);
+  border-left: 2px solid rgba(42, 104, 148, 0.46);
+  color: rgba(34, 55, 75, 0.72);
+  font-family: "Courier New", monospace;
+  font-size: 13px;
   font-weight: 800;
 }
 
+.library-card-row {
+  display: grid;
+  grid-template-columns: 0.8fr 0.8fr 1.1fr;
+  min-height: 44px;
+  border-bottom: 2px solid rgba(42, 104, 148, 0.46);
+}
+
+.library-card-row span {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  padding: 8px 10px;
+  border-right: 2px solid rgba(42, 104, 148, 0.46);
+}
+
+.library-card-row-header {
+  min-height: 36px;
+  color: rgba(42, 104, 148, 0.68);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+}
+
 .coordinate-minimap {
-  margin-top: 24px;
-  border: 1px solid rgba(25, 247, 241, 0.26);
+  margin-top: 26px;
+  border: 1px solid rgba(42, 104, 148, 0.34);
   padding: 14px;
-  background: rgba(0, 10, 15, 0.58);
+  background: rgba(244, 239, 222, 0.52);
 }
 
 .coordinate-minimap-top {
   display: flex;
   justify-content: space-between;
   margin-bottom: 10px;
-  color: var(--cyan);
+  color: rgba(42, 104, 148, 0.72);
   font-family: "Courier New", monospace;
   font-size: 10px;
   font-weight: 900;
@@ -1832,7 +1933,7 @@
   background:
     radial-gradient(circle at center, rgba(25, 247, 241, 0.18), transparent 9%),
     repeating-radial-gradient(ellipse at center, transparent 0 14%, rgba(25, 247, 241, 0.2) 14.5% 15%, transparent 15.5% 26%),
-    rgba(0, 12, 18, 0.74);
+    rgba(0, 18, 26, 0.84);
 }
 
 .coordinate-mini-space b {
