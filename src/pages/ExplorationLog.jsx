@@ -17,8 +17,15 @@ const fallbackLogs = [
 ];
 
 function getShape(index) {
-  const shapes = ['tall', 'rating', 'quote', 'compact', 'note', 'wide', 'compact', 'tall'];
+  const shapes = ['poster', 'rating', 'quote', 'mini', 'note', 'wide', 'compact', 'tall'];
   return shapes[index % shapes.length];
+}
+
+function getExcerpt(review, index) {
+  const lengths = [68, 112, 154, 42, 92, 128, 76, 180];
+  const maxLength = lengths[index % lengths.length];
+  if (!review || review.length <= maxLength) return review;
+  return `${review.slice(0, maxLength).trim()}...`;
 }
 
 export default function ExplorationLog() {
@@ -105,7 +112,7 @@ export default function ExplorationLog() {
                 <div className="log-stars" aria-label="review signal strength">★★★★★</div>
               )}
               <h2>{log.workTitle}</h2>
-              <p>{shape === 'compact' ? log.review.slice(0, 92) : log.review}</p>
+              <p>{getExcerpt(log.review, index)}</p>
               <div className="log-card-meta">
                 {log.date && <em>{log.date}</em>}
                 <em>{log.category}</em>

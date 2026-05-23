@@ -15,10 +15,10 @@ import InteractiveBackground from './components/InteractiveBackground';
 
 function App() {
   const location = useLocation();
-  const isHome = location.pathname === '/';
+  const isDesktopSurface = location.pathname === '/' || location.pathname === '/exploration-log';
 
   return (
-    <div className={isHome ? 'mobile-container desktop-home' : 'mobile-container'}>
+    <div className={isDesktopSurface ? 'mobile-container desktop-home' : 'mobile-container'}>
       <div className="app-wrapper">
         <InteractiveBackground />
         <div className="page-container">
