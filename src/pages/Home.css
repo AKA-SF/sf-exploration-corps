@@ -1316,6 +1316,35 @@
   line-height: 1.7;
 }
 
+.concept-meta-list {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 14px;
+}
+
+.concept-meta-list div {
+  display: grid;
+  gap: 4px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(25, 247, 241, 0.14);
+}
+
+.concept-meta-list dt {
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.1px;
+}
+
+.concept-meta-list dd {
+  margin: 0;
+  color: #d7e4e8;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
 .concept-tags {
   display: flex;
   flex-wrap: wrap;

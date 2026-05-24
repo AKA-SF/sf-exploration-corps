@@ -10,12 +10,23 @@ function plainText(value) {
   if (value.type === 'multi_select') return value.multi_select.map(tag => tag.name).join(', ');
   if (value.type === 'number') return String(value.number ?? '');
   if (value.type === 'url') return value.url ?? '';
+  if (value.type === 'relation') return value.relation?.length ? `${value.relation.length}개 연결` : '';
   return '';
 }
 
 function multiSelect(value) {
   if (!value || value.type !== 'multi_select') return [];
   return value.multi_select.map(tag => tag.name);
+}
+
+function textList(value) {
+  if (!value) return [];
+  if (value.type === 'multi_select') return value.multi_select.map(tag => tag.name);
+  const text = plainText(value);
+  return text
+    .split(/[,/、|]/)
+    .map(item => item.trim())
+    .filter(Boolean);
 }
 
 function pick(properties, names) {
@@ -35,6 +46,8 @@ function mapPageToConcept(page, index) {
   const english = plainText(pick(properties, ['영문명', '영어', 'English', '영문']));
   const category = plainText(pick(properties, ['분류', 'Category', 'Type']));
   const summary = plainText(pick(properties, ['설명', '정의', '요약', 'Description', 'Summary']));
+  const relatedWorks = textList(pick(properties, ['관련 작품', '관련작품', 'Related Works', 'Works']));
+  const source = plainText(pick(properties, ['출처', 'Source', 'Reference', '참고']));
   const code = plainText(pick(properties, ['코드', 'Code'])) || `CON-${String(index + 1).padStart(3, '0')}`;
   const keywords = multiSelect(pick(properties, ['키워드', '태그', 'Keywords', 'Tags']));
 
@@ -44,7 +57,9 @@ function mapPageToConcept(page, index) {
     english,
     category: category || 'SF 개념',
     summary: summary || '노션 SF 개념 사전에서 동기화된 개념 신호입니다.',
-    keywords: keywords.length > 0 ? keywords : ['Concept'],
+    relatedWorks,
+    source,
+    keywords: keywords.length > 0 ? keywords : relatedWorks.slice(0, 3),
   };
 }
 

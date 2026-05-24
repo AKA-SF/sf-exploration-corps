@@ -201,13 +201,14 @@ const conceptEntries = [
   },
 ];
 
-const mediaCategories = ['고전 SF 영화', 'SF 작가 인터뷰', 'SF 관련 기사'];
+const mediaCategories = ['SF 작가 인터뷰', 'SF 관련 미디어', 'SF 관련 기사', '고전 SF 영화'];
 
 function normalizeMediaCategory(category = '') {
   const normalized = category.replace(/\s/g, '').toLowerCase();
-  if (normalized.includes('고전') && (normalized.includes('영화') || normalized.includes('sf'))) return '고전 SF 영화';
   if (normalized.includes('작가') || normalized.includes('인터뷰')) return 'SF 작가 인터뷰';
+  if (normalized.includes('미디어') || normalized.includes('media') || normalized.includes('콘텐츠') || normalized.includes('자료')) return 'SF 관련 미디어';
   if (normalized.includes('기사') || normalized.includes('article')) return 'SF 관련 기사';
+  if (normalized.includes('고전') && (normalized.includes('영화') || normalized.includes('sf'))) return '고전 SF 영화';
   return category;
 }
 
@@ -716,7 +717,7 @@ export default function Home() {
             <span>ARCHIVE NODE 03</span>
             <h2>미디어 아카이브</h2>
             <p>
-              고전 SF 영화, SF 작가 인터뷰, SF 관련 기사 링크를 모아두는 영상과 읽을거리 저장소입니다.
+              SF 작가 인터뷰, 관련 미디어, 기사, 고전 SF 영화를 모아두는 영상과 읽을거리 저장소입니다.
             </p>
           </div>
 
@@ -912,9 +913,27 @@ export default function Home() {
                   <h3>{entry.term}</h3>
                   <strong>{entry.english}</strong>
                   <p>{entry.summary}</p>
-                  <div className="concept-tags">
-                    {entry.keywords.map(keyword => <span key={keyword}>{keyword}</span>)}
-                  </div>
+                  {entry.relatedWorks?.length > 0 && (
+                    <dl className="concept-meta-list">
+                      <div>
+                        <dt>관련 작품</dt>
+                        <dd>{entry.relatedWorks.join(', ')}</dd>
+                      </div>
+                    </dl>
+                  )}
+                  {entry.source && (
+                    <dl className="concept-meta-list">
+                      <div>
+                        <dt>출처</dt>
+                        <dd>{entry.source}</dd>
+                      </div>
+                    </dl>
+                  )}
+                  {entry.keywords?.length > 0 && (
+                    <div className="concept-tags">
+                      {entry.keywords.map(keyword => <span key={keyword}>{keyword}</span>)}
+                    </div>
+                  )}
                 </article>
               )) : (
                 <div className="concept-empty">

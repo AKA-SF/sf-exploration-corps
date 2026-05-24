@@ -43,9 +43,10 @@ function getYouTubeId(link) {
 
 function normalizeMediaCategory(category = '') {
   const normalized = category.replace(/\s/g, '').toLowerCase();
-  if (normalized.includes('고전') && (normalized.includes('영화') || normalized.includes('sf'))) return '고전 SF 영화';
   if (normalized.includes('작가') || normalized.includes('인터뷰')) return 'SF 작가 인터뷰';
+  if (normalized.includes('미디어') || normalized.includes('media') || normalized.includes('콘텐츠') || normalized.includes('자료')) return 'SF 관련 미디어';
   if (normalized.includes('기사') || normalized.includes('article')) return 'SF 관련 기사';
+  if (normalized.includes('고전') && (normalized.includes('영화') || normalized.includes('sf'))) return '고전 SF 영화';
   return category;
 }
 
