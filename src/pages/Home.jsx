@@ -388,6 +388,7 @@ export default function Home() {
   const [randomWorkCodes, setRandomWorkCodes] = useState(() => getRandomWorks(fallbackWorks, 6).map(work => work.code));
   const [mediaItems, setMediaItems] = useState([]);
   const [activeMediaCategory, setActiveMediaCategory] = useState(mediaCategories[0]);
+  const [concepts, setConcepts] = useState(conceptEntries);
   const [questionForm, setQuestionForm] = useState({
     title: '',
     content: '',
@@ -437,6 +438,28 @@ export default function Home() {
       })
       .catch(() => {
         if (isMounted) setMediaItems([]);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    fetch('/api/concepts', { cache: 'no-store' })
+      .then(response => {
+        if (!response.ok) throw new Error('Notion concepts unavailable');
+        return response.json();
+      })
+      .then(data => {
+        if (isMounted && Array.isArray(data.concepts) && data.concepts.length > 0) {
+          setConcepts(data.concepts);
+        }
+      })
+      .catch(() => {
+        if (isMounted) setConcepts(conceptEntries);
       });
 
     return () => {
@@ -875,12 +898,12 @@ export default function Home() {
           <div className="concept-layout">
             <aside className="concept-index">
               <span>DICTIONARY INDEX</span>
-              <strong>{conceptEntries.length} TERMS</strong>
+              <strong>{concepts.length} TERMS</strong>
               <p>작품 아카이브와 탐사 좌표 사이를 연결하는 개념 신호 목록입니다.</p>
             </aside>
 
             <div className="concept-grid">
-              {conceptEntries.map(entry => (
+              {concepts.map(entry => (
                 <article className="concept-card" key={entry.code}>
                   <div className="concept-card-top">
                     <span>{entry.code}</span>
