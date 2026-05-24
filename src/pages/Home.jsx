@@ -17,12 +17,12 @@ import './Home.css';
 
 const navItems = [
   { label: '작품 아카이브', href: '#works-archive' },
+  { label: '미디어 아카이브', href: '#media-archive' },
+  { label: '탐사 좌표', href: '#coordinates' },
   { label: '탐사 로그', href: '/exploration-log' },
   { label: 'SF 개념 사전', href: '#concept-dictionary' },
-  { label: '미디어 아카이브', href: '#media-archive' },
-  { label: '커뮤니티 게시판', href: '/questions' },
+  { label: '커뮤니티게시판', href: '/questions' },
   { label: 'Contact', href: '#contact' },
-  { label: '탐사 좌표', href: '#coordinates' },
 ];
 
 const archiveCards = [
@@ -31,6 +31,18 @@ const archiveCards = [
     title: '작품 아카이브',
     text: 'SF 소설·영화·게임·음악 등 작품 데이터베이스',
     href: '#works-archive',
+  },
+  {
+    icon: Play,
+    title: '미디어 아카이브',
+    text: '이미지·영상·오디오 등 미디어 자료 저장소',
+    href: '#media-archive',
+  },
+  {
+    icon: Satellite,
+    title: '탐사 좌표',
+    text: '장르와 개념을 연결하는 노드 기반 탐사 지도',
+    href: '#coordinates',
   },
   {
     icon: FileText,
@@ -45,14 +57,8 @@ const archiveCards = [
     href: '#concept-dictionary',
   },
   {
-    icon: Play,
-    title: '미디어 아카이브',
-    text: '이미지·영상·오디오 등 미디어 자료 저장소',
-    href: '#media-archive',
-  },
-  {
     icon: MessageSquare,
-    title: '커뮤니티 게시판',
+    title: '커뮤니티게시판',
     text: '질문, 추천, 제안을 남기는 커뮤니티 공간',
     href: '/questions',
   },
