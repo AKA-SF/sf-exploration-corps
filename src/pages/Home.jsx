@@ -800,40 +800,23 @@ export default function Home() {
             </div>
 
             <aside className="coordinate-brief">
-              <div className="library-card-head">
-                <span>{activeGenre ? activeGenre.en : 'SF-ARCHIVE'}</span>
-                <strong>{activeGenre ? `SF-${activeGenre.orbit}${activeGenre.signals}` : '325-SF'}</strong>
-              </div>
-              <div className="library-card-title">
-                <dl>
-                  <div>
-                    <dt>분류명</dt>
-                    <dd>{activeGenre ? `${activeGenre.label} 하위 좌표` : '장르를 고정하지 않고 연결하기'}</dd>
-                  </div>
-                  <div>
-                    <dt>좌표 설명</dt>
-                    <dd>{mapDescription}</dd>
-                  </div>
-                </dl>
-              </div>
-              <div className="library-card-stamp" aria-hidden="true">
-                {activeGenre ? 'SUB MAP' : 'ARCHIVE'}
-              </div>
-              <div className="library-card-grid" aria-hidden="true">
-                <div className="library-card-row library-card-row-header">
-                  <span>노드</span>
-                  <span>연결선</span>
-                  <span>탐사 방식</span>
+              <span>MAP PROTOCOL</span>
+              <h3>{activeGenre ? `${activeGenre.label} 하위 좌표` : '장르를 고정하지 않고 연결하기'}</h3>
+              <p>{mapDescription}</p>
+              <dl>
+                <div>
+                  <dt>NODES</dt>
+                  <dd>{visibleNodes.length} 장르 좌표</dd>
                 </div>
-                <div className="library-card-row">
-                  <span>{visibleNodes.length}</span>
-                  <span>{visibleConnections.length}</span>
-                  <span>{activeGenre ? '하위좌표' : '전체지도'}</span>
+                <div>
+                  <dt>LINKS</dt>
+                  <dd>{visibleConnections.length} 개념 연결선</dd>
                 </div>
-                <div className="library-card-row"><span /><span /><span /></div>
-                <div className="library-card-row"><span /><span /><span /></div>
-                <div className="library-card-row"><span /><span /><span /></div>
-              </div>
+                <div>
+                  <dt>MODE</dt>
+                  <dd>{activeGenre ? 'Subgenre Mapping' : 'Archive Mapping'}</dd>
+                </div>
+              </dl>
               <div className="coordinate-minimap" aria-label="탐사 좌표 미니맵">
                 <div className="coordinate-minimap-top">
                   <span>MINI MAP</span>
