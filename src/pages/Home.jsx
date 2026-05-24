@@ -70,14 +70,6 @@ const archiveCards = [
   },
 ];
 
-const logLines = [
-  ['LOG 001', 'SYSTEM BOOT', '00:00:01'],
-  ['LOG 002', 'SIGNAL SCAN', '00:00:21'],
-  ['LOG 003', 'ARCHIVE SYNC', '00:00:42'],
-  ['LOG 004', 'NETWORK LINK', '00:01:05'],
-  ['LOG 005', 'EXPLORATION READY', '00:01:30'],
-];
-
 const blips = [
   { x: 23, y: 43, size: 6, delay: 0 },
   { x: 36, y: 28, size: 5, delay: 0.3 },
@@ -99,6 +91,18 @@ function getRandomWorks(items, count) {
   return [...items]
     .sort(() => Math.random() - 0.5)
     .slice(0, count);
+}
+
+function formatTimestamp(date) {
+  return new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).format(date).replace(/\s/g, ' ');
 }
 
 const fallbackWorks = [
@@ -336,35 +340,50 @@ function RadarDisplay() {
   );
 }
 
-function SidePanel() {
+function SidePanel({ metrics, recentSignals, timestamp, activeGenre, archiveMode }) {
+  const onlineCount = Object.values(metrics.status).filter(Boolean).length;
+  const syncState = onlineCount >= 3 ? 'READY' : 'PARTIAL';
+
   return (
     <aside className="home-side">
       <section className="hud-panel">
         <h2>SYSTEM LOG</h2>
-        {logLines.map(([id, label, time]) => (
-          <div className="log-line" key={id}>
-            <strong>{id}</strong>
-            <span>{label}</span>
-            <em>{time}</em>
+        {recentSignals.map(signal => (
+          <div className="log-line" key={signal.id}>
+            <strong>{signal.id}</strong>
+            <span>{signal.label}</span>
+            <em>{signal.time}</em>
           </div>
         ))}
       </section>
       <section className="hud-panel compact">
         <h2>VESSEL INFO</h2>
         <dl>
-          <dt>VESSEL</dt>
-          <dd>SF EXPLORATION UNIT</dd>
-          <dt>CLASS</dt>
-          <dd>RESEARCH / ARCHIVE</dd>
-          <dt>CREW</dt>
-          <dd>SOLO OPERATION</dd>
-          <dt>MODE</dt>
-          <dd>DEEP EXPLORATION</dd>
+          <dt>WORKS</dt>
+          <dd>{metrics.works} SIGNALS</dd>
+          <dt>MEDIA</dt>
+          <dd>{metrics.media} ITEMS</dd>
+          <dt>LOGS</dt>
+          <dd>{metrics.logs} REVIEWS</dd>
+          <dt>BOARD</dt>
+          <dd>{metrics.questions} POSTS</dd>
+          <dt>SECTOR</dt>
+          <dd>{activeGenre?.label ?? (archiveMode === 'all' ? 'NOVEL ARCHIVE' : 'RANDOM ARCHIVE')}</dd>
         </dl>
       </section>
       <section className="hud-panel timestamp">
-        <h2>TIME STAMP</h2>
-        <p>2026.05.21 22:53:13</p>
+        <h2>ARCHIVE SYNC</h2>
+        <p>{timestamp}</p>
+        <dl className="sync-list">
+          <div>
+            <dt>STATUS</dt>
+            <dd>{syncState}</dd>
+          </div>
+          <div>
+            <dt>ONLINE</dt>
+            <dd>{onlineCount} / {Object.keys(metrics.status).length}</dd>
+          </div>
+        </dl>
       </section>
       <section className="mini-map" aria-label="탐사 지도">
         <div className="mini-map-top">
@@ -405,6 +424,23 @@ export default function Home() {
   });
   const [questionStatus, setQuestionStatus] = useState('idle');
   const [questionMessage, setQuestionMessage] = useState('');
+  const [dashboard, setDashboard] = useState({
+    logs: [],
+    questions: [],
+    status: {
+      works: false,
+      media: false,
+      concepts: false,
+      logs: false,
+      questions: false,
+    },
+  });
+  const [currentTime, setCurrentTime] = useState(() => new Date());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -418,10 +454,14 @@ export default function Home() {
         if (isMounted && Array.isArray(data.works) && data.works.length > 0) {
           setWorks(data.works);
           setRandomWorkCodes(getRandomWorks(data.works, 6).map(work => work.code));
+          setDashboard(state => ({ ...state, status: { ...state.status, works: true } }));
         }
       })
       .catch(() => {
-        if (isMounted) setWorks(fallbackWorks);
+        if (isMounted) {
+          setWorks(fallbackWorks);
+          setDashboard(state => ({ ...state, status: { ...state.status, works: false } }));
+        }
       });
 
     return () => {
@@ -440,10 +480,14 @@ export default function Home() {
       .then(data => {
         if (isMounted && Array.isArray(data.media)) {
           setMediaItems(data.media);
+          setDashboard(state => ({ ...state, status: { ...state.status, media: true } }));
         }
       })
       .catch(() => {
-        if (isMounted) setMediaItems([]);
+        if (isMounted) {
+          setMediaItems([]);
+          setDashboard(state => ({ ...state, status: { ...state.status, media: false } }));
+        }
       });
 
     return () => {
@@ -465,6 +509,7 @@ export default function Home() {
           setConcepts(data.concepts);
           setRandomConceptCodes(randomizedConcepts.map(concept => concept.code));
           setActiveConceptCode(randomizedConcepts[0]?.code ?? '');
+          setDashboard(state => ({ ...state, status: { ...state.status, concepts: true } }));
         }
       })
       .catch(() => {
@@ -473,8 +518,41 @@ export default function Home() {
           setConcepts(conceptEntries);
           setRandomConceptCodes(randomizedConcepts.map(concept => concept.code));
           setActiveConceptCode(randomizedConcepts[0]?.code ?? '');
+          setDashboard(state => ({ ...state, status: { ...state.status, concepts: false } }));
         }
       });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    Promise.allSettled([
+      fetch('/api/exploration-log', { cache: 'no-store' }).then(response => {
+        if (!response.ok) throw new Error('Exploration log unavailable');
+        return response.json();
+      }),
+      fetch('/api/questions', { cache: 'no-store' }).then(response => {
+        if (!response.ok) throw new Error('Questions unavailable');
+        return response.json();
+      }),
+    ]).then(([logsResult, questionsResult]) => {
+      if (!isMounted) return;
+
+      setDashboard(state => ({
+        ...state,
+        logs: logsResult.status === 'fulfilled' && Array.isArray(logsResult.value.logs) ? logsResult.value.logs : [],
+        questions: questionsResult.status === 'fulfilled' && Array.isArray(questionsResult.value.questions) ? questionsResult.value.questions : [],
+        status: {
+          ...state.status,
+          logs: logsResult.status === 'fulfilled',
+          questions: questionsResult.status === 'fulfilled',
+        },
+      }));
+    });
 
     return () => {
       isMounted = false;
@@ -563,6 +641,22 @@ export default function Home() {
   ];
   const selectedConcept = orderedConcepts.find(concept => concept.code === activeConceptCode) ?? orderedConcepts[0];
   const visibleConcepts = showAllConcepts ? orderedConcepts : orderedConcepts.slice(0, 6);
+  const metrics = {
+    works: works.length,
+    media: mediaItems.length,
+    concepts: concepts.length,
+    logs: dashboard.logs.length,
+    questions: dashboard.questions.length,
+    status: dashboard.status,
+  };
+  const recentSignals = [
+    works[0] && { id: 'WORK 001', label: `${works[0].title} / 작품 아카이브`, time: dashboard.status.works ? 'SYNC OK' : 'LOCAL FALLBACK' },
+    mediaItems[0] && { id: 'MEDIA 001', label: `${mediaItems[0].title} / 미디어`, time: 'SYNC OK' },
+    dashboard.logs[0] && { id: 'LOG 001', label: `${dashboard.logs[0].workTitle} / 탐사 로그`, time: 'SYNC OK' },
+    dashboard.questions[0] && { id: 'BOARD 001', label: `${dashboard.questions[0].title} / 커뮤니티`, time: 'SYNC OK' },
+    selectedConcept && { id: 'CONCEPT', label: `${selectedConcept.term} / 개념 사전`, time: dashboard.status.concepts ? 'SYNC OK' : 'LOCAL FALLBACK' },
+  ].filter(Boolean).slice(0, 5);
+  const systemReady = Object.values(dashboard.status).filter(Boolean).length >= 3;
 
   return (
     <PageTransition className="archive-home">
@@ -581,7 +675,7 @@ export default function Home() {
         </nav>
         <div className="system-status">
           <span>SYSTEM STATUS</span>
-          <strong><i /> ONLINE</strong>
+          <strong><i /> {systemReady ? 'ONLINE' : 'PARTIAL'}</strong>
         </div>
       </header>
 
@@ -620,7 +714,13 @@ export default function Home() {
           </div>
 
           <RadarDisplay />
-          <SidePanel />
+          <SidePanel
+            activeGenre={activeGenre}
+            archiveMode={archiveMode}
+            metrics={metrics}
+            recentSignals={recentSignals}
+            timestamp={formatTimestamp(currentTime)}
+          />
         </section>
 
         <section className="archive-dock" id="archive-links" aria-label="아카이브 바로가기">

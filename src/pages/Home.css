@@ -714,11 +714,26 @@
 }
 
 .timestamp p {
-  margin: 0;
+  margin: 0 0 12px;
   color: #9dbac2;
   font-family: "Courier New", monospace;
   font-size: 13px;
   font-weight: 900;
+}
+
+.sync-list {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 12px !important;
+  padding-top: 10px;
+  border-top: 1px solid rgba(25, 247, 241, 0.13);
+}
+
+.sync-list div {
+  min-width: 0;
+}
+
+.sync-list dd {
+  margin-top: 2px;
 }
 
 .mini-map {
