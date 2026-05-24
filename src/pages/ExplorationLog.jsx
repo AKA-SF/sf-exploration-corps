@@ -16,21 +16,56 @@ const fallbackLogs = [
   },
 ];
 
-function getShape(index) {
-  const shapes = ['poster', 'rating', 'quote', 'mini', 'note', 'wide', 'compact', 'tall'];
-  return shapes[index % shapes.length];
+function hashText(value) {
+  return [...value].reduce((hash, char) => ((hash << 5) - hash + char.charCodeAt(0)) | 0, 0);
 }
 
-function getExcerpt(review, index) {
-  const lengths = [68, 112, 154, 42, 92, 128, 76, 180];
-  const maxLength = lengths[index % lengths.length];
-  if (!review || review.length <= maxLength) return review;
-  return `${review.slice(0, maxLength).trim()}...`;
+function seededRandom(seed) {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+function shuffleWithSeed(items, seed) {
+  return [...items]
+    .map((item, index) => ({
+      item,
+      sort: seededRandom(seed + index * 97 + hashText(`${item.code}-${item.workTitle}`)),
+    }))
+    .sort((a, b) => a.sort - b.sort)
+    .map(entry => entry.item);
+}
+
+function getShape(index, log, seed) {
+  const shapes = ['poster', 'rating', 'quote', 'mini', 'note', 'wide', 'compact', 'tall'];
+  const shapeIndex = Math.abs(hashText(`${log.code}-${log.workTitle}-${seed}-${index}`)) % shapes.length;
+  return shapes[shapeIndex];
+}
+
+function summarizeReview(review) {
+  const cleaned = (review || '')
+    .replace(/https?:\/\/\S+/g, '')
+    .replace(/@\S+/g, '')
+    .replace(/#[^\s#]+/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+
+  if (!cleaned) return '리뷰 신호를 수집 중입니다.';
+
+  const sentences = cleaned
+    .split(/(?<=[.!?。！？]|[가-힣]\.)\s+|(?<=[다요죠음함됨임까])\s+/)
+    .map(sentence => sentence.trim())
+    .filter(sentence => sentence.length > 8);
+  const summary = sentences.slice(0, 2).join(' ');
+
+  if (summary && summary.length <= 150) return summary;
+  const source = summary || cleaned;
+  return `${source.slice(0, 132).trim()}...`;
 }
 
 export default function ExplorationLog() {
   const [logs, setLogs] = useState(fallbackLogs);
   const [activeCategory, setActiveCategory] = useState('전체');
+  const [layoutSeed] = useState(() => Date.now());
 
   useEffect(() => {
     let isMounted = true;
@@ -58,9 +93,12 @@ export default function ExplorationLog() {
     ['전체', ...new Set(logs.map(log => log.category).filter(Boolean))]
   ), [logs]);
 
-  const visibleLogs = activeCategory === '전체'
-    ? logs
-    : logs.filter(log => log.category === activeCategory);
+  const visibleLogs = useMemo(() => {
+    const filteredLogs = activeCategory === '전체'
+      ? logs
+      : logs.filter(log => log.category === activeCategory);
+    return shuffleWithSeed(filteredLogs, layoutSeed);
+  }, [activeCategory, layoutSeed, logs]);
 
   return (
     <PageTransition className="exploration-log-page">
@@ -95,7 +133,7 @@ export default function ExplorationLog() {
 
       <section className="log-masonry" aria-label="인스타 리뷰 탐사 로그">
         {visibleLogs.map((log, index) => {
-          const shape = getShape(index);
+          const shape = getShape(index, log, layoutSeed);
           return (
             <a
               className={`log-card ${shape}`}
@@ -112,7 +150,7 @@ export default function ExplorationLog() {
                 <div className="log-stars" aria-label="review signal strength">★★★★★</div>
               )}
               <h2>{log.workTitle}</h2>
-              <p>{getExcerpt(log.review, index)}</p>
+              <p>{summarizeReview(log.review)}</p>
               <div className="log-card-meta">
                 {log.date && <em>{log.date}</em>}
                 <em>{log.category}</em>
