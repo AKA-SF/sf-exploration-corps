@@ -221,8 +221,8 @@
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: minmax(440px, 0.95fr) minmax(430px, 1fr) 205px;
-  gap: clamp(20px, 3.6vw, 46px);
+  grid-template-columns: minmax(390px, 0.82fr) minmax(560px, 1.18fr) 190px;
+  gap: clamp(18px, 2.6vw, 34px);
   min-height: calc(100vh - 284px);
   padding: 44px 0 22px 98px;
   border-bottom: 1px solid var(--line);
@@ -640,8 +640,10 @@
 .home-side {
   align-self: stretch;
   display: grid;
-  gap: 26px;
+  gap: 14px;
   align-content: start;
+  max-height: min(650px, calc(100vh - 218px));
+  overflow: hidden;
 }
 
 .hud-panel,
@@ -652,7 +654,22 @@
 }
 
 .hud-panel {
-  padding: 18px 20px;
+  padding: 14px 16px;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-width: none;
+}
+
+.hud-panel::-webkit-scrollbar {
+  display: none;
+}
+
+.home-side .hud-panel:first-child {
+  max-height: 190px;
+}
+
+.home-side .hud-panel.compact {
+  max-height: 215px;
 }
 
 .hud-panel h2,
@@ -666,7 +683,7 @@
 }
 
 .log-line {
-  padding: 9px 0;
+  padding: 7px 0;
   border-bottom: 1px solid rgba(25, 247, 241, 0.13);
   font-family: "Courier New", monospace;
 }
@@ -686,6 +703,9 @@
 .log-line span {
   color: #9dbac2;
   font-size: 9px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .log-line em {

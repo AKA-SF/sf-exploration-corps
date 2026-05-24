@@ -71,6 +71,26 @@
   box-shadow: 0 14px 38px rgba(36, 28, 15, 0.14);
 }
 
+.reading-mode .system-status {
+  border-color: rgba(46, 72, 77, 0.22) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(232, 222, 202, 0.45)),
+    rgba(255, 252, 244, 0.9) !important;
+}
+
+.reading-mode .system-status span {
+  color: #2f6f78 !important;
+}
+
+.reading-mode .system-status strong {
+  color: #111827 !important;
+}
+
+.reading-mode .system-status i {
+  background: #2f6f78 !important;
+  box-shadow: 0 0 12px rgba(47, 111, 120, 0.3) !important;
+}
+
 .reading-mode .bg-geometry,
 .reading-mode .archive-home::before,
 .reading-mode .archive-home::after {
