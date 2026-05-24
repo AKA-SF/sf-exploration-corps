@@ -1,5 +1,19 @@
 const NOTION_VERSION = '2022-06-28';
 const DEFAULT_QUESTIONS_DATABASE_ID = '36a98dbef69d803abd53c09b6ff7f2e3';
+const NOTION_PAGE_SIZE = 100;
+
+function plainText(value) {
+  if (!value) return '';
+  if (value.type === 'title' || value.type === 'rich_text') {
+    return value[value.type]?.map(part => part.plain_text).join('') ?? '';
+  }
+  if (value.type === 'select') return value.select?.name ?? '';
+  if (value.type === 'status') return value.status?.name ?? '';
+  if (value.type === 'date') return value.date?.start ?? '';
+  if (value.type === 'email') return value.email ?? '';
+  if (value.type === 'url') return value.url ?? '';
+  return '';
+}
 
 function normalizeNotionId(value) {
   const source = value?.trim() ?? '';
@@ -14,6 +28,37 @@ function findProperty(schema, preferredNames, type) {
     property.type === type && preferredNames.includes(name)
   ));
   return preferred ?? entries.find(([, property]) => property.type === type);
+}
+
+function pick(properties, names) {
+  return names.map(name => properties[name]).find(Boolean);
+}
+
+function mapPageToQuestion(page, index) {
+  const properties = page.properties ?? {};
+  const title = plainText(pick(properties, ['질문', '제목', 'Title', 'Name', '이름']));
+  const content = plainText(pick(properties, ['내용', '본문', '질문 내용', 'Content', 'Description']));
+  const author = plainText(pick(properties, ['작성자', '이름', 'Author']));
+  const contact = plainText(pick(properties, ['연락처', 'Contact', 'Email', '이메일']));
+  const category = plainText(pick(properties, ['분류', 'Category', 'Type']));
+  const status = plainText(pick(properties, ['상태', 'Status']));
+  const date = plainText(pick(properties, ['작성일', '날짜', 'Date']));
+
+  return {
+    code: `Q-${String(index + 1).padStart(3, '0')}`,
+    title,
+    content,
+    author: author || '익명',
+    contact,
+    category: category || '토론 질문',
+    status,
+    date,
+  };
+}
+
+function isPublicQuestion(question, hasStatusProperty) {
+  if (!hasStatusProperty) return true;
+  return ['공개', '게시', '완료', 'Published', 'Public', 'Done'].includes(question.status);
 }
 
 function richText(value) {
@@ -55,8 +100,8 @@ function setIfPresent(properties, schema, names, type, value) {
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store');
 
-  if (request.method !== 'POST') {
-    response.setHeader('Allow', 'POST');
+  if (!['GET', 'POST'].includes(request.method)) {
+    response.setHeader('Allow', 'GET, POST');
     return response.status(405).json({ error: 'Method not allowed' });
   }
 
@@ -71,17 +116,6 @@ export default async function handler(request, response) {
         !databaseId ? 'NOTION_QUESTIONS_DATABASE_ID' : null,
       ].filter(Boolean),
     });
-  }
-
-  const body = typeof request.body === 'string' ? JSON.parse(request.body || '{}') : request.body;
-  const title = String(body?.title ?? '').trim();
-  const content = String(body?.content ?? '').trim();
-  const name = String(body?.name ?? '').trim();
-  const contact = String(body?.contact ?? '').trim();
-  const category = String(body?.category ?? '').trim() || '토론 질문';
-
-  if (!title || !content) {
-    return response.status(400).json({ error: 'Title and content are required' });
   }
 
   const headers = {
@@ -105,6 +139,57 @@ export default async function handler(request, response) {
 
   const database = await databaseResponse.json();
   const schema = database.properties ?? {};
+
+  if (request.method === 'GET') {
+    const results = [];
+    let startCursor;
+
+    do {
+      const notionResponse = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          page_size: NOTION_PAGE_SIZE,
+          ...(startCursor ? { start_cursor: startCursor } : {}),
+        }),
+      });
+
+      if (!notionResponse.ok) {
+        const notionError = await notionResponse.json().catch(() => ({}));
+        return response.status(notionResponse.status).json({
+          questions: [],
+          error: 'Question list request failed',
+          notion: {
+            code: notionError?.code,
+            message: notionError?.message,
+          },
+        });
+      }
+
+      const data = await notionResponse.json();
+      results.push(...data.results);
+      startCursor = data.has_more ? data.next_cursor : null;
+    } while (startCursor);
+
+    const hasStatusProperty = Boolean(pick(schema, ['상태', 'Status']));
+    const questions = results
+      .map(mapPageToQuestion)
+      .filter(question => question.title && isPublicQuestion(question, hasStatusProperty));
+
+    return response.status(200).json({ questions });
+  }
+
+  const body = typeof request.body === 'string' ? JSON.parse(request.body || '{}') : request.body;
+  const title = String(body?.title ?? '').trim();
+  const content = String(body?.content ?? '').trim();
+  const name = String(body?.name ?? '').trim();
+  const contact = String(body?.contact ?? '').trim();
+  const category = String(body?.category ?? '').trim() || '토론 질문';
+
+  if (!title || !content) {
+    return response.status(400).json({ error: 'Title and content are required' });
+  }
+
   const properties = {};
 
   setIfPresent(properties, schema, ['질문', '제목', 'Title', 'Name', '이름'], 'title', title);
