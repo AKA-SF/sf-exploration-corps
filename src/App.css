@@ -134,6 +134,60 @@
   line-height: 1.95;
 }
 
+.reading-mode .dock-nav,
+.reading-mode .archive-category-grid,
+.reading-mode .works-layout,
+.reading-mode .category-tile,
+.reading-mode .work-card,
+.reading-mode .media-card,
+.reading-mode .media-empty,
+.reading-mode .question-brief,
+.reading-mode .question-form,
+.reading-mode .contact-shell,
+.reading-mode .contact-signal,
+.reading-mode .contact-card,
+.reading-mode .hud-panel,
+.reading-mode .mini-map {
+  border-color: rgba(46, 72, 77, 0.22) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.64), rgba(232, 222, 202, 0.42)),
+    rgba(255, 252, 244, 0.88) !important;
+  box-shadow: none !important;
+}
+
+.reading-mode .dock-card,
+.reading-mode .category-tile {
+  background: rgba(255, 252, 244, 0.52) !important;
+}
+
+.reading-mode .dock-card:hover,
+.reading-mode .category-tile:hover,
+.reading-mode .category-tile:focus-visible,
+.reading-mode .category-tile.is-active,
+.reading-mode .work-card.is-linked:hover,
+.reading-mode .work-card.is-linked:focus-visible,
+.reading-mode .media-card:hover,
+.reading-mode .media-card:focus-visible {
+  background:
+    linear-gradient(135deg, rgba(221, 242, 239, 0.84), rgba(255, 252, 244, 0.92)) !important;
+  border-color: rgba(47, 111, 120, 0.44) !important;
+}
+
+.reading-mode .work-cover-frame,
+.reading-mode .media-thumb,
+.reading-mode .question-form input,
+.reading-mode .question-form textarea,
+.reading-mode .question-form select {
+  border-color: rgba(46, 72, 77, 0.2) !important;
+  background: rgba(255, 255, 255, 0.68) !important;
+  color: #172126 !important;
+}
+
+.reading-mode .question-form input::placeholder,
+.reading-mode .question-form textarea::placeholder {
+  color: rgba(52, 68, 75, 0.58) !important;
+}
+
 .reading-mode .archive-home *,
 .reading-mode .exploration-log-page *,
 .reading-mode .questions-page * {
