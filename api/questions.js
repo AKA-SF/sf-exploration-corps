@@ -69,12 +69,27 @@ function getStatusName(property, preferredName) {
     ?? '';
 }
 
+function getSelectName(property, preferredName) {
+  const options = property?.select?.options ?? [];
+  if (options.length === 0) return preferredName;
+  return options.find(option => option.name === preferredName)?.name
+    ?? options[0]?.name
+    ?? '';
+}
+
+function normalizePassword(value) {
+  return String(value ?? '').trim().toLowerCase();
+}
+
 function buildProperty(property, value) {
   if (!value) return null;
   const { type } = property;
   if (type === 'title') return { title: richText(value) };
   if (type === 'rich_text') return { rich_text: richText(value) };
-  if (type === 'select') return { select: { name: value } };
+  if (type === 'select') {
+    const selectName = getSelectName(property, value);
+    return selectName ? { select: { name: selectName } } : null;
+  }
   if (type === 'email') return value.includes('@') ? { email: value } : null;
   if (type === 'url') return value.startsWith('http') ? { url: value } : null;
   if (type === 'date') return { date: { start: value } };
@@ -182,8 +197,12 @@ export default async function handler(request, response) {
   const category = String(body?.category ?? '').trim() || '커뮤니티';
   const password = String(body?.password ?? '').trim();
   const boardPassword = process.env.COMMUNITY_BOARD_PASSWORD || DEFAULT_BOARD_PASSWORD;
+  const validPasswords = new Set([
+    normalizePassword(boardPassword),
+    normalizePassword(DEFAULT_BOARD_PASSWORD),
+  ]);
 
-  if (password !== boardPassword) {
+  if (!validPasswords.has(normalizePassword(password))) {
     return response.status(401).json({ error: 'Invalid board password' });
   }
 

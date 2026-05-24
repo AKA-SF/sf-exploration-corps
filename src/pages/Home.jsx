@@ -391,6 +391,7 @@ export default function Home() {
     password: '',
   });
   const [questionStatus, setQuestionStatus] = useState('idle');
+  const [questionMessage, setQuestionMessage] = useState('');
 
   useEffect(() => {
     let isMounted = true;
@@ -465,10 +466,12 @@ export default function Home() {
     event.preventDefault();
     if (!questionForm.title.trim() || !questionForm.content.trim()) {
       setQuestionStatus('error');
+      setQuestionMessage('글 제목과 글 내용을 입력해주세요.');
       return;
     }
 
     setQuestionStatus('submitting');
+    setQuestionMessage('');
 
     try {
       const response = await fetch('/api/questions', {
@@ -476,7 +479,11 @@ export default function Home() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(questionForm),
       });
-      if (!response.ok) throw new Error('Question submission failed');
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        if (response.status === 401) throw new Error('비밀번호가 맞지 않습니다. 기본 비밀번호는 sf 입니다.');
+        throw new Error(data?.notion?.message || data?.error || '저장에 실패했습니다.');
+      }
       setQuestionForm({
         title: '',
         content: '',
@@ -486,8 +493,10 @@ export default function Home() {
         password: '',
       });
       setQuestionStatus('success');
-    } catch {
+      setQuestionMessage('새 글이 저장되었습니다.');
+    } catch (error) {
       setQuestionStatus('error');
+      setQuestionMessage(error.message);
     }
   };
 
@@ -864,8 +873,8 @@ export default function Home() {
 
               <div className="question-form-actions">
                 <p className={`question-status is-${questionStatus}`}>
-                  {questionStatus === 'success' && '새 글이 저장되었습니다.'}
-                  {questionStatus === 'error' && '저장에 실패했습니다. 비밀번호, 필수 항목, Notion 연결을 확인해주세요.'}
+                  {questionStatus === 'success' && questionMessage}
+                  {questionStatus === 'error' && questionMessage}
                   {questionStatus === 'submitting' && '새 글을 저장 중입니다.'}
                   {questionStatus === 'idle' && '비밀번호를 입력한 뒤 새글 저장을 눌러주세요.'}
                 </p>
