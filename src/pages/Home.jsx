@@ -454,7 +454,7 @@ export default function Home() {
         return response.json();
       })
       .then(data => {
-        if (isMounted && Array.isArray(data.concepts) && data.concepts.length > 0) {
+        if (isMounted && Array.isArray(data.concepts)) {
           setConcepts(data.concepts);
         }
       })
@@ -903,7 +903,7 @@ export default function Home() {
             </aside>
 
             <div className="concept-grid">
-              {concepts.map(entry => (
+              {concepts.length > 0 ? concepts.map(entry => (
                 <article className="concept-card" key={entry.code}>
                   <div className="concept-card-top">
                     <span>{entry.code}</span>
@@ -916,7 +916,12 @@ export default function Home() {
                     {entry.keywords.map(keyword => <span key={keyword}>{keyword}</span>)}
                   </div>
                 </article>
-              ))}
+              )) : (
+                <div className="concept-empty">
+                  <strong>NO TERMS</strong>
+                  <span>노션 SF 개념 사전에 아직 등록된 개념어가 없습니다.</span>
+                </div>
+              )}
             </div>
           </div>
         </div>

@@ -1228,7 +1228,8 @@
 }
 
 .concept-index,
-.concept-card {
+.concept-card,
+.concept-empty {
   border: 1px solid var(--line);
   background:
     linear-gradient(135deg, rgba(25, 247, 241, 0.08), transparent 44%),
@@ -1327,6 +1328,28 @@
   color: #9eeff2;
   font-size: 11px;
   font-weight: 800;
+}
+
+.concept-empty {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 8px;
+  min-height: 180px;
+  padding: 24px;
+  color: #b8cbd2;
+}
+
+.concept-empty strong {
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 1.4px;
+}
+
+.concept-empty span {
+  font-size: 15px;
+  font-weight: 650;
 }
 
 .media-section {
