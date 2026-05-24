@@ -20,7 +20,7 @@ const navItems = [
   { label: '탐사 로그', href: '/exploration-log' },
   { label: 'SF 개념 사전', href: '#concept-dictionary' },
   { label: '미디어 아카이브', href: '#media-archive' },
-  { label: '토론 질문 저장소', href: '#question-vault' },
+  { label: '토론 질문 저장소', href: '/questions' },
   { label: 'Contact', href: '#contact' },
   { label: '탐사 좌표', href: '#coordinates' },
 ];
@@ -54,7 +54,7 @@ const archiveCards = [
     icon: MessageSquare,
     title: '토론 질문 저장소',
     text: '탐구하고 토론할 질문을 모아둔 아카이브',
-    href: '#question-vault',
+    href: '/questions',
   },
   {
     icon: Mail,
