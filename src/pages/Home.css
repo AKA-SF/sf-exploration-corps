@@ -1606,11 +1606,9 @@
 }
 
 .question-form-actions {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 18px;
-  padding-top: 8px;
+  display: grid;
+  gap: 12px;
+  padding-top: 12px;
 }
 
 .question-status {
@@ -1631,15 +1629,17 @@
   align-items: center;
   justify-content: center;
   gap: 10px;
-  min-height: 48px;
+  width: 100%;
+  min-height: 56px;
   border: 0;
   padding: 0 22px;
   color: #00161a;
   background: var(--cyan);
   cursor: pointer;
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 1000;
   white-space: nowrap;
+  box-shadow: 0 0 28px rgba(25, 247, 241, 0.2);
 }
 
 .question-form button:disabled {

@@ -1,6 +1,7 @@
 const NOTION_VERSION = '2022-06-28';
 const DEFAULT_QUESTIONS_DATABASE_ID = '36a98dbef69d803abd53c09b6ff7f2e3';
 const NOTION_PAGE_SIZE = 100;
+const DEFAULT_BOARD_PASSWORD = 'sf';
 
 function plainText(value) {
   if (!value) return '';
@@ -54,11 +55,6 @@ function mapPageToQuestion(page, index) {
     status,
     date,
   };
-}
-
-function isPublicQuestion(question, hasStatusProperty) {
-  if (!hasStatusProperty) return true;
-  return ['공개', '게시', '완료', 'Published', 'Public', 'Done'].includes(question.status);
 }
 
 function richText(value) {
@@ -171,10 +167,9 @@ export default async function handler(request, response) {
       startCursor = data.has_more ? data.next_cursor : null;
     } while (startCursor);
 
-    const hasStatusProperty = Boolean(pick(schema, ['상태', 'Status']));
     const questions = results
       .map(mapPageToQuestion)
-      .filter(question => question.title && isPublicQuestion(question, hasStatusProperty));
+      .filter(question => question.title);
 
     return response.status(200).json({ questions });
   }
@@ -184,7 +179,13 @@ export default async function handler(request, response) {
   const content = String(body?.content ?? '').trim();
   const name = String(body?.name ?? '').trim();
   const contact = String(body?.contact ?? '').trim();
-  const category = String(body?.category ?? '').trim() || '토론 질문';
+  const category = String(body?.category ?? '').trim() || '커뮤니티';
+  const password = String(body?.password ?? '').trim();
+  const boardPassword = process.env.COMMUNITY_BOARD_PASSWORD || DEFAULT_BOARD_PASSWORD;
+
+  if (password !== boardPassword) {
+    return response.status(401).json({ error: 'Invalid board password' });
+  }
 
   if (!title || !content) {
     return response.status(400).json({ error: 'Title and content are required' });
@@ -198,7 +199,7 @@ export default async function handler(request, response) {
   setIfPresent(properties, schema, ['연락처', 'Contact', 'Email', '이메일'], 'rich_text', contact);
   setIfPresent(properties, schema, ['이메일', 'Email'], 'email', contact);
   setIfPresent(properties, schema, ['분류', 'Category', 'Type'], 'select', category);
-  setIfPresent(properties, schema, ['상태', 'Status'], 'status', '대기');
+  setIfPresent(properties, schema, ['상태', 'Status'], 'status', '공개');
   setIfPresent(properties, schema, ['작성일', '날짜', 'Date'], 'date', new Date().toISOString().slice(0, 10));
 
   if (!Object.values(schema).some(property => property.type === 'title') || Object.keys(properties).length === 0) {

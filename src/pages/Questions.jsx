@@ -11,7 +11,8 @@ const emptyForm = {
   content: '',
   name: '',
   contact: '',
-  category: '토론 질문',
+  category: '커뮤니티',
+  password: '',
 };
 
 function excerpt(value) {
@@ -92,9 +93,9 @@ export default function Questions() {
           SF 탐사단
         </Link>
         <div>
-          <span>DISCUSSION QUESTION VAULT</span>
-          <h1>토론 질문 저장소</h1>
-          <p>SF 작품을 읽고 남은 질문과 함께 이야기하고 싶은 논점을 모아두는 공개 질문 아카이브입니다.</p>
+          <span>COMMUNITY BOARD</span>
+          <h1>커뮤니티 게시판</h1>
+          <p>SF 작품을 읽고 남은 질문, 추천, 수업 주제, 함께 나누고 싶은 이야기를 모아두는 게시판입니다.</p>
         </div>
         <div className="questions-status">
           <Sparkles aria-hidden="true" />
@@ -102,7 +103,7 @@ export default function Questions() {
         </div>
       </header>
 
-      <nav className="questions-filter" aria-label="토론 질문 분류">
+      <nav className="questions-filter" aria-label="커뮤니티 게시판 분류">
         {categories.map(category => (
           <button
             className={activeCategory === category ? 'is-active' : ''}
@@ -115,7 +116,7 @@ export default function Questions() {
         ))}
       </nav>
 
-      <section className="questions-grid" aria-label="공개 토론 질문">
+      <section className="questions-grid" aria-label="커뮤니티 게시글">
         {visibleQuestions.length > 0 ? visibleQuestions.map(question => (
           <article className="public-question-card" key={`${question.code}-${question.title}`}>
             <div className="public-question-top">
@@ -132,23 +133,23 @@ export default function Questions() {
         )) : (
           <div className="questions-empty">
             <MessageSquare aria-hidden="true" />
-            <strong>{loadStatus === 'loading' ? '질문 신호를 불러오는 중입니다' : '공개된 질문이 아직 없습니다'}</strong>
-            <span>질문을 남기면 관리자가 확인한 뒤 이곳에 공개할 수 있습니다.</span>
+            <strong>{loadStatus === 'loading' ? '게시글을 불러오는 중입니다' : '아직 게시글이 없습니다'}</strong>
+            <span>비밀번호를 입력해 새 글을 남기면 이곳에 바로 표시됩니다.</span>
           </div>
         )}
       </section>
 
-      <section className="question-write-panel" aria-label="토론 질문 작성">
+      <section className="question-write-panel" aria-label="커뮤니티 게시글 작성">
         <div className="question-write-brief">
           <MessageSquare aria-hidden="true" />
-          <span>WRITE QUESTION</span>
-          <h2>새 질문 남기기</h2>
-          <p>제출된 질문은 바로 공개되지 않고, 저장소에서 확인한 뒤 공개 목록에 올라갑니다.</p>
+          <span>WRITE POST</span>
+          <h2>새 글 쓰기</h2>
+          <p>비밀번호를 입력해 저장하면 게시판 목록에 바로 올라갑니다.</p>
         </div>
 
         <form className="question-form" onSubmit={submitQuestion}>
           <label>
-            <span>질문 제목</span>
+            <span>글 제목</span>
             <input
               name="title"
               onChange={updateQuestionForm}
@@ -159,11 +160,11 @@ export default function Questions() {
           </label>
 
           <label>
-            <span>질문 내용</span>
+            <span>글 내용</span>
             <textarea
               name="content"
               onChange={updateQuestionForm}
-              placeholder="작품명, 장면, 떠오른 질문을 자유롭게 적어주세요."
+              placeholder="작품명, 장면, 떠오른 생각을 자유롭게 적어주세요."
               rows="7"
               value={questionForm.content}
             />
@@ -183,6 +184,7 @@ export default function Questions() {
           <label>
             <span>분류</span>
             <select name="category" onChange={updateQuestionForm} value={questionForm.category}>
+              <option>커뮤니티</option>
               <option>토론 질문</option>
               <option>작품 추천</option>
               <option>강의/워크숍 주제</option>
@@ -190,16 +192,27 @@ export default function Questions() {
             </select>
           </label>
 
+          <label>
+            <span>게시판 비밀번호</span>
+            <input
+              name="password"
+              onChange={updateQuestionForm}
+              placeholder="비밀번호를 입력하세요"
+              type="password"
+              value={questionForm.password}
+            />
+          </label>
+
           <div className="question-form-actions">
             <p className={`question-status is-${questionStatus}`}>
-              {questionStatus === 'success' && '질문 신호가 저장되었습니다. 확인 후 공개됩니다.'}
-              {questionStatus === 'error' && '저장에 실패했습니다. 필수 항목 또는 Notion 연결을 확인해주세요.'}
-              {questionStatus === 'submitting' && '질문 신호를 전송 중입니다.'}
-              {questionStatus === 'idle' && '제출하면 토론 질문 저장소에 임시 저장됩니다.'}
+              {questionStatus === 'success' && '새 글이 저장되어 게시판에 표시됩니다.'}
+              {questionStatus === 'error' && '저장에 실패했습니다. 비밀번호, 필수 항목, Notion 연결을 확인해주세요.'}
+              {questionStatus === 'submitting' && '새 글을 저장 중입니다.'}
+              {questionStatus === 'idle' && '비밀번호를 입력한 뒤 새글 저장을 눌러주세요.'}
             </p>
             <button type="submit" disabled={questionStatus === 'submitting'}>
               <Send aria-hidden="true" />
-              {questionStatus === 'submitting' ? '전송 중' : '질문 저장'}
+              {questionStatus === 'submitting' ? '저장 중' : '새글 저장'}
             </button>
           </div>
         </form>
