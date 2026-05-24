@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Box,
@@ -390,8 +390,10 @@ export default function Home() {
   const [mediaItems, setMediaItems] = useState([]);
   const [activeMediaCategory, setActiveMediaCategory] = useState(mediaCategories[0]);
   const [concepts, setConcepts] = useState(conceptEntries);
-  const [activeConceptCode, setActiveConceptCode] = useState(conceptEntries[0]?.code ?? '');
+  const [randomConceptCodes, setRandomConceptCodes] = useState(() => getRandomWorks(conceptEntries, conceptEntries.length).map(concept => concept.code));
+  const [activeConceptCode, setActiveConceptCode] = useState('');
   const [showAllConcepts, setShowAllConcepts] = useState(false);
+  const conceptFeatureRef = useRef(null);
   const [questionForm, setQuestionForm] = useState({
     title: '',
     content: '',
@@ -458,11 +460,19 @@ export default function Home() {
       })
       .then(data => {
         if (isMounted && Array.isArray(data.concepts)) {
+          const randomizedConcepts = getRandomWorks(data.concepts, data.concepts.length);
           setConcepts(data.concepts);
+          setRandomConceptCodes(randomizedConcepts.map(concept => concept.code));
+          setActiveConceptCode(randomizedConcepts[0]?.code ?? '');
         }
       })
       .catch(() => {
-        if (isMounted) setConcepts(conceptEntries);
+        if (isMounted) {
+          const randomizedConcepts = getRandomWorks(conceptEntries, conceptEntries.length);
+          setConcepts(conceptEntries);
+          setRandomConceptCodes(randomizedConcepts.map(concept => concept.code));
+          setActiveConceptCode(randomizedConcepts[0]?.code ?? '');
+        }
       });
 
     return () => {
@@ -486,6 +496,16 @@ export default function Home() {
   const handleGenreNodeClick = node => {
     if (genreSubmaps[node.id]) {
       setActiveGenreId(node.id);
+    }
+  };
+
+  const selectConcept = code => {
+    setActiveConceptCode(code);
+
+    if (showAllConcepts) {
+      requestAnimationFrame(() => {
+        conceptFeatureRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
     }
   };
 
@@ -536,8 +556,12 @@ export default function Home() {
     ? works
     : works.filter(work => randomWorkCodes.includes(work.code)).slice(0, 6);
   const displayedMedia = mediaItems.filter(item => normalizeMediaCategory(item.category) === activeMediaCategory);
-  const selectedConcept = concepts.find(concept => concept.code === activeConceptCode) ?? concepts[0];
-  const visibleConcepts = showAllConcepts ? concepts : concepts.slice(0, 6);
+  const orderedConcepts = [
+    ...randomConceptCodes.map(code => concepts.find(concept => concept.code === code)).filter(Boolean),
+    ...concepts.filter(concept => !randomConceptCodes.includes(concept.code)),
+  ];
+  const selectedConcept = orderedConcepts.find(concept => concept.code === activeConceptCode) ?? orderedConcepts[0];
+  const visibleConcepts = showAllConcepts ? orderedConcepts : orderedConcepts.slice(0, 6);
 
   return (
     <PageTransition className="archive-home">
@@ -916,7 +940,7 @@ export default function Home() {
 
             {selectedConcept ? (
               <div className="concept-browser">
-                <article className="concept-feature-card">
+                <article className="concept-feature-card" ref={conceptFeatureRef}>
                   <div className="concept-card-top">
                     <span>{selectedConcept.code}</span>
                     <em>{selectedConcept.category}</em>
@@ -952,11 +976,12 @@ export default function Home() {
                     <button
                       className={`concept-card ${entry.code === selectedConcept.code ? 'is-active' : ''}`}
                       key={entry.code}
-                      onClick={() => setActiveConceptCode(entry.code)}
+                      onClick={() => selectConcept(entry.code)}
                       type="button"
                     >
                       <span>{entry.code}</span>
                       <strong>{entry.term}</strong>
+                      {entry.english && <small>{entry.english}</small>}
                       <em>{entry.category}</em>
                     </button>
                   ))}
