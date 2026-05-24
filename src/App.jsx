@@ -18,7 +18,7 @@ function App() {
   const location = useLocation();
   const isDesktopSurface = location.pathname === '/'
     || location.pathname === '/exploration-log'
-    || location.pathname === '/questions';
+    || location.pathname.startsWith('/questions');
 
   return (
     <div className={isDesktopSurface ? 'mobile-container desktop-home' : 'mobile-container'}>
@@ -30,6 +30,7 @@ function App() {
               <Route path="/" element={<Home />} />
               <Route path="/exploration-log" element={<ExplorationLog />} />
               <Route path="/questions" element={<Questions />} />
+              <Route path="/questions/:questionId" element={<Questions />} />
               <Route path="/log" element={<LogEntry />} />
               <Route path="/result/:id" element={<LogResult />} />
               <Route path="/network" element={<Network />} />

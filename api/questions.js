@@ -46,6 +46,7 @@ function mapPageToQuestion(page, index) {
   const date = plainText(pick(properties, ['작성일', '날짜', 'Date']));
 
   return {
+    id: page.id,
     code: `Q-${String(index + 1).padStart(3, '0')}`,
     title,
     content,
@@ -55,6 +56,18 @@ function mapPageToQuestion(page, index) {
     status,
     date,
   };
+}
+
+function parseCommentBlock(block) {
+  if (block.type !== 'paragraph') return null;
+  const text = block.paragraph?.rich_text?.map(part => part.plain_text).join('') ?? '';
+  if (!text.startsWith('SFA_COMMENT:')) return null;
+
+  try {
+    return JSON.parse(text.replace('SFA_COMMENT:', ''));
+  } catch {
+    return null;
+  }
 }
 
 function richText(value) {
@@ -152,6 +165,37 @@ export default async function handler(request, response) {
   const schema = database.properties ?? {};
 
   if (request.method === 'GET') {
+    const questionId = String(request.query?.id ?? '').trim();
+
+    if (questionId) {
+      const pageResponse = await fetch(`https://api.notion.com/v1/pages/${questionId}`, { headers });
+
+      if (!pageResponse.ok) {
+        const notionError = await pageResponse.json().catch(() => ({}));
+        return response.status(pageResponse.status).json({
+          question: null,
+          comments: [],
+          error: 'Question detail request failed',
+          notion: {
+            code: notionError?.code,
+            message: notionError?.message,
+          },
+        });
+      }
+
+      const page = await pageResponse.json();
+      const blocksResponse = await fetch(`https://api.notion.com/v1/blocks/${questionId}/children?page_size=100`, { headers });
+      const blocks = blocksResponse.ok ? await blocksResponse.json() : { results: [] };
+      const comments = (blocks.results ?? [])
+        .map(parseCommentBlock)
+        .filter(Boolean);
+
+      return response.status(200).json({
+        question: mapPageToQuestion(page, 0),
+        comments,
+      });
+    }
+
     const results = [];
     let startCursor;
 
@@ -190,11 +234,7 @@ export default async function handler(request, response) {
   }
 
   const body = typeof request.body === 'string' ? JSON.parse(request.body || '{}') : request.body;
-  const title = String(body?.title ?? '').trim();
-  const content = String(body?.content ?? '').trim();
-  const name = String(body?.name ?? '').trim();
-  const contact = String(body?.contact ?? '').trim();
-  const category = String(body?.category ?? '').trim() || '커뮤니티';
+  const mode = String(body?.mode ?? 'post').trim();
   const password = String(body?.password ?? '').trim();
   const boardPassword = process.env.COMMUNITY_BOARD_PASSWORD || DEFAULT_BOARD_PASSWORD;
   const validPasswords = new Set([
@@ -205,6 +245,57 @@ export default async function handler(request, response) {
   if (!validPasswords.has(normalizePassword(password))) {
     return response.status(401).json({ error: 'Invalid board password' });
   }
+
+  if (mode === 'comment') {
+    const questionId = String(body?.questionId ?? '').trim();
+    const name = String(body?.name ?? '').trim() || '익명';
+    const content = String(body?.content ?? '').trim();
+
+    if (!questionId || !content) {
+      return response.status(400).json({ error: 'Question ID and comment content are required' });
+    }
+
+    const comment = {
+      name,
+      content,
+      date: new Date().toISOString().slice(0, 10),
+    };
+
+    const commentResponse = await fetch(`https://api.notion.com/v1/blocks/${questionId}/children`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify({
+        children: [
+          {
+            object: 'block',
+            type: 'paragraph',
+            paragraph: {
+              rich_text: richText(`SFA_COMMENT:${JSON.stringify(comment)}`),
+            },
+          },
+        ],
+      }),
+    });
+
+    if (!commentResponse.ok) {
+      const notionError = await commentResponse.json().catch(() => ({}));
+      return response.status(commentResponse.status).json({
+        error: 'Comment submission failed',
+        notion: {
+          code: notionError?.code,
+          message: notionError?.message,
+        },
+      });
+    }
+
+    return response.status(200).json({ ok: true, comment });
+  }
+
+  const title = String(body?.title ?? '').trim();
+  const content = String(body?.content ?? '').trim();
+  const name = String(body?.name ?? '').trim();
+  const contact = String(body?.contact ?? '').trim();
+  const category = String(body?.category ?? '').trim() || '커뮤니티';
 
   if (!title || !content) {
     return response.status(400).json({ error: 'Title and content are required' });

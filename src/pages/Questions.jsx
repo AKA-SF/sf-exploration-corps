@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, MessageSquare, Send, Sparkles } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
 import './Questions.css';
 
@@ -15,17 +15,17 @@ const emptyForm = {
   password: '',
 };
 
-function excerpt(value) {
-  if (!value) return '질문 내용이 공개 대기 중입니다.';
-  if (value.length <= 180) return value;
-  return `${value.slice(0, 178).trim()}...`;
-}
-
 export default function Questions() {
+  const { questionId } = useParams();
   const [questions, setQuestions] = useState(fallbackQuestions);
+  const [activeQuestion, setActiveQuestion] = useState(null);
+  const [comments, setComments] = useState([]);
   const [questionForm, setQuestionForm] = useState(emptyForm);
+  const [commentForm, setCommentForm] = useState({ name: '', content: '', password: '' });
   const [questionStatus, setQuestionStatus] = useState('idle');
   const [questionMessage, setQuestionMessage] = useState('');
+  const [commentStatus, setCommentStatus] = useState('idle');
+  const [commentMessage, setCommentMessage] = useState('');
   const [loadStatus, setLoadStatus] = useState('loading');
 
   const loadQuestions = () => {
@@ -44,9 +44,31 @@ export default function Questions() {
       });
   };
 
+  const loadQuestionDetail = id => {
+    fetch(`/api/questions?id=${encodeURIComponent(id)}`, { cache: 'no-store' })
+      .then(response => {
+        if (!response.ok) throw new Error('Question detail unavailable');
+        return response.json();
+      })
+      .then(data => {
+        setActiveQuestion(data.question);
+        setComments(Array.isArray(data.comments) ? data.comments : []);
+        setLoadStatus('ready');
+      })
+      .catch(() => {
+        setActiveQuestion(null);
+        setComments([]);
+        setLoadStatus('error');
+      });
+  };
+
   useEffect(() => {
-    loadQuestions();
-  }, []);
+    if (questionId) {
+      loadQuestionDetail(questionId);
+    } else {
+      loadQuestions();
+    }
+  }, [questionId]);
 
   const categories = useMemo(() => (
     ['전체', ...new Set(questions.map(question => question.category).filter(Boolean))]
@@ -60,6 +82,11 @@ export default function Questions() {
   const updateQuestionForm = event => {
     const { name, value } = event.target;
     setQuestionForm(form => ({ ...form, [name]: value }));
+  };
+
+  const updateCommentForm = event => {
+    const { name, value } = event.target;
+    setCommentForm(form => ({ ...form, [name]: value }));
   };
 
   const submitQuestion = async event => {
@@ -94,6 +121,131 @@ export default function Questions() {
     }
   };
 
+  const submitComment = async event => {
+    event.preventDefault();
+    if (!commentForm.content.trim()) {
+      setCommentStatus('error');
+      setCommentMessage('댓글 내용을 입력해주세요.');
+      return;
+    }
+
+    setCommentStatus('submitting');
+    setCommentMessage('');
+
+    try {
+      const response = await fetch('/api/questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'comment',
+          questionId,
+          ...commentForm,
+        }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        if (response.status === 401) throw new Error('비밀번호가 맞지 않습니다. 기본 비밀번호는 sf 입니다.');
+        throw new Error(data?.notion?.message || data?.error || '댓글 저장에 실패했습니다.');
+      }
+      setCommentForm({ name: '', content: '', password: '' });
+      setCommentStatus('success');
+      setCommentMessage('댓글이 저장되었습니다.');
+      loadQuestionDetail(questionId);
+    } catch (error) {
+      setCommentStatus('error');
+      setCommentMessage(error.message);
+    }
+  };
+
+  if (questionId) {
+    return (
+      <PageTransition className="questions-page">
+        <header className="questions-header">
+          <Link className="questions-back-link" to="/questions">
+            <ArrowLeft aria-hidden="true" />
+            게시판 목록
+          </Link>
+          <div>
+            <span>COMMUNITY POST</span>
+            <h1>게시글</h1>
+            <p>게시글 전체 내용과 댓글을 확인하는 공간입니다.</p>
+          </div>
+          <div className="questions-status">
+            <Sparkles aria-hidden="true" />
+            <strong>{comments.length} COMMENTS</strong>
+          </div>
+        </header>
+
+        {activeQuestion ? (
+          <article className="question-detail">
+            <div className="question-detail-top">
+              <span>{activeQuestion.category}</span>
+              <em>{activeQuestion.date || 'NO DATE'}</em>
+            </div>
+            <h2>{activeQuestion.title}</h2>
+            <div className="question-detail-meta">
+              <span>작성자 {activeQuestion.author}</span>
+            </div>
+            <p>{activeQuestion.content}</p>
+          </article>
+        ) : (
+          <div className="questions-empty">
+            <MessageSquare aria-hidden="true" />
+            <strong>{loadStatus === 'loading' ? '게시글을 불러오는 중입니다' : '게시글을 찾을 수 없습니다'}</strong>
+            <span>목록으로 돌아가 다시 선택해주세요.</span>
+          </div>
+        )}
+
+        <section className="comments-panel" aria-label="댓글">
+          <div className="comments-list">
+            <div className="comments-heading">
+              <span>COMMENTS</span>
+              <strong>{comments.length}</strong>
+            </div>
+            {comments.length > 0 ? comments.map((comment, index) => (
+              <article className="comment-item" key={`${comment.date}-${comment.name}-${index}`}>
+                <div>
+                  <strong>{comment.name || '익명'}</strong>
+                  <span>{comment.date}</span>
+                </div>
+                <p>{comment.content}</p>
+              </article>
+            )) : (
+              <p className="comments-empty">아직 댓글이 없습니다.</p>
+            )}
+          </div>
+
+          <form className="question-form comment-form" onSubmit={submitComment}>
+            <label>
+              <span>이름</span>
+              <input name="name" onChange={updateCommentForm} placeholder="익명 가능" type="text" value={commentForm.name} />
+            </label>
+            <label>
+              <span>댓글 내용</span>
+              <textarea name="content" onChange={updateCommentForm} placeholder="댓글을 입력해주세요." rows="5" value={commentForm.content} />
+            </label>
+            <label>
+              <span>게시판 비밀번호</span>
+              <input name="password" onChange={updateCommentForm} placeholder="비밀번호를 입력하세요" type="password" value={commentForm.password} />
+            </label>
+            <div className="question-form-actions">
+              <p className={`question-status is-${commentStatus}`}>
+                {commentStatus === 'success' && commentMessage}
+                {commentStatus === 'error' && commentMessage}
+                {commentStatus === 'submitting' && '댓글을 저장 중입니다.'}
+                {commentStatus === 'idle' && '비밀번호를 입력한 뒤 댓글 저장을 눌러주세요.'}
+              </p>
+              <button type="submit" disabled={commentStatus === 'submitting'}>
+                <Send aria-hidden="true" />
+                {commentStatus === 'submitting' ? '저장 중' : '댓글 저장'}
+              </button>
+            </div>
+          </form>
+        </section>
+      </PageTransition>
+    );
+  }
+
   return (
     <PageTransition className="questions-page">
       <header className="questions-header">
@@ -125,20 +277,18 @@ export default function Questions() {
         ))}
       </nav>
 
-      <section className="questions-grid" aria-label="커뮤니티 게시글">
+      <section className="questions-board" aria-label="커뮤니티 게시글">
+        <div className="questions-board-head">
+          <span>제목</span>
+          <span>작성자</span>
+          <span>날짜</span>
+        </div>
         {visibleQuestions.length > 0 ? visibleQuestions.map(question => (
-          <article className="public-question-card" key={`${question.code}-${question.title}`}>
-            <div className="public-question-top">
-              <span>{question.code}</span>
-              <em>{question.category}</em>
-            </div>
-            <h2>{question.title}</h2>
-            <p>{excerpt(question.content)}</p>
-            <div className="public-question-meta">
-              <span>{question.author}</span>
-              {question.date && <span>{question.date}</span>}
-            </div>
-          </article>
+          <Link className="question-row" key={question.id} to={`/questions/${question.id}`}>
+            <strong>{question.title}</strong>
+            <span>{question.author}</span>
+            <time>{question.date || '-'}</time>
+          </Link>
         )) : (
           <div className="questions-empty">
             <MessageSquare aria-hidden="true" />
