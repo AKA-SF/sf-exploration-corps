@@ -38,6 +38,102 @@
   flex-direction: column;
 }
 
+.site-mode-toggle {
+  position: fixed;
+  top: 88px;
+  right: 24px;
+  z-index: 120;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid rgba(0, 255, 255, 0.34);
+  background: rgba(0, 10, 14, 0.82);
+  color: var(--primary-cyan);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 0 18px rgba(0, 255, 255, 0.12);
+}
+
+.site-mode-toggle svg {
+  width: 16px;
+  height: 16px;
+}
+
+.reading-mode .site-mode-toggle {
+  border-color: rgba(55, 65, 81, 0.24);
+  background: rgba(255, 252, 244, 0.92);
+  color: #263238;
+  box-shadow: 0 14px 38px rgba(36, 28, 15, 0.14);
+}
+
+.reading-mode .bg-geometry,
+.reading-mode .archive-home::before,
+.reading-mode .archive-home::after {
+  opacity: 0.12;
+  filter: grayscale(1);
+}
+
+.reading-mode .archive-home,
+.reading-mode .exploration-log-page,
+.reading-mode .questions-page {
+  --cyan: #2f6f78;
+  --line: rgba(35, 73, 82, 0.2);
+  background: #f3efe6 !important;
+  color: #172126;
+}
+
+.reading-mode .archive-home section,
+.reading-mode .exploration-log-page,
+.reading-mode .questions-page {
+  background:
+    linear-gradient(180deg, rgba(255, 252, 244, 0.96), rgba(239, 233, 219, 0.96)) !important;
+}
+
+.reading-mode .home-topbar,
+.reading-mode .log-archive-header,
+.reading-mode .questions-header,
+.reading-mode .archive-category-grid,
+.reading-mode .concept-index,
+.reading-mode .concept-feature-card,
+.reading-mode .concept-card,
+.reading-mode .question-detail,
+.reading-mode .comments-panel,
+.reading-mode .log-card {
+  border-color: rgba(46, 72, 77, 0.22) !important;
+  background: rgba(255, 252, 244, 0.9) !important;
+  box-shadow: none !important;
+}
+
+.reading-mode .section-heading h2,
+.reading-mode .concept-feature-card h3,
+.reading-mode .question-detail h2,
+.reading-mode .log-archive-header h1,
+.reading-mode .questions-header h1,
+.reading-mode .log-card h2 {
+  color: #111827 !important;
+}
+
+.reading-mode .section-heading p,
+.reading-mode .concept-feature-card p,
+.reading-mode .question-detail > p,
+.reading-mode .comment-item p,
+.reading-mode .comments-empty,
+.reading-mode .log-card p {
+  color: #34444b !important;
+}
+
+.reading-mode .concept-feature-card p,
+.reading-mode .question-detail > p,
+.reading-mode .log-card p {
+  font-size: 18px;
+  line-height: 1.95;
+}
+
 .page-container:has(.home-container) {
   padding: 10px;
   padding-bottom: 68px;

@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
+import { BookOpen, TerminalSquare } from 'lucide-react';
 import './App.css';
 
 // Components & Pages
@@ -16,14 +18,30 @@ import InteractiveBackground from './components/InteractiveBackground';
 
 function App() {
   const location = useLocation();
+  const [siteMode, setSiteMode] = useState(() => localStorage.getItem('sf-site-mode') || 'console');
   const isDesktopSurface = location.pathname === '/'
     || location.pathname === '/exploration-log'
     || location.pathname.startsWith('/questions');
+  const isReadingMode = siteMode === 'reading';
+
+  useEffect(() => {
+    localStorage.setItem('sf-site-mode', siteMode);
+  }, [siteMode]);
 
   return (
-    <div className={isDesktopSurface ? 'mobile-container desktop-home' : 'mobile-container'}>
+    <div className={`${isDesktopSurface ? 'mobile-container desktop-home' : 'mobile-container'} ${isReadingMode ? 'reading-mode' : 'console-mode'}`}>
       <div className="app-wrapper">
         <InteractiveBackground />
+        {isDesktopSurface && (
+          <button
+            className="site-mode-toggle"
+            onClick={() => setSiteMode(isReadingMode ? 'console' : 'reading')}
+            type="button"
+          >
+            {isReadingMode ? <TerminalSquare aria-hidden="true" /> : <BookOpen aria-hidden="true" />}
+            <span>{isReadingMode ? 'Console Mode' : 'Reading Mode'}</span>
+          </button>
+        )}
         <div className="page-container">
           <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>

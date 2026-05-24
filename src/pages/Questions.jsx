@@ -20,6 +20,7 @@ export default function Questions() {
   const [questions, setQuestions] = useState(fallbackQuestions);
   const [activeQuestion, setActiveQuestion] = useState(null);
   const [comments, setComments] = useState([]);
+  const [localReadingMode, setLocalReadingMode] = useState(false);
   const [questionForm, setQuestionForm] = useState(emptyForm);
   const [commentForm, setCommentForm] = useState({ name: '', content: '', password: '' });
   const [questionStatus, setQuestionStatus] = useState('idle');
@@ -177,11 +178,18 @@ export default function Questions() {
         </header>
 
         {activeQuestion ? (
-          <article className="question-detail">
+          <article className={`question-detail ${localReadingMode ? 'is-reading-local' : ''}`}>
             <div className="question-detail-top">
               <span>{activeQuestion.category}</span>
               <em>{activeQuestion.date || 'NO DATE'}</em>
             </div>
+            <button
+              className="question-reading-toggle"
+              onClick={() => setLocalReadingMode(value => !value)}
+              type="button"
+            >
+              {localReadingMode ? 'Console View' : 'Reading View'}
+            </button>
             <h2>{activeQuestion.title}</h2>
             <div className="question-detail-meta">
               <span>작성자 {activeQuestion.author}</span>

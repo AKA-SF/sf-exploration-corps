@@ -1286,9 +1286,48 @@
 }
 
 .concept-feature-card {
+  position: relative;
   min-height: 260px;
   scroll-margin-top: 96px;
   padding: 24px;
+}
+
+.local-reading-toggle {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(25, 247, 241, 0.28);
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.local-reading-toggle:hover,
+.local-reading-toggle:focus-visible {
+  border-color: rgba(25, 247, 241, 0.8);
+  outline: 0;
+}
+
+.concept-feature-card.is-reading-local {
+  max-width: 980px;
+  margin: 0 auto;
+  background: #f7f1e5;
+  color: #172126;
+}
+
+.concept-feature-card.is-reading-local h3 {
+  color: #101820;
+  font-size: clamp(38px, 4.5vw, 64px);
+}
+
+.concept-feature-card.is-reading-local p {
+  color: #2f3d42;
+  font-size: 19px;
+  line-height: 2;
 }
 
 .concept-feature-card h3 {

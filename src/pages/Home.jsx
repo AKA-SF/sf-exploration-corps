@@ -393,6 +393,7 @@ export default function Home() {
   const [randomConceptCodes, setRandomConceptCodes] = useState(() => getRandomWorks(conceptEntries, conceptEntries.length).map(concept => concept.code));
   const [activeConceptCode, setActiveConceptCode] = useState('');
   const [showAllConcepts, setShowAllConcepts] = useState(false);
+  const [conceptReadingMode, setConceptReadingMode] = useState(false);
   const conceptFeatureRef = useRef(null);
   const [questionForm, setQuestionForm] = useState({
     title: '',
@@ -940,11 +941,18 @@ export default function Home() {
 
             {selectedConcept ? (
               <div className="concept-browser">
-                <article className="concept-feature-card" ref={conceptFeatureRef}>
+                <article className={`concept-feature-card ${conceptReadingMode ? 'is-reading-local' : ''}`} ref={conceptFeatureRef}>
                   <div className="concept-card-top">
                     <span>{selectedConcept.code}</span>
                     <em>{selectedConcept.category}</em>
                   </div>
+                  <button
+                    className="local-reading-toggle"
+                    onClick={() => setConceptReadingMode(value => !value)}
+                    type="button"
+                  >
+                    {conceptReadingMode ? 'Console View' : 'Reading View'}
+                  </button>
                   <h3>{selectedConcept.term}</h3>
                   <strong>{selectedConcept.english}</strong>
                   <p>{selectedConcept.summary}</p>

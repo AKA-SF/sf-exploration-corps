@@ -24,7 +24,7 @@
 
 .log-archive-header {
   display: grid;
-  grid-template-columns: 180px minmax(0, 1fr) 210px;
+  grid-template-columns: 180px minmax(0, 1fr) 210px auto;
   gap: 28px;
   align-items: start;
   max-width: 1680px;
@@ -32,6 +32,38 @@
   padding: 28px;
   border: 1px solid rgba(25, 247, 241, 0.24);
   background: rgba(0, 12, 18, 0.62);
+}
+
+.log-reading-toggle {
+  min-height: 38px;
+  padding: 0 12px;
+  border: 1px solid rgba(25, 247, 241, 0.3);
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.exploration-log-page.is-reading-local .log-masonry {
+  columns: 3 320px;
+  max-width: 1280px;
+}
+
+.exploration-log-page.is-reading-local .log-card {
+  padding: 26px 24px;
+  transform: none;
+}
+
+.exploration-log-page.is-reading-local .log-card p,
+.exploration-log-page.is-reading-local .log-card.mini p,
+.exploration-log-page.is-reading-local .log-card.quote p {
+  display: block;
+  overflow: visible;
+  color: rgba(31, 41, 48, 0.88);
+  font-size: 17px;
+  line-height: 1.95;
+  -webkit-line-clamp: unset;
 }
 
 .log-back-link,

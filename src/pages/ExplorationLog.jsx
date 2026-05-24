@@ -67,6 +67,7 @@ function summarizeReview(review, log) {
 export default function ExplorationLog() {
   const [logs, setLogs] = useState(fallbackLogs);
   const [activeCategory, setActiveCategory] = useState('전체');
+  const [localReadingMode, setLocalReadingMode] = useState(false);
   const [layoutSeed] = useState(() => Date.now());
 
   useEffect(() => {
@@ -103,7 +104,7 @@ export default function ExplorationLog() {
   }, [activeCategory, layoutSeed, logs]);
 
   return (
-    <PageTransition className="exploration-log-page">
+    <PageTransition className={`exploration-log-page ${localReadingMode ? 'is-reading-local' : ''}`}>
       <header className="log-archive-header">
         <Link className="log-back-link" to="/">
           <ArrowLeft aria-hidden="true" />
@@ -118,6 +119,13 @@ export default function ExplorationLog() {
           <Sparkles aria-hidden="true" />
           <strong>{logs.length} SIGNALS</strong>
         </div>
+        <button
+          className="log-reading-toggle"
+          onClick={() => setLocalReadingMode(value => !value)}
+          type="button"
+        >
+          {localReadingMode ? 'Console View' : 'Reading View'}
+        </button>
       </header>
 
       <nav className="log-filter-bar" aria-label="탐사 로그 분류">
