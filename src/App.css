@@ -137,6 +137,8 @@
 .reading-mode .dock-nav,
 .reading-mode .archive-category-grid,
 .reading-mode .works-layout,
+.reading-mode .works-brief,
+.reading-mode .archive-view-status,
 .reading-mode .category-tile,
 .reading-mode .work-card,
 .reading-mode .media-card,
@@ -147,7 +149,12 @@
 .reading-mode .contact-signal,
 .reading-mode .contact-card,
 .reading-mode .hud-panel,
-.reading-mode .mini-map {
+.reading-mode .mini-map,
+.reading-mode .genre-map,
+.reading-mode .map-hud,
+.reading-mode .coordinate-brief,
+.reading-mode .coordinate-minimap,
+.reading-mode .coordinate-mini-space {
   border-color: rgba(46, 72, 77, 0.22) !important;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.64), rgba(232, 222, 202, 0.42)),
@@ -186,6 +193,79 @@
 .reading-mode .question-form input::placeholder,
 .reading-mode .question-form textarea::placeholder {
   color: rgba(52, 68, 75, 0.58) !important;
+}
+
+.reading-mode .map-grid-cross,
+.reading-mode .genre-map::before,
+.reading-mode .genre-map::after {
+  border-color: rgba(47, 111, 120, 0.16) !important;
+}
+
+.reading-mode .map-grid-cross::before,
+.reading-mode .map-grid-cross::after {
+  background: rgba(47, 111, 120, 0.18) !important;
+}
+
+.reading-mode .map-lines line {
+  stroke: rgba(47, 111, 120, 0.38) !important;
+}
+
+.reading-mode .map-nebula {
+  opacity: 0.18;
+  mix-blend-mode: multiply;
+}
+
+.reading-mode .map-core,
+.reading-mode .genre-node span {
+  border-color: rgba(47, 111, 120, 0.32) !important;
+  background: rgba(255, 252, 244, 0.92) !important;
+  box-shadow: 0 10px 28px rgba(36, 28, 15, 0.12) !important;
+}
+
+.reading-mode .map-core strong,
+.reading-mode .genre-node span b,
+.reading-mode .coordinate-brief h3,
+.reading-mode .works-brief h3 {
+  color: #111827 !important;
+}
+
+.reading-mode .map-core span,
+.reading-mode .map-hud,
+.reading-mode .map-hud *,
+.reading-mode .genre-node span em,
+.reading-mode .coordinate-brief > span,
+.reading-mode .coordinate-brief dt,
+.reading-mode .coordinate-minimap-top,
+.reading-mode .coordinate-minimap-top *,
+.reading-mode .works-brief > span,
+.reading-mode .works-brief dt,
+.reading-mode .archive-view-status {
+  color: #2f6f78 !important;
+}
+
+.reading-mode .coordinate-brief p,
+.reading-mode .works-brief p,
+.reading-mode .coordinate-brief dd,
+.reading-mode .works-brief dd {
+  color: #34444b !important;
+}
+
+.reading-mode .genre-node i,
+.reading-mode .map-signal-dot,
+.reading-mode .coordinate-mini-space b,
+.reading-mode .mini-node {
+  background: #2f6f78 !important;
+  box-shadow: 0 0 12px rgba(47, 111, 120, 0.28) !important;
+}
+
+.reading-mode .genre-node.tone-blue i,
+.reading-mode .mini-node.tone-blue {
+  background: #557f95 !important;
+}
+
+.reading-mode .genre-node.tone-amber i,
+.reading-mode .mini-node.tone-amber {
+  background: #9f7b41 !important;
 }
 
 .reading-mode .archive-home *,
