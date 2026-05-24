@@ -687,44 +687,6 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="concept-section" id="concept-dictionary">
-        <div className="section-shell">
-          <div className="section-heading">
-            <span>ARCHIVE NODE 02</span>
-            <h2>SF 개념 사전</h2>
-            <p>
-              SF 작품을 읽을 때 반복해서 나타나는 장르, 세계관, 기술, 사회적 질문을
-              작은 탐사 용어로 정리합니다.
-            </p>
-          </div>
-
-          <div className="concept-layout">
-            <aside className="concept-index">
-              <span>DICTIONARY INDEX</span>
-              <strong>{conceptEntries.length} TERMS</strong>
-              <p>작품 아카이브와 탐사 좌표 사이를 연결하는 개념 신호 목록입니다.</p>
-            </aside>
-
-            <div className="concept-grid">
-              {conceptEntries.map(entry => (
-                <article className="concept-card" key={entry.code}>
-                  <div className="concept-card-top">
-                    <span>{entry.code}</span>
-                    <em>{entry.category}</em>
-                  </div>
-                  <h3>{entry.term}</h3>
-                  <strong>{entry.english}</strong>
-                  <p>{entry.summary}</p>
-                  <div className="concept-tags">
-                    {entry.keywords.map(keyword => <span key={keyword}>{keyword}</span>)}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
       <section className="media-section" id="media-archive">
         <div className="section-shell">
           <div className="section-heading">
@@ -773,123 +735,6 @@ export default function Home() {
                 <span>{activeMediaCategory} 데이터가 아직 없습니다.</span>
               </div>
             )}
-          </div>
-        </div>
-      </section>
-
-      <section className="question-section" id="question-vault">
-        <div className="section-shell">
-          <div className="section-heading">
-            <span>ARCHIVE NODE 04</span>
-            <h2>커뮤니티 게시판</h2>
-            <p>
-              SF 작품을 읽고 남은 질문, 추천, 제안, 함께 나누고 싶은 이야기를
-              비밀번호 입력 후 바로 남길 수 있습니다.
-            </p>
-          </div>
-
-          <div className="question-layout">
-            <aside className="question-brief">
-              <MessageSquare aria-hidden="true" />
-              <span>QUESTION VAULT</span>
-              <h3>새 글은 다음 탐사의 좌표가 됩니다</h3>
-              <p>
-                작품명, 핵심 질문, 떠오른 장면, 추천하고 싶은 자료를 함께 적어두면
-                더 좋은 커뮤니티 신호가 됩니다.
-              </p>
-              <dl>
-                <div>
-                  <dt>TYPE</dt>
-                  <dd>질문 / 추천 / 제안 / 수업 주제</dd>
-                </div>
-                <div>
-                  <dt>MODE</dt>
-                  <dd>비밀번호 입력 후 바로 저장</dd>
-                </div>
-              </dl>
-            </aside>
-
-            <form className="question-form" onSubmit={submitQuestion}>
-              <label>
-                <span>글 제목</span>
-                <input
-                  name="title"
-                  onChange={updateQuestionForm}
-                  placeholder="예: 인간과 인공지능의 경계는 어디서 무너질까?"
-                  type="text"
-                  value={questionForm.title}
-                />
-              </label>
-
-              <label>
-                <span>글 내용</span>
-                <textarea
-                  name="content"
-                  onChange={updateQuestionForm}
-                  placeholder="작품명, 장면, 떠오른 생각을 자유롭게 적어주세요."
-                  rows="7"
-                  value={questionForm.content}
-                />
-              </label>
-
-              <div className="question-form-row">
-                <label>
-                  <span>이름</span>
-                  <input
-                    name="name"
-                    onChange={updateQuestionForm}
-                    placeholder="익명 가능"
-                    type="text"
-                    value={questionForm.name}
-                  />
-                </label>
-                <label>
-                  <span>연락처</span>
-                  <input
-                    name="contact"
-                    onChange={updateQuestionForm}
-                    placeholder="이메일 또는 인스타그램"
-                    type="text"
-                    value={questionForm.contact}
-                  />
-                </label>
-              </div>
-
-              <label>
-                <span>분류</span>
-                <select name="category" onChange={updateQuestionForm} value={questionForm.category}>
-                  <option>커뮤니티</option>
-                  <option>토론 질문</option>
-                  <option>작품 추천</option>
-                  <option>강의/워크숍 주제</option>
-                  <option>아카이브 제안</option>
-                </select>
-              </label>
-
-              <label>
-                <span>게시판 비밀번호</span>
-                <input
-                  name="password"
-                  onChange={updateQuestionForm}
-                  placeholder="비밀번호를 입력하세요"
-                  type="password"
-                  value={questionForm.password}
-                />
-              </label>
-
-              <div className="question-form-actions">
-                <p className={`question-status is-${questionStatus}`}>
-                  {questionStatus === 'success' && questionMessage}
-                  {questionStatus === 'error' && questionMessage}
-                  {questionStatus === 'submitting' && '새 글을 저장 중입니다.'}
-                  {questionStatus === 'idle' && '비밀번호를 입력한 뒤 새글 저장을 눌러주세요.'}
-                </p>
-                <button type="submit" disabled={questionStatus === 'submitting'}>
-                  <Send aria-hidden="true" />
-                  {questionStatus === 'submitting' ? '저장 중' : '새글 저장'}
-                </button>
-              </div>
-            </form>
           </div>
         </div>
       </section>
@@ -1012,6 +857,161 @@ export default function Home() {
                 </div>
               </div>
             </aside>
+          </div>
+        </div>
+      </section>
+
+      <section className="concept-section" id="concept-dictionary">
+        <div className="section-shell">
+          <div className="section-heading">
+            <span>ARCHIVE NODE 02</span>
+            <h2>SF 개념 사전</h2>
+            <p>
+              SF 작품을 읽을 때 반복해서 나타나는 장르, 세계관, 기술, 사회적 질문을
+              작은 탐사 용어로 정리합니다.
+            </p>
+          </div>
+
+          <div className="concept-layout">
+            <aside className="concept-index">
+              <span>DICTIONARY INDEX</span>
+              <strong>{conceptEntries.length} TERMS</strong>
+              <p>작품 아카이브와 탐사 좌표 사이를 연결하는 개념 신호 목록입니다.</p>
+            </aside>
+
+            <div className="concept-grid">
+              {conceptEntries.map(entry => (
+                <article className="concept-card" key={entry.code}>
+                  <div className="concept-card-top">
+                    <span>{entry.code}</span>
+                    <em>{entry.category}</em>
+                  </div>
+                  <h3>{entry.term}</h3>
+                  <strong>{entry.english}</strong>
+                  <p>{entry.summary}</p>
+                  <div className="concept-tags">
+                    {entry.keywords.map(keyword => <span key={keyword}>{keyword}</span>)}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="question-section" id="question-vault">
+        <div className="section-shell">
+          <div className="section-heading">
+            <span>ARCHIVE NODE 04</span>
+            <h2>커뮤니티 게시판</h2>
+            <p>
+              SF 작품을 읽고 남은 질문, 추천, 제안, 함께 나누고 싶은 이야기를
+              비밀번호 입력 후 바로 남길 수 있습니다.
+            </p>
+          </div>
+
+          <div className="question-layout">
+            <aside className="question-brief">
+              <MessageSquare aria-hidden="true" />
+              <span>QUESTION VAULT</span>
+              <h3>새 글은 다음 탐사의 좌표가 됩니다</h3>
+              <p>
+                작품명, 핵심 질문, 떠오른 장면, 추천하고 싶은 자료를 함께 적어두면
+                더 좋은 커뮤니티 신호가 됩니다.
+              </p>
+              <dl>
+                <div>
+                  <dt>TYPE</dt>
+                  <dd>질문 / 추천 / 제안 / 수업 주제</dd>
+                </div>
+                <div>
+                  <dt>MODE</dt>
+                  <dd>비밀번호 입력 후 바로 저장</dd>
+                </div>
+              </dl>
+            </aside>
+
+            <form className="question-form" onSubmit={submitQuestion}>
+              <label>
+                <span>글 제목</span>
+                <input
+                  name="title"
+                  onChange={updateQuestionForm}
+                  placeholder="예: 인간과 인공지능의 경계는 어디서 무너질까?"
+                  type="text"
+                  value={questionForm.title}
+                />
+              </label>
+
+              <label>
+                <span>글 내용</span>
+                <textarea
+                  name="content"
+                  onChange={updateQuestionForm}
+                  placeholder="작품명, 장면, 떠오른 생각을 자유롭게 적어주세요."
+                  rows="7"
+                  value={questionForm.content}
+                />
+              </label>
+
+              <div className="question-form-row">
+                <label>
+                  <span>이름</span>
+                  <input
+                    name="name"
+                    onChange={updateQuestionForm}
+                    placeholder="익명 가능"
+                    type="text"
+                    value={questionForm.name}
+                  />
+                </label>
+                <label>
+                  <span>연락처</span>
+                  <input
+                    name="contact"
+                    onChange={updateQuestionForm}
+                    placeholder="이메일 또는 인스타그램"
+                    type="text"
+                    value={questionForm.contact}
+                  />
+                </label>
+              </div>
+
+              <label>
+                <span>분류</span>
+                <select name="category" onChange={updateQuestionForm} value={questionForm.category}>
+                  <option>커뮤니티</option>
+                  <option>토론 질문</option>
+                  <option>작품 추천</option>
+                  <option>강의/워크숍 주제</option>
+                  <option>아카이브 제안</option>
+                </select>
+              </label>
+
+              <label>
+                <span>게시판 비밀번호</span>
+                <input
+                  name="password"
+                  onChange={updateQuestionForm}
+                  placeholder="비밀번호를 입력하세요"
+                  type="password"
+                  value={questionForm.password}
+                />
+              </label>
+
+              <div className="question-form-actions">
+                <p className={`question-status is-${questionStatus}`}>
+                  {questionStatus === 'success' && questionMessage}
+                  {questionStatus === 'error' && questionMessage}
+                  {questionStatus === 'submitting' && '새 글을 저장 중입니다.'}
+                  {questionStatus === 'idle' && '비밀번호를 입력한 뒤 새글 저장을 눌러주세요.'}
+                </p>
+                <button type="submit" disabled={questionStatus === 'submitting'}>
+                  <Send aria-hidden="true" />
+                  {questionStatus === 'submitting' ? '저장 중' : '새글 저장'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </section>
