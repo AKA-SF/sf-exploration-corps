@@ -223,8 +223,8 @@
   display: grid;
   grid-template-columns: minmax(390px, 0.82fr) minmax(560px, 1.18fr) 190px;
   gap: clamp(18px, 2.6vw, 34px);
-  min-height: calc(100vh - 284px);
-  padding: 44px 0 22px 98px;
+  min-height: calc(100vh - 224px);
+  padding: 44px 0 34px 98px;
   border-bottom: 1px solid var(--line);
   overflow: hidden;
 }
@@ -796,17 +796,16 @@
 }
 
 .archive-dock {
-  position: absolute;
-  right: 22px;
-  bottom: 0;
-  left: 90px;
+  position: relative;
+  z-index: 3;
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  margin-left: 0;
-  padding: 24px 0 8px 52px;
+  margin: 20px 22px 0 90px;
+  padding: 20px 0 8px 36px;
   border-left: 1px solid var(--line);
   border-right: 1px solid var(--line);
   border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
   background: rgba(1, 10, 15, 0.9);
   backdrop-filter: blur(8px);
 }
@@ -816,8 +815,8 @@
   grid-template-columns: 34px 1fr 16px;
   gap: 14px;
   align-items: start;
-  min-height: 112px;
-  padding: 12px 18px;
+  min-height: 96px;
+  padding: 10px 16px;
   color: #f2fbff;
   text-align: left;
   background: transparent;
@@ -2421,11 +2420,8 @@
   }
 
   .archive-dock {
-    position: static;
-    right: auto;
-    bottom: auto;
-    left: auto;
     grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-left: 92px;
     padding-left: 32px;
   }
 

@@ -62,12 +62,6 @@ const archiveCards = [
     text: '질문, 추천, 제안을 남기는 커뮤니티 공간',
     href: '/questions',
   },
-  {
-    icon: Mail,
-    title: 'Contact',
-    text: '협업·협찬·강의·일반 문의 채널',
-    href: '#contact',
-  },
 ];
 
 const blips = [
