@@ -316,7 +316,12 @@
 }
 
 .log-card.mini p {
-  display: none;
+  font-size: 12px;
+  line-height: 1.55;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .log-card.quote p {

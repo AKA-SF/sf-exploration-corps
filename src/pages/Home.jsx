@@ -9,6 +9,7 @@ import {
   MessageSquare,
   Play,
   Satellite,
+  Send,
   Sparkles,
 } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
@@ -381,6 +382,14 @@ export default function Home() {
   const [randomWorkCodes, setRandomWorkCodes] = useState(() => getRandomWorks(fallbackWorks, 6).map(work => work.code));
   const [mediaItems, setMediaItems] = useState([]);
   const [activeMediaCategory, setActiveMediaCategory] = useState(mediaCategories[0]);
+  const [questionForm, setQuestionForm] = useState({
+    title: '',
+    content: '',
+    name: '',
+    contact: '',
+    category: '토론 질문',
+  });
+  const [questionStatus, setQuestionStatus] = useState('idle');
 
   useEffect(() => {
     let isMounted = true;
@@ -445,6 +454,41 @@ export default function Home() {
       setActiveGenreId(node.id);
     }
   };
+
+  const updateQuestionForm = event => {
+    const { name, value } = event.target;
+    setQuestionForm(form => ({ ...form, [name]: value }));
+  };
+
+  const submitQuestion = async event => {
+    event.preventDefault();
+    if (!questionForm.title.trim() || !questionForm.content.trim()) {
+      setQuestionStatus('error');
+      return;
+    }
+
+    setQuestionStatus('submitting');
+
+    try {
+      const response = await fetch('/api/questions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(questionForm),
+      });
+      if (!response.ok) throw new Error('Question submission failed');
+      setQuestionForm({
+        title: '',
+        content: '',
+        name: '',
+        contact: '',
+        category: '토론 질문',
+      });
+      setQuestionStatus('success');
+    } catch {
+      setQuestionStatus('error');
+    }
+  };
+
   const displayedWorks = archiveMode === 'all'
     ? works
     : works.filter(work => randomWorkCodes.includes(work.code)).slice(0, 6);
@@ -712,6 +756,111 @@ export default function Home() {
                 <span>{activeMediaCategory} 데이터가 아직 없습니다.</span>
               </div>
             )}
+          </div>
+        </div>
+      </section>
+
+      <section className="question-section" id="question-vault">
+        <div className="section-shell">
+          <div className="section-heading">
+            <span>ARCHIVE NODE 04</span>
+            <h2>토론 질문 저장소</h2>
+            <p>
+              SF 작품을 읽고 남은 질문, 함께 이야기하고 싶은 논점, 강의와 워크숍에서
+              다뤄보고 싶은 주제를 직접 남길 수 있습니다.
+            </p>
+          </div>
+
+          <div className="question-layout">
+            <aside className="question-brief">
+              <MessageSquare aria-hidden="true" />
+              <span>QUESTION VAULT</span>
+              <h3>질문은 다음 탐사의 좌표가 됩니다</h3>
+              <p>
+                남겨진 질문은 관리자가 확인한 뒤 토론 질문 저장소에 보관됩니다.
+                작품명, 핵심 질문, 떠오른 장면을 함께 적어두면 더 좋은 아카이브 신호가 됩니다.
+              </p>
+              <dl>
+                <div>
+                  <dt>TYPE</dt>
+                  <dd>토론 질문 / 제안 / 수업 주제</dd>
+                </div>
+                <div>
+                  <dt>STATUS</dt>
+                  <dd>관리자 확인 후 공개</dd>
+                </div>
+              </dl>
+            </aside>
+
+            <form className="question-form" onSubmit={submitQuestion}>
+              <label>
+                <span>질문 제목</span>
+                <input
+                  name="title"
+                  onChange={updateQuestionForm}
+                  placeholder="예: 인간과 인공지능의 경계는 어디서 무너질까?"
+                  type="text"
+                  value={questionForm.title}
+                />
+              </label>
+
+              <label>
+                <span>질문 내용</span>
+                <textarea
+                  name="content"
+                  onChange={updateQuestionForm}
+                  placeholder="작품명, 장면, 떠오른 질문을 자유롭게 적어주세요."
+                  rows="7"
+                  value={questionForm.content}
+                />
+              </label>
+
+              <div className="question-form-row">
+                <label>
+                  <span>이름</span>
+                  <input
+                    name="name"
+                    onChange={updateQuestionForm}
+                    placeholder="익명 가능"
+                    type="text"
+                    value={questionForm.name}
+                  />
+                </label>
+                <label>
+                  <span>연락처</span>
+                  <input
+                    name="contact"
+                    onChange={updateQuestionForm}
+                    placeholder="이메일 또는 인스타그램"
+                    type="text"
+                    value={questionForm.contact}
+                  />
+                </label>
+              </div>
+
+              <label>
+                <span>분류</span>
+                <select name="category" onChange={updateQuestionForm} value={questionForm.category}>
+                  <option>토론 질문</option>
+                  <option>작품 추천</option>
+                  <option>강의/워크숍 주제</option>
+                  <option>아카이브 제안</option>
+                </select>
+              </label>
+
+              <div className="question-form-actions">
+                <p className={`question-status is-${questionStatus}`}>
+                  {questionStatus === 'success' && '질문 신호가 저장되었습니다.'}
+                  {questionStatus === 'error' && '저장에 실패했습니다. 필수 항목 또는 Notion 연결을 확인해주세요.'}
+                  {questionStatus === 'submitting' && '질문 신호를 전송 중입니다.'}
+                  {questionStatus === 'idle' && '제출하면 토론 질문 저장소에 임시 저장됩니다.'}
+                </p>
+                <button type="submit" disabled={questionStatus === 'submitting'}>
+                  <Send aria-hidden="true" />
+                  {questionStatus === 'submitting' ? '전송 중' : '질문 저장'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       </section>

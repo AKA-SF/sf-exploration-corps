@@ -41,7 +41,7 @@ function getShape(index, log, seed) {
   return shapes[shapeIndex];
 }
 
-function summarizeReview(review) {
+function summarizeReview(review, log) {
   const cleaned = (review || '')
     .replace(/https?:\/\/\S+/g, '')
     .replace(/@\S+/g, '')
@@ -49,7 +49,8 @@ function summarizeReview(review) {
     .replace(/\s+/g, ' ')
     .trim();
 
-  if (!cleaned) return '리뷰 신호를 수집 중입니다.';
+  const fallback = `${log.workTitle || '이 작품'}에 대한 탐사 리뷰가 기록된 카드입니다.`;
+  if (!cleaned) return fallback;
 
   const sentences = cleaned
     .split(/(?<=[.!?。！？]|[가-힣]\.)\s+|(?<=[다요죠음함됨임까])\s+/)
@@ -59,7 +60,8 @@ function summarizeReview(review) {
 
   if (summary && summary.length <= 150) return summary;
   const source = summary || cleaned;
-  return `${source.slice(0, 132).trim()}...`;
+  const excerpt = source.slice(0, 132).trim();
+  return excerpt ? `${excerpt}...` : fallback;
 }
 
 export default function ExplorationLog() {
@@ -150,7 +152,7 @@ export default function ExplorationLog() {
                 <div className="log-stars" aria-label="review signal strength">★★★★★</div>
               )}
               <h2>{log.workTitle}</h2>
-              <p>{summarizeReview(log.review)}</p>
+              <p>{summarizeReview(log.review, log)}</p>
               <div className="log-card-meta">
                 {log.date && <em>{log.date}</em>}
                 <em>{log.category}</em>
