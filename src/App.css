@@ -161,6 +161,7 @@
 .reading-mode .archive-view-status,
 .reading-mode .category-tile,
 .reading-mode .work-card,
+.reading-mode .mission-card,
 .reading-mode .media-card,
 .reading-mode .media-empty,
 .reading-mode .question-brief,
@@ -351,8 +352,18 @@
 .reading-mode .questions-header p,
 .reading-mode .log-card p,
 .reading-mode .media-card p,
-.reading-mode .work-card p {
+.reading-mode .work-card p,
+.reading-mode .mission-card span,
+.reading-mode .mission-card em {
   color: #34444b !important;
+}
+
+.reading-mode .mission-card strong {
+  color: #2f6f78 !important;
+}
+
+.reading-mode .wire-globe {
+  border-color: rgba(47, 111, 120, 0.32) !important;
 }
 
 .page-container:has(.home-container) {
