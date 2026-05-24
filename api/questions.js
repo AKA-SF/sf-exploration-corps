@@ -1,4 +1,5 @@
 const NOTION_VERSION = '2022-06-28';
+const DEFAULT_QUESTIONS_DATABASE_ID = '36a98dbef69d803abd53c09b6ff7f2e3';
 
 function normalizeNotionId(value) {
   const source = value?.trim() ?? '';
@@ -19,15 +20,27 @@ function richText(value) {
   return [{ type: 'text', text: { content: value } }];
 }
 
-function buildProperty(type, value) {
+function getStatusName(property, preferredName) {
+  const options = property?.status?.options ?? [];
+  return options.find(option => option.name === preferredName)?.name
+    ?? options.find(option => ['대기', '접수', '검토 중', 'Not started', 'To do'].includes(option.name))?.name
+    ?? options[0]?.name
+    ?? '';
+}
+
+function buildProperty(property, value) {
   if (!value) return null;
+  const { type } = property;
   if (type === 'title') return { title: richText(value) };
   if (type === 'rich_text') return { rich_text: richText(value) };
   if (type === 'select') return { select: { name: value } };
-  if (type === 'email') return { email: value.includes('@') ? value : null };
-  if (type === 'url') return { url: value.startsWith('http') ? value : null };
+  if (type === 'email') return value.includes('@') ? { email: value } : null;
+  if (type === 'url') return value.startsWith('http') ? { url: value } : null;
   if (type === 'date') return { date: { start: value } };
-  if (type === 'status') return { status: { name: value } };
+  if (type === 'status') {
+    const statusName = getStatusName(property, value);
+    return statusName ? { status: { name: statusName } } : null;
+  }
   return null;
 }
 
@@ -35,7 +48,7 @@ function setIfPresent(properties, schema, names, type, value) {
   const entry = findProperty(schema, names, type);
   if (!entry) return;
   const [name, property] = entry;
-  const payload = buildProperty(property.type, value);
+  const payload = buildProperty(property, value);
   if (payload) properties[name] = payload;
 }
 
@@ -48,7 +61,7 @@ export default async function handler(request, response) {
   }
 
   const token = process.env.NOTION_TOKEN;
-  const databaseId = normalizeNotionId(process.env.NOTION_QUESTIONS_DATABASE_ID || '');
+  const databaseId = normalizeNotionId(process.env.NOTION_QUESTIONS_DATABASE_ID || DEFAULT_QUESTIONS_DATABASE_ID);
 
   if (!token || !databaseId) {
     return response.status(503).json({
