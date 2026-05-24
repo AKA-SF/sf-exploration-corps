@@ -1228,6 +1228,7 @@
 }
 
 .concept-index,
+.concept-feature-card,
 .concept-card,
 .concept-empty {
   border: 1px solid var(--line);
@@ -1251,12 +1252,24 @@
   letter-spacing: 1.4px;
 }
 
-.concept-index strong {
+.concept-count-button {
   display: block;
+  width: 100%;
   margin: 16px 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: #fff;
   font-size: 26px;
   font-weight: 1000;
+  text-align: left;
+  cursor: pointer;
+}
+
+.concept-count-button:hover,
+.concept-count-button:focus-visible {
+  color: var(--cyan);
+  outline: 0;
 }
 
 .concept-index p {
@@ -1267,6 +1280,43 @@
   line-height: 1.7;
 }
 
+.concept-browser {
+  display: grid;
+  gap: 14px;
+}
+
+.concept-feature-card {
+  min-height: 260px;
+  padding: 24px;
+}
+
+.concept-feature-card h3 {
+  margin: 28px 0 6px;
+  color: #fff;
+  font-size: clamp(34px, 4vw, 56px);
+  font-weight: 1000;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.concept-feature-card > strong {
+  display: block;
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 1.1px;
+}
+
+.concept-feature-card p {
+  max-width: 780px;
+  margin: 20px 0;
+  color: #d2e1e6;
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.75;
+}
+
 .concept-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1274,8 +1324,13 @@
 }
 
 .concept-card {
-  min-height: 260px;
-  padding: 20px;
+  display: grid;
+  min-height: 116px;
+  padding: 16px;
+  border-radius: 0;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 
 .concept-card-top {
@@ -1290,30 +1345,38 @@
   text-align: right;
 }
 
-.concept-card h3 {
-  margin: 26px 0 5px;
-  color: #fff;
-  font-size: 28px;
-  font-weight: 1000;
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.concept-card > strong {
+.concept-card > span {
   display: block;
   color: var(--cyan);
   font-family: "Courier New", monospace;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 900;
   letter-spacing: 1.1px;
 }
 
-.concept-card p {
-  margin: 18px 0 20px;
-  color: #b8cbd2;
-  font-size: 14px;
-  font-weight: 650;
-  line-height: 1.7;
+.concept-card > strong {
+  align-self: end;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 1000;
+  letter-spacing: 0;
+}
+
+.concept-card > em {
+  color: #91a9b2;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.concept-card:hover,
+.concept-card:focus-visible,
+.concept-card.is-active {
+  border-color: rgba(25, 247, 241, 0.85);
+  background:
+    linear-gradient(135deg, rgba(25, 247, 241, 0.16), transparent 52%),
+    rgba(2, 26, 31, 0.9);
+  outline: 0;
 }
 
 .concept-meta-list {

@@ -390,6 +390,8 @@ export default function Home() {
   const [mediaItems, setMediaItems] = useState([]);
   const [activeMediaCategory, setActiveMediaCategory] = useState(mediaCategories[0]);
   const [concepts, setConcepts] = useState(conceptEntries);
+  const [activeConceptCode, setActiveConceptCode] = useState(conceptEntries[0]?.code ?? '');
+  const [showAllConcepts, setShowAllConcepts] = useState(false);
   const [questionForm, setQuestionForm] = useState({
     title: '',
     content: '',
@@ -534,6 +536,8 @@ export default function Home() {
     ? works
     : works.filter(work => randomWorkCodes.includes(work.code)).slice(0, 6);
   const displayedMedia = mediaItems.filter(item => normalizeMediaCategory(item.category) === activeMediaCategory);
+  const selectedConcept = concepts.find(concept => concept.code === activeConceptCode) ?? concepts[0];
+  const visibleConcepts = showAllConcepts ? concepts : concepts.slice(0, 6);
 
   return (
     <PageTransition className="archive-home">
@@ -899,49 +903,71 @@ export default function Home() {
           <div className="concept-layout">
             <aside className="concept-index">
               <span>DICTIONARY INDEX</span>
-              <strong>{concepts.length} TERMS</strong>
+              <button
+                aria-expanded={showAllConcepts}
+                className="concept-count-button"
+                onClick={() => setShowAllConcepts(value => !value)}
+                type="button"
+              >
+                {concepts.length} TERMS
+              </button>
               <p>작품 아카이브와 탐사 좌표 사이를 연결하는 개념 신호 목록입니다.</p>
             </aside>
 
-            <div className="concept-grid">
-              {concepts.length > 0 ? concepts.map(entry => (
-                <article className="concept-card" key={entry.code}>
+            {selectedConcept ? (
+              <div className="concept-browser">
+                <article className="concept-feature-card">
                   <div className="concept-card-top">
-                    <span>{entry.code}</span>
-                    <em>{entry.category}</em>
+                    <span>{selectedConcept.code}</span>
+                    <em>{selectedConcept.category}</em>
                   </div>
-                  <h3>{entry.term}</h3>
-                  <strong>{entry.english}</strong>
-                  <p>{entry.summary}</p>
-                  {entry.relatedWorks?.length > 0 && (
+                  <h3>{selectedConcept.term}</h3>
+                  <strong>{selectedConcept.english}</strong>
+                  <p>{selectedConcept.summary}</p>
+                  {selectedConcept.relatedWorks?.length > 0 && (
                     <dl className="concept-meta-list">
                       <div>
                         <dt>관련 작품</dt>
-                        <dd>{entry.relatedWorks.join(', ')}</dd>
+                        <dd>{selectedConcept.relatedWorks.join(', ')}</dd>
                       </div>
                     </dl>
                   )}
-                  {entry.source && (
+                  {selectedConcept.source && (
                     <dl className="concept-meta-list">
                       <div>
                         <dt>출처</dt>
-                        <dd>{entry.source}</dd>
+                        <dd>{selectedConcept.source}</dd>
                       </div>
                     </dl>
                   )}
-                  {entry.keywords?.length > 0 && (
+                  {selectedConcept.keywords?.length > 0 && (
                     <div className="concept-tags">
-                      {entry.keywords.map(keyword => <span key={keyword}>{keyword}</span>)}
+                      {selectedConcept.keywords.map(keyword => <span key={keyword}>{keyword}</span>)}
                     </div>
                   )}
                 </article>
-              )) : (
-                <div className="concept-empty">
-                  <strong>NO TERMS</strong>
-                  <span>노션 SF 개념 사전에 아직 등록된 개념어가 없습니다.</span>
+
+                <div className="concept-grid">
+                  {visibleConcepts.map(entry => (
+                    <button
+                      className={`concept-card ${entry.code === selectedConcept.code ? 'is-active' : ''}`}
+                      key={entry.code}
+                      onClick={() => setActiveConceptCode(entry.code)}
+                      type="button"
+                    >
+                      <span>{entry.code}</span>
+                      <strong>{entry.term}</strong>
+                      <em>{entry.category}</em>
+                    </button>
+                  ))}
                 </div>
-              )}
-            </div>
+              </div>
+            ) : (
+              <div className="concept-empty">
+                <strong>NO TERMS</strong>
+                <span>노션 SF 개념 사전에 아직 등록된 개념어가 없습니다.</span>
+              </div>
+            )}
           </div>
         </div>
       </section>
