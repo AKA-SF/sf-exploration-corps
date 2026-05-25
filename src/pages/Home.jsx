@@ -726,28 +726,28 @@ export default function Home() {
           />
         </section>
 
-        <section className="archive-dock" id="archive-links" aria-label="아카이브 바로가기">
-          {archiveCards.map(card => {
-            const Icon = card.icon;
-            return (
-              <a className="dock-card" href={card.href} key={card.title}>
-                <Icon aria-hidden="true" />
-                <span>
-                  <strong>{card.title}</strong>
-                  <em>{card.text}</em>
-                </span>
-                <ChevronRight aria-hidden="true" />
-              </a>
-            );
-          })}
-        </section>
-
         <div className="archive-status">
           <Database aria-hidden="true" />
           <span>ARCHIVE STATUS</span>
           <strong>WORKS 111&nbsp;&nbsp;NODES 08&nbsp;&nbsp;SIGNAL READY</strong>
         </div>
       </main>
+
+      <section className="archive-dock" id="archive-links" aria-label="아카이브 바로가기">
+        {archiveCards.map(card => {
+          const Icon = card.icon;
+          return (
+            <a className="dock-card" href={card.href} key={card.title}>
+              <Icon aria-hidden="true" />
+              <span>
+                <strong>{card.title}</strong>
+                <em>{card.text}</em>
+              </span>
+              <ChevronRight aria-hidden="true" />
+            </a>
+          );
+        })}
+      </section>
 
       <section className="works-archive-section" id="works-archive">
         <div className="section-shell">
