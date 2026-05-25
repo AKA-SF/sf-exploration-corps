@@ -11,13 +11,13 @@ const mediaCategories = [
   { label: '고전 SF 영화', slug: 'classic-films' },
 ];
 
-function normalizeMediaCategory(category = '') {
+function categoryToSlug(category = '') {
   const normalized = category.replace(/\s/g, '').toLowerCase();
-  if (normalized.includes('작가') || normalized.includes('인터뷰')) return 'SF 작가 인터뷰';
-  if (normalized.includes('미디어') || normalized.includes('media') || normalized.includes('콘텐츠') || normalized.includes('자료')) return 'SF 관련 미디어';
-  if (normalized.includes('기사') || normalized.includes('article')) return 'SF 관련 기사';
-  if (normalized.includes('고전') && (normalized.includes('영화') || normalized.includes('sf'))) return '고전 SF 영화';
-  return category;
+  if (normalized.includes('작가') || normalized.includes('인터뷰') || normalized.includes('interview')) return 'interviews';
+  if (normalized.includes('고전') || normalized.includes('영화') || normalized.includes('film') || normalized.includes('movie')) return 'classic-films';
+  if (normalized.includes('기사') || normalized.includes('article') || normalized.includes('news')) return 'articles';
+  if (normalized.includes('미디어') || normalized.includes('media') || normalized.includes('콘텐츠') || normalized.includes('자료') || normalized.includes('video')) return 'media';
+  return 'media';
 }
 
 export default function MediaArchive() {
@@ -51,8 +51,8 @@ export default function MediaArchive() {
   }, []);
 
   const visibleItems = useMemo(() => (
-    items.filter(item => normalizeMediaCategory(item.category) === activeCategory.label)
-  ), [activeCategory.label, items]);
+    items.filter(item => categoryToSlug(item.category || item.medium || item.title) === activeCategory.slug)
+  ), [activeCategory.slug, items]);
 
   return (
     <PageTransition className="media-archive-page">
@@ -110,7 +110,11 @@ export default function MediaArchive() {
         )) : (
           <div className="media-archive-empty">
             <strong>{status === 'loading' ? 'LOADING SIGNALS' : 'NO SIGNALS'}</strong>
-            <span>{activeCategory.label} 데이터가 아직 없습니다.</span>
+            <span>
+              {status === 'ready' && items.length > 0
+                ? `${items.length}개의 미디어 신호를 불러왔지만, ${activeCategory.label} 분류와 맞는 항목이 없습니다.`
+                : `${activeCategory.label} 데이터가 아직 없습니다.`}
+            </span>
           </div>
         )}
       </section>
