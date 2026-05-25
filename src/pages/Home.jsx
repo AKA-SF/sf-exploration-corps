@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import {
   Box,
   ChevronRight,
@@ -863,9 +864,9 @@ export default function Home() {
                 {category}
               </button>
             ))}
-            <a className="media-full-link" href={activeMediaArchivePath}>
+            <Link className="media-full-link" to={activeMediaArchivePath}>
               전체 보기 <ChevronRight aria-hidden="true" />
-            </a>
+            </Link>
           </div>
 
           <div className="media-grid">
