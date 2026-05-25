@@ -134,6 +134,7 @@
 
 .reading-mode .media-archive-card,
 .reading-mode .media-archive-empty,
+.reading-mode .media-archive-search,
 .reading-mode .media-archive-tabs a {
   border-color: rgba(46, 72, 77, 0.22) !important;
   background: rgba(255, 252, 244, 0.9) !important;
@@ -315,6 +316,7 @@
 .reading-mode .archive-home a,
 .reading-mode .exploration-log-page a,
 .reading-mode .media-archive-page a,
+.reading-mode .media-archive-page input,
 .reading-mode .questions-page a,
 .reading-mode .archive-home button,
 .reading-mode .exploration-log-page button,
@@ -335,6 +337,8 @@
 .reading-mode .media-archive-status,
 .reading-mode .media-archive-status *,
 .reading-mode .media-archive-tags span,
+.reading-mode .media-archive-search,
+.reading-mode .media-archive-search *,
 .reading-mode .work-card-code,
 .reading-mode .log-card-top,
 .reading-mode .log-card-top *,

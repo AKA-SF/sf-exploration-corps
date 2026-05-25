@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ExternalLink, Play, Sparkles } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Play, Search, Sparkles } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
 import './MediaArchive.css';
@@ -23,6 +23,7 @@ function categoryToSlug(category = '') {
 export default function MediaArchive() {
   const { categorySlug = 'interviews' } = useParams();
   const [items, setItems] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const [status, setStatus] = useState('loading');
   const activeCategory = mediaCategories.find(category => category.slug === categorySlug) ?? mediaCategories[0];
 
@@ -50,9 +51,24 @@ export default function MediaArchive() {
     };
   }, []);
 
-  const visibleItems = useMemo(() => (
+  const categoryItems = useMemo(() => (
     items.filter(item => categoryToSlug(item.category || item.medium || item.title) === activeCategory.slug)
   ), [activeCategory.slug, items]);
+
+  const visibleItems = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
+    if (!query) return categoryItems;
+
+    return categoryItems.filter(item => [
+      item.title,
+      item.description,
+      item.publisher,
+      item.year,
+      item.medium,
+      item.category,
+      ...item.tags,
+    ].filter(Boolean).join(' ').toLowerCase().includes(query));
+  }, [categoryItems, searchQuery]);
 
   return (
     <PageTransition className="media-archive-page">
@@ -84,6 +100,18 @@ export default function MediaArchive() {
         ))}
       </nav>
 
+      <div className="media-archive-search" role="search">
+        <Search aria-hidden="true" />
+        <input
+          aria-label="미디어 아카이브 검색"
+          onChange={event => setSearchQuery(event.target.value)}
+          placeholder="제목, 설명, 출처, 태그 검색"
+          type="search"
+          value={searchQuery}
+        />
+        <span>{visibleItems.length} / {categoryItems.length} SIGNALS</span>
+      </div>
+
       <section className="media-archive-grid" aria-label={`${activeCategory.label} 전체 목록`}>
         {visibleItems.length > 0 ? visibleItems.map(item => (
           <a className="media-archive-card" href={item.link} key={item.code} rel="noreferrer" target="_blank">
@@ -112,7 +140,7 @@ export default function MediaArchive() {
             <strong>{status === 'loading' ? 'LOADING SIGNALS' : 'NO SIGNALS'}</strong>
             <span>
               {status === 'ready' && items.length > 0
-                ? `${items.length}개의 미디어 신호를 불러왔지만, ${activeCategory.label} 분류와 맞는 항목이 없습니다.`
+                ? `${categoryItems.length}개의 ${activeCategory.label} 신호 중 검색어와 맞는 항목이 없습니다.`
                 : `${activeCategory.label} 데이터가 아직 없습니다.`}
             </span>
           </div>

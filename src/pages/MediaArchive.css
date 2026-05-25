@@ -124,6 +124,46 @@
   background: var(--cyan);
 }
 
+.media-archive-search {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 1560px;
+  min-height: 52px;
+  margin: 0 auto 24px;
+  padding: 0 16px;
+  border: 1px solid rgba(25, 247, 241, 0.24);
+  color: var(--cyan);
+  background: rgba(0, 12, 18, 0.58);
+}
+
+.media-archive-search svg {
+  width: 18px;
+  height: 18px;
+}
+
+.media-archive-search input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: #eafcff;
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.media-archive-search input::placeholder {
+  color: rgba(191, 208, 214, 0.6);
+}
+
+.media-archive-search span {
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
 .media-archive-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
