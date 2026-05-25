@@ -7,7 +7,6 @@ import './MediaArchive.css';
 const mediaCategories = [
   { label: 'SF 작가 인터뷰', slug: 'interviews' },
   { label: 'SF 관련 미디어', slug: 'media' },
-  { label: 'SF 관련 기사', slug: 'articles' },
   { label: '고전 SF 영화', slug: 'classic-films' },
 ];
 
@@ -15,7 +14,7 @@ function categoryToSlug(category = '') {
   const normalized = category.replace(/\s/g, '').toLowerCase();
   if (normalized.includes('작가') || normalized.includes('인터뷰') || normalized.includes('interview')) return 'interviews';
   if (normalized.includes('고전') || normalized.includes('영화') || normalized.includes('film') || normalized.includes('movie')) return 'classic-films';
-  if (normalized.includes('기사') || normalized.includes('article') || normalized.includes('news')) return 'articles';
+  if (normalized.includes('기사') || normalized.includes('article') || normalized.includes('news')) return 'media';
   if (normalized.includes('미디어') || normalized.includes('media') || normalized.includes('콘텐츠') || normalized.includes('자료') || normalized.includes('video')) return 'media';
   return 'media';
 }

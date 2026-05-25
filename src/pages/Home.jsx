@@ -30,7 +30,7 @@ const archiveCards = [
   {
     icon: Box,
     title: '작품 아카이브',
-    text: 'SF 소설·영화·게임·음악 등 작품 데이터베이스',
+    text: 'SF 소설·영화·게임·애니메이션 작품 데이터베이스',
     href: '#works-archive',
   },
   {
@@ -78,7 +78,6 @@ const workCategories = [
   { label: 'NOVEL', title: '소설', count: '042 SIGNALS' },
   { label: 'CINEMA', title: '영화', count: '027 SIGNALS' },
   { label: 'GAME', title: '게임', count: '018 SIGNALS' },
-  { label: 'SOUND', title: '음악', count: '013 SIGNALS' },
   { label: 'ANIMATION', title: '애니메이션', count: '011 SIGNALS' },
 ];
 
@@ -200,11 +199,10 @@ const conceptEntries = [
   },
 ];
 
-const mediaCategories = ['SF 작가 인터뷰', 'SF 관련 미디어', 'SF 관련 기사', '고전 SF 영화'];
+const mediaCategories = ['SF 작가 인터뷰', 'SF 관련 미디어', '고전 SF 영화'];
 const mediaCategorySlugs = {
   'SF 작가 인터뷰': 'interviews',
   'SF 관련 미디어': 'media',
-  'SF 관련 기사': 'articles',
   '고전 SF 영화': 'classic-films',
 };
 
@@ -212,7 +210,7 @@ function normalizeMediaCategory(category = '') {
   const normalized = category.replace(/\s/g, '').toLowerCase();
   if (normalized.includes('작가') || normalized.includes('인터뷰')) return 'SF 작가 인터뷰';
   if (normalized.includes('미디어') || normalized.includes('media') || normalized.includes('콘텐츠') || normalized.includes('자료')) return 'SF 관련 미디어';
-  if (normalized.includes('기사') || normalized.includes('article')) return 'SF 관련 기사';
+  if (normalized.includes('기사') || normalized.includes('article') || normalized.includes('news')) return 'SF 관련 미디어';
   if (normalized.includes('고전') && (normalized.includes('영화') || normalized.includes('sf'))) return '고전 SF 영화';
   return category;
 }
@@ -695,7 +693,7 @@ export default function Home() {
             <h1>SF<br />탐사단</h1>
             <p className="hero-kicker">INTERSTELLAR ARCHIVE VESSEL</p>
             <p className="hero-description">
-              SF 탐사단은 소설, 영화, 게임, 애니메이션, 음악을 탐사하며
+              SF 탐사단은 소설, 영화, 게임, 애니메이션을 탐사하며
               인간 이후의 세계와 미래 사회를 연구하는 인터스텔라 아카이브입니다.
             </p>
             <div className="hero-actions">
@@ -849,7 +847,7 @@ export default function Home() {
             <span>ARCHIVE NODE 03</span>
             <h2>미디어 아카이브</h2>
             <p>
-              SF 작가 인터뷰, 관련 미디어, 기사, 고전 SF 영화를 모아두는 영상과 읽을거리 저장소입니다.
+              SF 작가 인터뷰, 관련 미디어, 고전 SF 영화를 모아두는 영상과 읽을거리 저장소입니다.
             </p>
           </div>
 
