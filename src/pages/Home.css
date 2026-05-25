@@ -178,7 +178,7 @@
   position: relative;
   z-index: 2;
   min-height: calc(100vh - 86px);
-  padding: 0 22px 24px;
+  padding: 0 22px 56px;
 }
 
 .scan-column {
@@ -797,10 +797,10 @@
 
 .archive-dock {
   position: relative;
-  z-index: 3;
+  z-index: 5;
   display: grid;
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  margin: 20px 22px 28px 90px;
+  margin: 26px 22px 48px 90px;
   padding: 20px 0 8px 36px;
   border-left: 1px solid var(--line);
   border-right: 1px solid var(--line);
@@ -894,8 +894,8 @@
 
 .works-archive-section {
   position: relative;
-  z-index: 2;
-  padding: 74px 22px 110px;
+  z-index: 1;
+  padding: 96px 22px 110px;
   border-top: 1px solid rgba(25, 247, 241, 0.24);
   background:
     radial-gradient(circle at 74% 14%, rgba(25, 247, 241, 0.14), transparent 25%),
