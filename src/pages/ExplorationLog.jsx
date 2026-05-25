@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, ExternalLink, Radio, Sparkles } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Radio, Search, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
 import './ExplorationLog.css';
@@ -66,7 +66,7 @@ function summarizeReview(review, log) {
 
 export default function ExplorationLog() {
   const [logs, setLogs] = useState(fallbackLogs);
-  const [activeCategory, setActiveCategory] = useState('전체');
+  const [searchQuery, setSearchQuery] = useState('');
   const [localReadingMode, setLocalReadingMode] = useState(false);
   const [layoutSeed] = useState(() => Date.now());
 
@@ -92,16 +92,19 @@ export default function ExplorationLog() {
     };
   }, []);
 
-  const categories = useMemo(() => (
-    ['전체', ...new Set(logs.map(log => log.category).filter(Boolean))]
-  ), [logs]);
-
   const visibleLogs = useMemo(() => {
-    const filteredLogs = activeCategory === '전체'
-      ? logs
-      : logs.filter(log => log.category === activeCategory);
+    const query = searchQuery.trim().toLowerCase();
+    const filteredLogs = query
+      ? logs.filter(log => [
+        log.workTitle,
+        log.review,
+        log.category,
+        log.date,
+        ...log.tags,
+      ].filter(Boolean).join(' ').toLowerCase().includes(query))
+      : logs;
     return shuffleWithSeed(filteredLogs, layoutSeed);
-  }, [activeCategory, layoutSeed, logs]);
+  }, [layoutSeed, logs, searchQuery]);
 
   return (
     <PageTransition className={`exploration-log-page ${localReadingMode ? 'is-reading-local' : ''}`}>
@@ -128,21 +131,20 @@ export default function ExplorationLog() {
         </button>
       </header>
 
-      <nav className="log-filter-bar" aria-label="탐사 로그 분류">
-        {categories.map(category => (
-          <button
-            className={activeCategory === category ? 'is-active' : ''}
-            key={category}
-            onClick={() => setActiveCategory(category)}
-            type="button"
-          >
-            {category}
-          </button>
-        ))}
-      </nav>
+      <div className="log-search-bar" role="search">
+        <Search aria-hidden="true" />
+        <input
+          aria-label="탐사 로그 검색"
+          onChange={event => setSearchQuery(event.target.value)}
+          placeholder="작품명, 리뷰 문구, 태그 검색"
+          type="search"
+          value={searchQuery}
+        />
+        <span>{visibleLogs.length} / {logs.length} SIGNALS</span>
+      </div>
 
       <section className="log-masonry" aria-label="인스타 리뷰 탐사 로그">
-        {visibleLogs.map((log, index) => {
+        {visibleLogs.length > 0 ? visibleLogs.map((log, index) => {
           const shape = getShape(index, log, layoutSeed);
           return (
             <a
@@ -174,7 +176,12 @@ export default function ExplorationLog() {
               </div>
             </a>
           );
-        })}
+        }) : (
+          <div className="log-empty-result">
+            <strong>NO SIGNALS</strong>
+            <span>검색어와 일치하는 탐사 로그가 없습니다.</span>
+          </div>
+        )}
       </section>
     </PageTransition>
   );
