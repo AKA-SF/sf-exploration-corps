@@ -200,6 +200,12 @@ const conceptEntries = [
 ];
 
 const mediaCategories = ['SF 작가 인터뷰', 'SF 관련 미디어', 'SF 관련 기사', '고전 SF 영화'];
+const mediaCategorySlugs = {
+  'SF 작가 인터뷰': 'interviews',
+  'SF 관련 미디어': 'media',
+  'SF 관련 기사': 'articles',
+  '고전 SF 영화': 'classic-films',
+};
 
 function normalizeMediaCategory(category = '') {
   const normalized = category.replace(/\s/g, '').toLowerCase();
@@ -629,6 +635,8 @@ export default function Home() {
     ? works
     : works.filter(work => randomWorkCodes.includes(work.code)).slice(0, 6);
   const displayedMedia = mediaItems.filter(item => normalizeMediaCategory(item.category) === activeMediaCategory);
+  const previewMedia = displayedMedia.slice(0, 3);
+  const activeMediaArchivePath = `/media/${mediaCategorySlugs[activeMediaCategory] ?? 'media'}`;
   const orderedConcepts = [
     ...randomConceptCodes.map(code => concepts.find(concept => concept.code === code)).filter(Boolean),
     ...concepts.filter(concept => !randomConceptCodes.includes(concept.code)),
@@ -855,10 +863,13 @@ export default function Home() {
                 {category}
               </button>
             ))}
+            <a className="media-full-link" href={activeMediaArchivePath}>
+              전체 보기 <ChevronRight aria-hidden="true" />
+            </a>
           </div>
 
           <div className="media-grid">
-            {displayedMedia.length > 0 ? displayedMedia.map(item => (
+            {previewMedia.length > 0 ? previewMedia.map(item => (
               <a className="media-card" href={item.link} key={item.code} rel="noreferrer" target="_blank">
                 <div className="media-thumb">
                   {item.thumbnail ? <img src={item.thumbnail} alt={`${item.title} 썸네일`} loading="lazy" /> : <Play aria-hidden="true" />}

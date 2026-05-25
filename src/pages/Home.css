@@ -1564,6 +1564,25 @@
   box-shadow: 0 0 22px rgba(25, 247, 241, 0.18);
 }
 
+.media-full-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 42px;
+  margin-left: auto;
+  padding: 0 16px;
+  border: 1px solid rgba(25, 247, 241, 0.36);
+  color: var(--cyan);
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.media-full-link svg {
+  width: 16px;
+  height: 16px;
+}
+
 .media-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

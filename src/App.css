@@ -100,6 +100,7 @@
 
 .reading-mode .archive-home,
 .reading-mode .exploration-log-page,
+.reading-mode .media-archive-page,
 .reading-mode .questions-page {
   --cyan: #2f6f78;
   --line: rgba(35, 73, 82, 0.2);
@@ -109,6 +110,7 @@
 
 .reading-mode .archive-home section,
 .reading-mode .exploration-log-page,
+.reading-mode .media-archive-page,
 .reading-mode .questions-page {
   background:
     linear-gradient(180deg, rgba(255, 252, 244, 0.96), rgba(239, 233, 219, 0.96)) !important;
@@ -116,6 +118,7 @@
 
 .reading-mode .home-topbar,
 .reading-mode .log-archive-header,
+.reading-mode .media-archive-header,
 .reading-mode .questions-header,
 .reading-mode .archive-category-grid,
 .reading-mode .concept-index,
@@ -129,10 +132,20 @@
   box-shadow: none !important;
 }
 
+.reading-mode .media-archive-card,
+.reading-mode .media-archive-empty,
+.reading-mode .media-archive-tabs a {
+  border-color: rgba(46, 72, 77, 0.22) !important;
+  background: rgba(255, 252, 244, 0.9) !important;
+  box-shadow: none !important;
+}
+
 .reading-mode .section-heading h2,
 .reading-mode .concept-feature-card h3,
 .reading-mode .question-detail h2,
 .reading-mode .log-archive-header h1,
+.reading-mode .media-archive-header h1,
+.reading-mode .media-archive-card h2,
 .reading-mode .questions-header h1,
 .reading-mode .log-card h2 {
   color: #111827 !important;
@@ -143,6 +156,8 @@
 .reading-mode .question-detail > p,
 .reading-mode .comment-item p,
 .reading-mode .comments-empty,
+.reading-mode .media-archive-card p,
+.reading-mode .media-archive-header p,
 .reading-mode .log-card p {
   color: #34444b !important;
 }
@@ -291,6 +306,7 @@
 
 .reading-mode .archive-home *,
 .reading-mode .exploration-log-page *,
+.reading-mode .media-archive-page *,
 .reading-mode .questions-page * {
   color: #172126;
   text-shadow: none !important;
@@ -298,9 +314,11 @@
 
 .reading-mode .archive-home a,
 .reading-mode .exploration-log-page a,
+.reading-mode .media-archive-page a,
 .reading-mode .questions-page a,
 .reading-mode .archive-home button,
 .reading-mode .exploration-log-page button,
+.reading-mode .media-archive-page button,
 .reading-mode .questions-page button {
   color: #245f68;
 }
@@ -310,6 +328,13 @@
 .reading-mode .concept-card-top *,
 .reading-mode .concept-tags span,
 .reading-mode .media-tags span,
+.reading-mode .media-archive-body > span,
+.reading-mode .media-archive-link,
+.reading-mode .media-archive-link *,
+.reading-mode .media-archive-meta em,
+.reading-mode .media-archive-status,
+.reading-mode .media-archive-status *,
+.reading-mode .media-archive-tags span,
 .reading-mode .work-card-code,
 .reading-mode .log-card-top,
 .reading-mode .log-card-top *,
@@ -336,6 +361,8 @@
 .reading-mode .concept-card > strong,
 .reading-mode .question-detail h2,
 .reading-mode .log-archive-header h1,
+.reading-mode .media-archive-header h1,
+.reading-mode .media-archive-card h2,
 .reading-mode .questions-header h1,
 .reading-mode .log-card h2 {
   color: #111827 !important;
@@ -349,6 +376,8 @@
 .reading-mode .comment-item p,
 .reading-mode .comments-empty,
 .reading-mode .log-archive-header p,
+.reading-mode .media-archive-header p,
+.reading-mode .media-archive-card p,
 .reading-mode .questions-header p,
 .reading-mode .log-card p,
 .reading-mode .media-card p,
