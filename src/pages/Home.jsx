@@ -215,6 +215,20 @@ function normalizeMediaCategory(category = '') {
   return category;
 }
 
+function getMediaSortTime(item) {
+  if (item.date) {
+    const timestamp = Date.parse(item.date);
+    if (!Number.isNaN(timestamp)) return timestamp;
+  }
+
+  const year = String(item.year ?? '').match(/\d{4}/)?.[0];
+  return year ? Date.UTC(Number(year), 11, 31) : 0;
+}
+
+function sortMediaByLatest(items) {
+  return [...items].sort((a, b) => getMediaSortTime(b) - getMediaSortTime(a));
+}
+
 const genreNodes = [
   { id: 'cyberpunk', label: '사이버펑크', en: 'CYBERPUNK', x: 24, y: 31, orbit: 2, tone: 'cyan', signals: 12 },
   { id: 'space-opera', label: '스페이스 오페라', en: 'SPACE OPERA', x: 32, y: 65, orbit: 3, tone: 'blue', signals: 18 },
@@ -633,7 +647,9 @@ export default function Home() {
   const displayedWorks = archiveMode === 'all'
     ? works
     : works.filter(work => randomWorkCodes.includes(work.code)).slice(0, 6);
-  const displayedMedia = mediaItems.filter(item => normalizeMediaCategory(item.category) === activeMediaCategory);
+  const displayedMedia = sortMediaByLatest(
+    mediaItems.filter(item => normalizeMediaCategory(item.category) === activeMediaCategory),
+  );
   const previewMedia = displayedMedia.slice(0, 3);
   const activeMediaArchivePath = `/media/${mediaCategorySlugs[activeMediaCategory] ?? 'media'}`;
   const orderedConcepts = [
@@ -879,7 +895,7 @@ export default function Home() {
                   <p>{item.description || item.publisher || item.category}</p>
                   <div className="media-meta">
                     {item.publisher && <em>{item.publisher}</em>}
-                    {item.year && <em>{item.year}</em>}
+                    {(item.date || item.year) && <em>{item.date || item.year}</em>}
                   </div>
                   <div className="media-tags">
                     {item.tags.map(tag => <span key={tag}>{tag}</span>)}

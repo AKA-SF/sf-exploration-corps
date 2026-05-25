@@ -11,6 +11,9 @@ function plainText(value) {
   if (value.type === 'multi_select') return value.multi_select.map(tag => tag.name).join(', ');
   if (value.type === 'number') return String(value.number ?? '');
   if (value.type === 'url') return value.url ?? '';
+  if (value.type === 'date') return value.date?.start ?? '';
+  if (value.type === 'created_time') return value.created_time ?? '';
+  if (value.type === 'last_edited_time') return value.last_edited_time ?? '';
   return '';
 }
 
@@ -50,6 +53,16 @@ function normalizeMediaCategory(category = '') {
   return category;
 }
 
+function getMediaSortTime(item) {
+  if (item.date) {
+    const timestamp = Date.parse(item.date);
+    if (!Number.isNaN(timestamp)) return timestamp;
+  }
+
+  const year = String(item.year ?? '').match(/\d{4}/)?.[0];
+  return year ? Date.UTC(Number(year), 11, 31) : 0;
+}
+
 function mapPageToMedia(page, index) {
   const properties = page.properties ?? {};
   const title = plainText(pick(properties, ['제목', 'Title', 'Name', '이름']));
@@ -59,6 +72,18 @@ function mapPageToMedia(page, index) {
   const description = plainText(pick(properties, ['설명', 'Description', '메모']));
   const publisher = plainText(pick(properties, ['게시자', 'Publisher', 'Source', '출처', '채널']));
   const year = plainText(pick(properties, ['연도', 'Year']));
+  const date = plainText(pick(properties, [
+    '날짜',
+    '게시일',
+    '발행일',
+    '업로드일',
+    '생성일',
+    'Date',
+    'Published',
+    'Published At',
+    'Created',
+    'Created time',
+  ]));
   const tags = multiSelect(pick(properties, ['태그', 'Tags', '키워드', 'Keywords']));
   const youtubeId = getYouTubeId(link);
 
@@ -71,6 +96,7 @@ function mapPageToMedia(page, index) {
     description,
     publisher,
     year,
+    date,
     tags: tags.length > 0 ? tags : ['Media'],
     thumbnail: youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : '',
   };
@@ -141,7 +167,8 @@ export default async function handler(request, response) {
 
   const media = results
     .map(mapPageToMedia)
-    .filter(item => item.title && item.link);
+    .filter(item => item.title && item.link)
+    .sort((a, b) => getMediaSortTime(b) - getMediaSortTime(a));
 
   return response.status(200).json({ media });
 }

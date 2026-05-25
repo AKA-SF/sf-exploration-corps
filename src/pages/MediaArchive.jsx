@@ -19,6 +19,20 @@ function categoryToSlug(category = '') {
   return 'media';
 }
 
+function getMediaSortTime(item) {
+  if (item.date) {
+    const timestamp = Date.parse(item.date);
+    if (!Number.isNaN(timestamp)) return timestamp;
+  }
+
+  const year = String(item.year ?? '').match(/\d{4}/)?.[0];
+  return year ? Date.UTC(Number(year), 11, 31) : 0;
+}
+
+function sortMediaByLatest(items) {
+  return [...items].sort((a, b) => getMediaSortTime(b) - getMediaSortTime(a));
+}
+
 export default function MediaArchive() {
   const { categorySlug = 'interviews' } = useParams();
   const [items, setItems] = useState([]);
@@ -50,8 +64,8 @@ export default function MediaArchive() {
     };
   }, []);
 
-  const categoryItems = useMemo(() => (
-    items.filter(item => categoryToSlug(item.category || item.medium || item.title) === activeCategory.slug)
+  const categoryItems = useMemo(() => sortMediaByLatest(
+    items.filter(item => categoryToSlug(item.category || item.medium || item.title) === activeCategory.slug),
   ), [activeCategory.slug, items]);
 
   const visibleItems = useMemo(() => {
@@ -62,6 +76,7 @@ export default function MediaArchive() {
       item.title,
       item.description,
       item.publisher,
+      item.date,
       item.year,
       item.medium,
       item.category,
@@ -123,7 +138,7 @@ export default function MediaArchive() {
               <p>{item.description || item.publisher || item.category}</p>
               <div className="media-archive-meta">
                 {item.publisher && <em>{item.publisher}</em>}
-                {item.year && <em>{item.year}</em>}
+                {(item.date || item.year) && <em>{item.date || item.year}</em>}
               </div>
               <div className="media-archive-tags">
                 {item.tags.map(tag => <span key={tag}>{tag}</span>)}
