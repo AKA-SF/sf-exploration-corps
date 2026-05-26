@@ -10,12 +10,14 @@ function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
 
-function nodeToPoint(node) {
+function nodeToPoint(node, time = 0) {
   const seed = node.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const driftA = time * (0.00016 + (seed % 5) * 0.000012) + seed;
+  const driftB = time * (0.00012 + (seed % 7) * 0.00001) + seed * 0.37;
   return {
-    x: (node.x - 50) * 18,
-    y: (node.y - 50) * 12,
-    z: Math.sin(seed * 0.41) * 260 + Math.cos(seed * 0.17) * 110,
+    x: (node.x - 50) * 18 + Math.sin(driftA) * 20,
+    y: (node.y - 50) * 12 + Math.cos(driftB) * 14,
+    z: Math.sin(seed * 0.41) * 260 + Math.cos(seed * 0.17) * 110 + Math.sin(driftA * 0.78) * 42,
   };
 }
 
@@ -135,7 +137,7 @@ export default function CoordinateUniverse({
       a: 0.2 + (index % 7) * 0.08,
     }));
 
-    const render = () => {
+    const render = time => {
       const rect = canvas.getBoundingClientRect();
       const ratio = window.devicePixelRatio || 1;
       if (canvas.width !== Math.floor(rect.width * ratio) || canvas.height !== Math.floor(rect.height * ratio)) {
@@ -165,7 +167,7 @@ export default function CoordinateUniverse({
       context.globalAlpha = 1;
 
       const projectedNodes = nodes.map(node => {
-        const rotated = rotatePoint(nodeToPoint(node), view.yaw, view.pitch);
+        const rotated = rotatePoint(nodeToPoint(node, time), view.yaw, view.pitch);
         const projected = project(rotated, width, height, view.zoom);
         const selected = selectedId === node.id;
         const related = relatedIds?.has(node.id);
