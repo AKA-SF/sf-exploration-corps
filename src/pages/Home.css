@@ -1891,6 +1891,146 @@
   height: 17px;
 }
 
+.coordinate-log-modal {
+  position: fixed;
+  z-index: 80;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background:
+    radial-gradient(circle at 50% 42%, rgba(25, 247, 241, 0.16), transparent 32%),
+    rgba(0, 4, 8, 0.78);
+  backdrop-filter: blur(10px);
+}
+
+.coordinate-log-form {
+  width: min(520px, 100%);
+  border: 1px solid rgba(25, 247, 241, 0.38);
+  padding: 26px;
+  background:
+    linear-gradient(135deg, rgba(25, 247, 241, 0.1), transparent 44%),
+    rgba(1, 14, 20, 0.96);
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55), 0 0 42px rgba(25, 247, 241, 0.16);
+}
+
+.coordinate-log-form-head,
+.coordinate-log-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.coordinate-log-form-head {
+  margin-bottom: 16px;
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1.4px;
+}
+
+.coordinate-log-form-head button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(25, 247, 241, 0.24);
+  color: var(--cyan);
+  background: rgba(0, 18, 24, 0.72);
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.coordinate-log-form h3 {
+  margin: 0 0 10px;
+  color: #fff;
+  font-size: 30px;
+  font-weight: 950;
+}
+
+.coordinate-log-form p {
+  margin: 0 0 20px;
+  color: #bfd0d6;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.65;
+}
+
+.coordinate-log-form label {
+  display: grid;
+  gap: 8px;
+}
+
+.coordinate-log-form label span {
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.coordinate-log-form input {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid rgba(25, 247, 241, 0.26);
+  padding: 0 14px;
+  color: #fff;
+  background: rgba(0, 16, 22, 0.72);
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.coordinate-log-form input:focus {
+  outline: 0;
+  border-color: rgba(25, 247, 241, 0.76);
+  box-shadow: 0 0 0 3px rgba(25, 247, 241, 0.1);
+}
+
+.coordinate-log-actions {
+  margin-top: 18px;
+}
+
+.coordinate-log-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  border: 1px solid rgba(25, 247, 241, 0.42);
+  padding: 0 16px;
+  color: #061316;
+  background: var(--cyan);
+  font-size: 13px;
+  font-weight: 950;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.coordinate-log-actions button:disabled {
+  color: rgba(191, 208, 214, 0.54);
+  background: rgba(0, 18, 24, 0.56);
+  cursor: wait;
+}
+
+.coordinate-log-message {
+  margin: 0;
+  color: #8fb0bc;
+  font-size: 12px;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.coordinate-log-message.is-success {
+  color: #8fffe8;
+}
+
+.coordinate-log-message.is-error {
+  color: #ffb7a4;
+}
+
 .coordinates-section {
   position: relative;
   z-index: 2;
@@ -2394,6 +2534,36 @@
   color: #e5f4f7;
   font-size: 14px;
   font-weight: 800;
+}
+
+.coordinate-log-trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  margin-top: 20px;
+  border: 1px solid rgba(25, 247, 241, 0.42);
+  color: #061316;
+  background: var(--cyan);
+  font-size: 14px;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.coordinate-log-trigger:disabled {
+  border-color: rgba(25, 247, 241, 0.14);
+  color: rgba(191, 208, 214, 0.4);
+  background: rgba(0, 18, 24, 0.42);
+  cursor: not-allowed;
+}
+
+.coordinate-log-trigger:not(:disabled):hover,
+.coordinate-log-trigger:not(:disabled):focus-visible {
+  color: #fff;
+  background: rgba(25, 247, 241, 0.18);
+  box-shadow: 0 0 28px rgba(25, 247, 241, 0.22);
 }
 
 .coordinate-panel-section {

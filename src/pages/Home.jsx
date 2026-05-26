@@ -611,6 +611,10 @@ export default function Home() {
   });
   const [questionStatus, setQuestionStatus] = useState('idle');
   const [questionMessage, setQuestionMessage] = useState('');
+  const [isLogModalOpen, setIsLogModalOpen] = useState(false);
+  const [coordinateLogUrl, setCoordinateLogUrl] = useState('');
+  const [coordinateLogStatus, setCoordinateLogStatus] = useState('idle');
+  const [coordinateLogMessage, setCoordinateLogMessage] = useState('');
   const [dashboard, setDashboard] = useState({
     logs: [],
     questions: [],
@@ -822,6 +826,57 @@ export default function Home() {
     setSelectedCoordinateId(node.id);
     if (genreSubmaps[node.id]) {
       setActiveGenreId(node.id);
+    }
+  };
+
+  const openCoordinateLogModal = () => {
+    if (!selectedCoordinateId) return;
+    setCoordinateLogUrl('');
+    setCoordinateLogStatus('idle');
+    setCoordinateLogMessage('');
+    setIsLogModalOpen(true);
+  };
+
+  const submitCoordinateLog = async event => {
+    event.preventDefault();
+    if (!coordinateLogUrl.trim()) {
+      setCoordinateLogStatus('error');
+      setCoordinateLogMessage('인스타 서평 주소를 입력해주세요.');
+      return;
+    }
+
+    setCoordinateLogStatus('submitting');
+    setCoordinateLogMessage('');
+
+    try {
+      const response = await fetch('/api/exploration-log', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instagramUrl: coordinateLogUrl,
+          nodeId: selectedCoordinate.id,
+          nodeLabel: selectedCoordinate.label,
+          nodeEnglish: selectedCoordinate.en,
+          workTitle: selectedCoordinate.label,
+        }),
+      });
+
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.notion?.message || data?.error || '탐사 로그 저장에 실패했습니다.');
+      }
+
+      setCoordinateLogStatus('success');
+      setCoordinateLogMessage('탐사 로그가 노션에 저장되었습니다.');
+      setDashboard(state => ({
+        ...state,
+        logs: data.log ? [data.log, ...state.logs] : state.logs,
+        status: { ...state.status, logs: true },
+      }));
+      setCoordinateLogUrl('');
+    } catch (error) {
+      setCoordinateLogStatus('error');
+      setCoordinateLogMessage(error.message);
     }
   };
 
@@ -1189,6 +1244,15 @@ export default function Home() {
                   <dd>{activeGenre ? 'Subgenre Mapping' : 'Archive Mapping'}</dd>
                 </div>
               </dl>
+              <button
+                className="coordinate-log-trigger"
+                disabled={!selectedCoordinateId}
+                onClick={openCoordinateLogModal}
+                type="button"
+              >
+                <Send size={16} />
+                탐사 로그 작성
+              </button>
               <div className="coordinate-panel-section">
                 <span>RELATED WORKS</span>
                 {selectedCoordinateWorks.length > 0 ? (
@@ -1516,6 +1580,48 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {isLogModalOpen && (
+        <div className="coordinate-log-modal" role="dialog" aria-modal="true" aria-label="탐사 로그 작성">
+          <form className="coordinate-log-form" onSubmit={submitCoordinateLog}>
+            <div className="coordinate-log-form-head">
+              <span>MISSION LOG INPUT</span>
+              <button
+                aria-label="탐사 로그 작성 닫기"
+                onClick={() => setIsLogModalOpen(false)}
+                type="button"
+              >
+                ×
+              </button>
+            </div>
+            <h3>{selectedCoordinate.label} 탐사 로그</h3>
+            <p>
+              선택한 좌표에 연결할 인스타 서평 주소를 입력하면 탐사 로그 노션 DB에 저장됩니다.
+            </p>
+            <label>
+              <span>인스타 서평 주소</span>
+              <input
+                autoFocus
+                onChange={event => setCoordinateLogUrl(event.target.value)}
+                placeholder="https://www.instagram.com/p/..."
+                type="url"
+                value={coordinateLogUrl}
+              />
+            </label>
+            <div className="coordinate-log-actions">
+              <p className={`coordinate-log-message is-${coordinateLogStatus}`}>
+                {coordinateLogStatus === 'idle' && '저장 후 탐사 로그 페이지에서 함께 보입니다.'}
+                {coordinateLogStatus === 'submitting' && '노션으로 신호를 전송 중입니다.'}
+                {coordinateLogStatus !== 'idle' && coordinateLogStatus !== 'submitting' && coordinateLogMessage}
+              </p>
+              <button type="submit" disabled={coordinateLogStatus === 'submitting'}>
+                <Send size={16} />
+                {coordinateLogStatus === 'submitting' ? '저장 중' : '노션에 저장'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </PageTransition>
   );
 }

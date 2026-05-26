@@ -157,6 +157,53 @@ export default function CoordinateUniverse({
       context.fillStyle = background;
       context.fillRect(0, 0, width, height);
 
+      context.save();
+      context.translate(width * 0.5, height * 0.5);
+      context.rotate(-0.34 + time * 0.000018);
+      context.globalCompositeOperation = 'lighter';
+      const galaxyGlow = context.createRadialGradient(0, 0, 18, 0, 0, Math.min(width, height) * 0.52);
+      galaxyGlow.addColorStop(0, 'rgba(255, 255, 255, 0.28)');
+      galaxyGlow.addColorStop(0.15, 'rgba(25, 247, 241, 0.16)');
+      galaxyGlow.addColorStop(0.42, 'rgba(124, 199, 255, 0.07)');
+      galaxyGlow.addColorStop(1, 'rgba(25, 247, 241, 0)');
+      context.fillStyle = galaxyGlow;
+      context.beginPath();
+      context.ellipse(0, 0, width * 0.34, height * 0.19, 0, 0, Math.PI * 2);
+      context.fill();
+
+      for (let arm = 0; arm < 3; arm += 1) {
+        context.beginPath();
+        for (let index = 0; index < 150; index += 1) {
+          const progress = index / 149;
+          const radius = progress * Math.min(width, height) * 0.42;
+          const angle = progress * 5.8 + arm * ((Math.PI * 2) / 3);
+          const wobble = Math.sin(progress * 10 + time * 0.0004 + arm) * 12;
+          const x = Math.cos(angle) * (radius + wobble);
+          const y = Math.sin(angle) * (radius * 0.46 + wobble * 0.16);
+          if (index === 0) context.moveTo(x, y);
+          else context.lineTo(x, y);
+        }
+        context.strokeStyle = arm === 1 ? 'rgba(124, 199, 255, 0.18)' : 'rgba(25, 247, 241, 0.16)';
+        context.lineWidth = 16 - arm * 3;
+        context.shadowColor = '#19f7f1';
+        context.shadowBlur = 16;
+        context.stroke();
+      }
+
+      for (let index = 0; index < 240; index += 1) {
+        const progress = ((index * 37) % 239) / 239;
+        const angle = progress * 7.2 + (index % 3) * 2.1 + time * 0.000016;
+        const radius = Math.sqrt(progress) * Math.min(width, height) * 0.43;
+        const x = Math.cos(angle) * radius;
+        const y = Math.sin(angle) * radius * 0.44;
+        context.globalAlpha = 0.1 + (index % 7) * 0.035;
+        context.fillStyle = index % 5 === 0 ? '#f0b85a' : '#dffcff';
+        context.beginPath();
+        context.arc(x, y, 0.45 + (index % 4) * 0.22, 0, Math.PI * 2);
+        context.fill();
+      }
+      context.restore();
+
       starSeeds.forEach(star => {
         context.globalAlpha = star.a;
         context.fillStyle = '#ffffff';
