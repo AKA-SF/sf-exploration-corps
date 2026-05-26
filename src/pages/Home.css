@@ -1915,6 +1915,8 @@
   border: 1px solid var(--line);
   overflow: hidden;
   perspective: 1100px;
+  cursor: grab;
+  touch-action: none;
   background:
     radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.16) 0 1px, transparent 2px),
     radial-gradient(circle at 72% 16%, rgba(255, 255, 255, 0.12) 0 1px, transparent 2px),
@@ -1930,13 +1932,21 @@
   background-size: auto, auto, auto, auto, auto, auto, auto, auto, 72px 72px, 72px 72px, auto;
 }
 
+.genre-map.is-panning {
+  cursor: grabbing;
+}
+
 .map-projection {
   position: absolute;
-  inset: 0;
-  transform: scale(var(--map-zoom, 1)) rotateX(2deg) rotateZ(-0.4deg);
+  inset: -22%;
+  transform:
+    translate3d(var(--map-pan-x, 0), var(--map-pan-y, 0), 0)
+    scale(var(--map-zoom, 1))
+    rotateX(2deg)
+    rotateZ(-0.4deg);
   transform-origin: center;
   transform-style: preserve-3d;
-  transition: transform 320ms ease;
+  transition: transform 120ms ease-out;
 }
 
 .map-zoom-controls {
@@ -2518,6 +2528,15 @@
   background: var(--cyan);
   box-shadow: 0 0 18px rgba(25, 247, 241, 0.72);
   transform: translate(-50%, -50%);
+}
+
+.mini-viewport {
+  position: absolute;
+  z-index: 3;
+  border: 1px solid rgba(240, 184, 90, 0.82);
+  background: rgba(240, 184, 90, 0.1);
+  box-shadow: 0 0 14px rgba(240, 184, 90, 0.26);
+  pointer-events: none;
 }
 
 .mini-node {

@@ -321,6 +321,10 @@ function findRelatedConceptsForNode(node, concepts) {
     .slice(0, 4);
 }
 
+function clamp(value, min, max) {
+  return Math.min(max, Math.max(min, value));
+}
+
 const genreNodes = [
   { id: 'cyberpunk', label: '사이버펑크', en: 'CYBERPUNK', x: 24, y: 31, orbit: 2, tone: 'cyan', signals: 12, keywords: ['사이버펑크', '안드로이드', '기억', '네트워크', 'AI'], questions: ['기술은 인간의 신체와 기억을 어디까지 바꿀 수 있을까?', '도시는 왜 미래의 욕망과 불평등을 동시에 증폭시키는가?'], concepts: ['사이버펑크', '포스트휴먼', 'AI SF'] },
   { id: 'space-opera', label: '스페이스 오페라', en: 'SPACE OPERA', x: 32, y: 65, orbit: 3, tone: 'blue', signals: 18, keywords: ['스페이스오페라', '스페이스 오페라', '은하', '제국', '우주', '함대'], questions: ['우주 규모의 정치와 전쟁은 인간 사회를 어떻게 확대해서 보여주는가?', '은하 제국의 서사는 왜 모험과 식민의 감각을 동시에 품는가?'], concepts: ['스페이스 오페라', '우주 서사', '문명'] },
@@ -521,7 +525,9 @@ export default function Home() {
   const [works, setWorks] = useState(fallbackWorks);
   const [activeGenreId, setActiveGenreId] = useState(null);
   const [selectedCoordinateId, setSelectedCoordinateId] = useState('');
-  const [mapZoom, setMapZoom] = useState(1);
+  const [mapView, setMapView] = useState({ zoom: 1, panX: 0, panY: 0 });
+  const [isMapPanning, setIsMapPanning] = useState(false);
+  const mapDragRef = useRef(null);
   const [archiveMode, setArchiveMode] = useState('random');
   const [randomWorkCodes, setRandomWorkCodes] = useState(() => getRandomWorks(fallbackWorks, 6).map(work => work.code));
   const [mediaItems, setMediaItems] = useState([]);
@@ -557,7 +563,8 @@ export default function Home() {
   const resetCoordinateMap = () => {
     setActiveGenreId(null);
     setSelectedCoordinateId('');
-    setMapZoom(1);
+    setMapView({ zoom: 1, panX: 0, panY: 0 });
+    setIsMapPanning(false);
   };
   const [currentTime, setCurrentTime] = useState(() => new Date());
 
@@ -706,6 +713,56 @@ export default function Home() {
     : ['이 좌표는 어떤 인간 이후의 조건을 상상하게 만드는가?'];
   const mapDescription = activeSubmap?.description
     ?? '탐사 좌표는 작품을 하나의 장르에 가두지 않습니다. 사이버펑크는 디스토피아와, 생태 SF는 스페이스 오페라와, 시간여행은 뉴웨이브와 겹치며 새로운 질문을 만듭니다.';
+  const minimapViewportWidth = clamp(54 / mapView.zoom, 30, 62);
+  const minimapViewportHeight = clamp(54 / mapView.zoom, 30, 62);
+  const minimapViewport = {
+    width: minimapViewportWidth,
+    height: minimapViewportHeight,
+    x: clamp(50 - mapView.panX / 7 - minimapViewportWidth / 2, 4, 96 - minimapViewportWidth),
+    y: clamp(50 - mapView.panY / 7 - minimapViewportHeight / 2, 4, 96 - minimapViewportHeight),
+  };
+
+  const zoomCoordinateMap = amount => {
+    setMapView(view => ({
+      ...view,
+      zoom: clamp(Number((view.zoom + amount).toFixed(2)), 0.72, 1.72),
+    }));
+  };
+
+  const handleMapWheel = event => {
+    event.preventDefault();
+    const direction = event.deltaY > 0 ? -0.08 : 0.08;
+    zoomCoordinateMap(direction);
+  };
+
+  const handleMapPointerDown = event => {
+    if (event.target.closest('button, a')) return;
+    mapDragRef.current = {
+      startX: event.clientX,
+      startY: event.clientY,
+      panX: mapView.panX,
+      panY: mapView.panY,
+    };
+    setIsMapPanning(true);
+    event.currentTarget.setPointerCapture?.(event.pointerId);
+  };
+
+  const handleMapPointerMove = event => {
+    if (!mapDragRef.current) return;
+    const nextPanX = mapDragRef.current.panX + event.clientX - mapDragRef.current.startX;
+    const nextPanY = mapDragRef.current.panY + event.clientY - mapDragRef.current.startY;
+    setMapView(view => ({
+      ...view,
+      panX: clamp(nextPanX, -260, 260),
+      panY: clamp(nextPanY, -210, 210),
+    }));
+  };
+
+  const endMapPan = event => {
+    mapDragRef.current = null;
+    setIsMapPanning(false);
+    event.currentTarget.releasePointerCapture?.(event.pointerId);
+  };
 
   const handleGenreNodeClick = node => {
     if (node.id === selectedCoordinateId && !genreSubmaps[node.id]) {
@@ -1052,19 +1109,34 @@ export default function Home() {
           </div>
 
           <div className="coordinate-map-layout">
-            <div className={`genre-map ${hasCoordinateFocus ? 'is-focused' : ''}`} aria-label="SF 장르 노드 맵">
+            <div
+              className={`genre-map ${hasCoordinateFocus ? 'is-focused' : ''} ${isMapPanning ? 'is-panning' : ''}`}
+              aria-label="SF 장르 노드 맵"
+              onPointerDown={handleMapPointerDown}
+              onPointerMove={handleMapPointerMove}
+              onPointerUp={endMapPan}
+              onPointerCancel={endMapPan}
+              onWheel={handleMapWheel}
+            >
               <div className="map-zoom-controls" aria-label="탐사 좌표 확대 축소">
                 <button type="button" onClick={resetCoordinateMap}>ROOT</button>
-                <button type="button" onClick={() => setMapZoom(value => Math.min(1.22, Number((value + 0.08).toFixed(2))))}>+</button>
-                <button type="button" onClick={() => setMapZoom(1)}>100</button>
-                <button type="button" onClick={() => setMapZoom(value => Math.max(0.86, Number((value - 0.08).toFixed(2))))}>-</button>
+                <button type="button" onClick={() => zoomCoordinateMap(0.08)}>+</button>
+                <button type="button" onClick={() => setMapView(view => ({ ...view, zoom: 1, panX: 0, panY: 0 }))}>100</button>
+                <button type="button" onClick={() => zoomCoordinateMap(-0.08)}>-</button>
               </div>
               {activeGenre && (
                 <button className="map-back-button" type="button" onClick={resetCoordinateMap}>
                   상위 좌표로 돌아가기
                 </button>
               )}
-              <div className="map-projection" style={{ '--map-zoom': mapZoom }}>
+              <div
+                className="map-projection"
+                style={{
+                  '--map-zoom': mapView.zoom,
+                  '--map-pan-x': `${mapView.panX}px`,
+                  '--map-pan-y': `${mapView.panY}px`,
+                }}
+              >
               <div className="map-hud map-hud-top">
                 <span>{activeGenre ? 'SUB-SECTOR VIEW' : 'SECTOR VIEW'}</span>
                 <strong>{activeGenre ? activeGenre.en : 'ARCHIVE CARTOGRAPHY'}</strong>
@@ -1219,6 +1291,15 @@ export default function Home() {
                       style={{ left: `${node.x}%`, top: `${node.y}%` }}
                     />
                   ))}
+                  <span
+                    className="mini-viewport"
+                    style={{
+                      left: `${minimapViewport.x}%`,
+                      top: `${minimapViewport.y}%`,
+                      width: `${minimapViewport.width}%`,
+                      height: `${minimapViewport.height}%`,
+                    }}
+                  />
                   <b />
                 </div>
               </div>
