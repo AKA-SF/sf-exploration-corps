@@ -553,6 +553,12 @@ export default function Home() {
       questions: false,
     },
   });
+
+  const resetCoordinateMap = () => {
+    setActiveGenreId(null);
+    setSelectedCoordinateId('');
+    setMapZoom(1);
+  };
   const [currentTime, setCurrentTime] = useState(() => new Date());
 
   useEffect(() => {
@@ -807,7 +813,7 @@ export default function Home() {
         </a>
         <nav className="top-nav" aria-label="주요 메뉴">
           {navItems.map(item => (
-            <a key={item.label} href={item.href}>
+            <a key={item.label} href={item.href} onClick={item.href === '#coordinates' ? resetCoordinateMap : undefined}>
               {item.label}
             </a>
           ))}
@@ -835,7 +841,7 @@ export default function Home() {
               인간 이후의 세계와 미래 사회를 연구하는 인터스텔라 아카이브입니다.
             </p>
             <div className="hero-actions">
-              <a className="primary-action" href="#coordinates">
+              <a className="primary-action" href="#coordinates" onClick={resetCoordinateMap}>
                 탐사 시작 <ChevronRight aria-hidden="true" />
               </a>
               <a className="secondary-action" href="#archive-links">
@@ -873,7 +879,7 @@ export default function Home() {
         {archiveCards.map(card => {
           const Icon = card.icon;
           return (
-            <a className="dock-card" href={card.href} key={card.title}>
+            <a className="dock-card" href={card.href} key={card.title} onClick={card.href === '#coordinates' ? resetCoordinateMap : undefined}>
               <Icon aria-hidden="true" />
               <span>
                 <strong>{card.title}</strong>
@@ -1048,10 +1054,16 @@ export default function Home() {
           <div className="coordinate-map-layout">
             <div className={`genre-map ${hasCoordinateFocus ? 'is-focused' : ''}`} aria-label="SF 장르 노드 맵">
               <div className="map-zoom-controls" aria-label="탐사 좌표 확대 축소">
+                <button type="button" onClick={resetCoordinateMap}>ROOT</button>
                 <button type="button" onClick={() => setMapZoom(value => Math.min(1.22, Number((value + 0.08).toFixed(2))))}>+</button>
                 <button type="button" onClick={() => setMapZoom(1)}>100</button>
                 <button type="button" onClick={() => setMapZoom(value => Math.max(0.86, Number((value - 0.08).toFixed(2))))}>-</button>
               </div>
+              {activeGenre && (
+                <button className="map-back-button" type="button" onClick={resetCoordinateMap}>
+                  상위 좌표로 돌아가기
+                </button>
+              )}
               <div className="map-projection" style={{ '--map-zoom': mapZoom }}>
               <div className="map-hud map-hud-top">
                 <span>{activeGenre ? 'SUB-SECTOR VIEW' : 'SECTOR VIEW'}</span>
