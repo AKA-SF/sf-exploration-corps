@@ -1916,6 +1916,10 @@
   overflow: hidden;
   perspective: 1100px;
   background:
+    radial-gradient(circle at 18% 20%, rgba(255, 255, 255, 0.16) 0 1px, transparent 2px),
+    radial-gradient(circle at 72% 16%, rgba(255, 255, 255, 0.12) 0 1px, transparent 2px),
+    radial-gradient(circle at 42% 76%, rgba(255, 255, 255, 0.12) 0 1px, transparent 2px),
+    radial-gradient(circle at 88% 72%, rgba(255, 255, 255, 0.14) 0 1px, transparent 2px),
     radial-gradient(circle at 24% 31%, rgba(124, 199, 255, 0.12), transparent 13%),
     radial-gradient(circle at 74% 42%, rgba(240, 184, 90, 0.08), transparent 16%),
     radial-gradient(circle at center, rgba(25, 247, 241, 0.13), transparent 13%),
@@ -1923,7 +1927,7 @@
     linear-gradient(rgba(25, 247, 241, 0.035) 1px, transparent 1px),
     linear-gradient(90deg, rgba(25, 247, 241, 0.035) 1px, transparent 1px),
     rgba(0, 12, 18, 0.62);
-  background-size: auto, auto, auto, auto, 72px 72px, 72px 72px, auto;
+  background-size: auto, auto, auto, auto, auto, auto, auto, auto, 72px 72px, 72px 72px, auto;
 }
 
 .map-projection {
@@ -2102,10 +2106,25 @@
   border: 1px solid rgba(25, 247, 241, 0.55);
   border-radius: 50%;
   color: #fff;
-  background: rgba(0, 20, 26, 0.8);
-  box-shadow: 0 0 42px rgba(25, 247, 241, 0.22), inset 0 0 24px rgba(25, 247, 241, 0.16);
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.9), transparent 10%),
+    radial-gradient(circle at 38% 34%, rgba(25, 247, 241, 0.78), rgba(2, 43, 52, 0.96) 44%, rgba(0, 11, 18, 0.98) 74%);
+  box-shadow:
+    0 0 54px rgba(25, 247, 241, 0.34),
+    -18px 22px 42px rgba(0, 0, 0, 0.54),
+    inset -18px -22px 28px rgba(0, 0, 0, 0.42),
+    inset 12px 10px 20px rgba(255, 255, 255, 0.12);
   cursor: default;
   transform: translate(-50%, -50%);
+}
+
+.map-core::before {
+  content: "";
+  position: absolute;
+  inset: -15px -28px;
+  border: 1px solid rgba(25, 247, 241, 0.28);
+  border-radius: 50%;
+  transform: rotate(-16deg);
 }
 
 .map-core.is-returnable {
@@ -2156,10 +2175,16 @@
   position: relative;
   width: calc(18px + var(--orbit) * 3px);
   height: calc(18px + var(--orbit) * 3px);
-  border: 1px solid rgba(25, 247, 241, 0.72);
+  border: 1px solid rgba(25, 247, 241, 0.6);
   border-radius: 50%;
-  background: var(--cyan);
-  box-shadow: 0 0 22px rgba(25, 247, 241, 0.5);
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.9), transparent 14%),
+    radial-gradient(circle at 42% 36%, rgba(25, 247, 241, 0.96), rgba(5, 84, 93, 0.95) 47%, rgba(0, 18, 28, 0.95) 78%);
+  box-shadow:
+    0 0 24px rgba(25, 247, 241, 0.46),
+    -8px 9px 18px rgba(0, 0, 0, 0.42),
+    inset -7px -8px 12px rgba(0, 0, 0, 0.42),
+    inset 4px 3px 8px rgba(255, 255, 255, 0.16);
 }
 
 .genre-node.has-submap i::after {
@@ -2201,12 +2226,16 @@
 }
 
 .genre-node.tone-blue i {
-  background: #7cc7ff;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.9), transparent 14%),
+    radial-gradient(circle at 42% 36%, rgba(124, 199, 255, 0.96), rgba(17, 78, 122, 0.95) 48%, rgba(0, 18, 34, 0.96) 78%);
   box-shadow: 0 0 22px rgba(124, 199, 255, 0.45);
 }
 
 .genre-node.tone-amber i {
-  background: #f0b85a;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255, 255, 255, 0.88), transparent 14%),
+    radial-gradient(circle at 42% 36%, rgba(240, 184, 90, 0.96), rgba(126, 78, 24, 0.96) 50%, rgba(31, 16, 2, 0.96) 78%);
   box-shadow: 0 0 22px rgba(240, 184, 90, 0.45);
 }
 
@@ -2230,7 +2259,11 @@
 
 .genre-node.is-selected i {
   border-color: rgba(240, 184, 90, 0.9);
-  box-shadow: 0 0 28px rgba(240, 184, 90, 0.58);
+  box-shadow:
+    0 0 40px rgba(240, 184, 90, 0.62),
+    0 0 80px rgba(25, 247, 241, 0.18),
+    -12px 14px 26px rgba(0, 0, 0, 0.48),
+    inset -8px -10px 14px rgba(0, 0, 0, 0.48);
 }
 
 .genre-node.is-related {

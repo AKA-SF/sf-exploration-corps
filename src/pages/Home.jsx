@@ -361,6 +361,17 @@ const genreSubmaps = {
       { id: 'astrobiology', label: '우주생물학', en: 'ASTROBIOLOGY', x: 24, y: 34, orbit: 1, tone: 'amber', signals: 6, keywords: ['우주생물학', '생명', '외계생명', '공생', '진화'], questions: ['생명의 기준을 바꾸면 인간 중심의 사고는 얼마나 흔들리는가?'], concepts: ['우주생물학', '생명', '공생'] },
     ],
   },
+  apocalypse: {
+    description: '아포칼립스 좌표는 세계가 무너지는 장면보다, 붕괴 이후 어떤 질서와 공동체가 다시 태어나는지를 추적합니다.',
+    nodes: [
+      { id: 'climate-collapse', label: '기후 재난', en: 'CLIMATE COLLAPSE', x: 52, y: 18, orbit: 2, tone: 'cyan', signals: 7, keywords: ['기후', '환경', '재난', '생태'], questions: ['기후 위기는 자연재해인가, 사회 시스템의 실패인가?'], concepts: ['기후위기', '생태 SF'] },
+      { id: 'pandemic-sf', label: '팬데믹 SF', en: 'PANDEMIC SF', x: 76, y: 35, orbit: 1, tone: 'blue', signals: 6, keywords: ['팬데믹', '감염', '바이러스', '격리'], questions: ['감염 서사는 타자에 대한 공포를 어떻게 드러내는가?'], concepts: ['팬데믹', '격리', '공동체'] },
+      { id: 'post-collapse', label: '붕괴 이후', en: 'POST-COLLAPSE', x: 72, y: 68, orbit: 3, tone: 'amber', signals: 9, keywords: ['종말', '생존', '폐허', '공동체'], questions: ['무너진 세계에서 가장 먼저 다시 만들어지는 규칙은 무엇인가?'], concepts: ['생존', '공동체'] },
+      { id: 'resource-war', label: '자원 전쟁', en: 'RESOURCE WAR', x: 48, y: 84, orbit: 2, tone: 'amber', signals: 5, keywords: ['자원', '전쟁', '식량', '물', '에너지'], questions: ['부족한 자원은 윤리를 어떻게 시험하는가?'], concepts: ['자원', '전쟁', '불평등'] },
+      { id: 'zombie-sf', label: '좀비/감염체', en: 'INFECTED BODY', x: 24, y: 65, orbit: 1, tone: 'blue', signals: 5, keywords: ['좀비', '감염체', '신체', '바이러스'], questions: ['감염된 몸은 인간과 비인간의 경계를 어떻게 흔드는가?'], concepts: ['신체', '비인간'] },
+      { id: 'survival-community', label: '생존 공동체', en: 'SURVIVAL COMMUNITY', x: 26, y: 32, orbit: 2, tone: 'cyan', signals: 8, keywords: ['생존', '공동체', '피난', '연대'], questions: ['생존은 개인의 능력인가, 공동체의 구조인가?'], concepts: ['연대', '공동체'] },
+    ],
+  },
 };
 
 const mapSignalDots = [
@@ -691,6 +702,11 @@ export default function Home() {
     ?? '탐사 좌표는 작품을 하나의 장르에 가두지 않습니다. 사이버펑크는 디스토피아와, 생태 SF는 스페이스 오페라와, 시간여행은 뉴웨이브와 겹치며 새로운 질문을 만듭니다.';
 
   const handleGenreNodeClick = node => {
+    if (node.id === selectedCoordinateId && !genreSubmaps[node.id]) {
+      setSelectedCoordinateId('');
+      return;
+    }
+
     setSelectedCoordinateId(node.id);
     if (genreSubmaps[node.id]) {
       setActiveGenreId(node.id);
@@ -1072,7 +1088,9 @@ export default function Home() {
                 onClick={() => {
                   if (activeGenre) {
                     setActiveGenreId(null);
-                    setSelectedCoordinateId(activeGenre.id);
+                    setSelectedCoordinateId('');
+                  } else {
+                    setSelectedCoordinateId('');
                   }
                 }}
                 aria-label={activeGenre ? '상위 SF 장르 지도로 돌아가기' : 'SF 중심 좌표'}
