@@ -1914,6 +1914,7 @@
   height: 690px;
   border: 1px solid var(--line);
   overflow: hidden;
+  overscroll-behavior: contain;
   background: #01070c;
   cursor: grab;
   touch-action: none;

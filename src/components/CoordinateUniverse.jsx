@@ -108,6 +108,24 @@ export default function CoordinateUniverse({
 
   useEffect(() => {
     const canvas = canvasRef.current;
+    const wrapper = canvas?.parentElement;
+    if (!wrapper) return undefined;
+
+    const preventPageWheel = event => {
+      event.preventDefault();
+      event.stopPropagation();
+      setView(current => ({
+        ...current,
+        zoom: clamp(Number((current.zoom + (event.deltaY > 0 ? -0.08 : 0.08)).toFixed(2)), 0.65, 1.8),
+      }));
+    };
+
+    wrapper.addEventListener('wheel', preventPageWheel, { passive: false });
+    return () => wrapper.removeEventListener('wheel', preventPageWheel);
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
     if (!canvas) return undefined;
     const context = canvas.getContext('2d');
     const starSeeds = Array.from({ length: 180 }, (_, index) => ({
@@ -236,6 +254,7 @@ export default function CoordinateUniverse({
 
   const handleWheel = event => {
     event.preventDefault();
+    event.stopPropagation();
     zoom(event.deltaY > 0 ? -0.08 : 0.08);
   };
 
