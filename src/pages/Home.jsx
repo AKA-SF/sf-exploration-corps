@@ -229,6 +229,47 @@ function sortMediaByLatest(items) {
   return [...items].sort((a, b) => getMediaSortTime(b) - getMediaSortTime(a));
 }
 
+function formatSourceDomain(hostname) {
+  const cleanHost = hostname.replace(/^www\./, '');
+  if (cleanHost.includes('wikipedia.org')) return 'Wikipedia';
+  if (cleanHost.includes('britannica.com')) return 'Britannica';
+  if (cleanHost.includes('sf-encyclopedia.com')) return 'The Encyclopedia of Science Fiction';
+  if (cleanHost.includes('namu.wiki')) return 'Namu Wiki';
+  if (cleanHost.includes('terms.naver.com')) return 'Naver 지식백과';
+  return cleanHost
+    .split('.')[0]
+    .replace(/[-_]/g, ' ')
+    .replace(/\b\w/g, letter => letter.toUpperCase());
+}
+
+function getConceptSource(source, concept) {
+  const sourceText = source?.trim() ?? '';
+  const url = sourceText.match(/https?:\/\/[^\s)]+/)?.[0];
+
+  if (!url) {
+    return {
+      href: '',
+      label: sourceText,
+    };
+  }
+
+  try {
+    const parsedUrl = new URL(url);
+    const domain = formatSourceDomain(parsedUrl.hostname);
+    const conceptName = concept.english || concept.term;
+
+    return {
+      href: url,
+      label: conceptName ? `${domain} - ${conceptName}` : domain,
+    };
+  } catch {
+    return {
+      href: '',
+      label: sourceText,
+    };
+  }
+}
+
 const genreNodes = [
   { id: 'cyberpunk', label: '사이버펑크', en: 'CYBERPUNK', x: 24, y: 31, orbit: 2, tone: 'cyan', signals: 12 },
   { id: 'space-opera', label: '스페이스 오페라', en: 'SPACE OPERA', x: 32, y: 65, orbit: 3, tone: 'blue', signals: 18 },
@@ -1088,7 +1129,20 @@ export default function Home() {
                     <dl className="concept-meta-list">
                       <div>
                         <dt>출처</dt>
-                        <dd>{selectedConcept.source}</dd>
+                        <dd>
+                          {getConceptSource(selectedConcept.source, selectedConcept).href ? (
+                            <a
+                              className="concept-source-link"
+                              href={getConceptSource(selectedConcept.source, selectedConcept).href}
+                              rel="noreferrer"
+                              target="_blank"
+                            >
+                              {getConceptSource(selectedConcept.source, selectedConcept).label}
+                            </a>
+                          ) : (
+                            getConceptSource(selectedConcept.source, selectedConcept).label
+                          )}
+                        </dd>
                       </div>
                     </dl>
                   )}

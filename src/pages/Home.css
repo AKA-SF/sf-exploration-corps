@@ -1493,6 +1493,17 @@
   line-height: 1.5;
 }
 
+.concept-source-link {
+  color: var(--cyan);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.concept-source-link:hover,
+.concept-source-link:focus-visible {
+  color: #f8ffff;
+}
+
 .concept-tags {
   display: flex;
   flex-wrap: wrap;
