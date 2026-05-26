@@ -270,17 +270,68 @@ function getConceptSource(source, concept) {
   }
 }
 
+function getWorkSearchText(work) {
+  return [
+    work.title,
+    work.subtitle,
+    work.medium,
+    work.recommender,
+    ...(work.tags ?? []),
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+
+function findRelatedWorksForNode(node, works) {
+  const keywords = [node.label, node.en, ...(node.keywords ?? [])]
+    .filter(Boolean)
+    .map(keyword => keyword.toLowerCase());
+
+  const scoredWorks = works
+    .map(work => {
+      const searchText = getWorkSearchText(work);
+      const score = keywords.reduce((total, keyword) => (
+        searchText.includes(keyword.replace(/\s/g, '').toLowerCase()) || searchText.includes(keyword)
+          ? total + 1
+          : total
+      ), 0);
+      return { work, score };
+    })
+    .filter(item => item.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  return scoredWorks.map(item => item.work).slice(0, 5);
+}
+
+function findRelatedConceptsForNode(node, concepts) {
+  const keywords = [node.label, node.en, ...(node.keywords ?? []), ...(node.concepts ?? [])]
+    .filter(Boolean)
+    .map(keyword => keyword.toLowerCase());
+
+  return concepts
+    .filter(concept => {
+      const searchText = [
+        concept.term,
+        concept.english,
+        concept.category,
+        concept.summary,
+        ...(concept.keywords ?? []),
+      ].filter(Boolean).join(' ').toLowerCase();
+
+      return keywords.some(keyword => searchText.includes(keyword.replace(/\s/g, '').toLowerCase()) || searchText.includes(keyword));
+    })
+    .slice(0, 4);
+}
+
 const genreNodes = [
-  { id: 'cyberpunk', label: '사이버펑크', en: 'CYBERPUNK', x: 24, y: 31, orbit: 2, tone: 'cyan', signals: 12 },
-  { id: 'space-opera', label: '스페이스 오페라', en: 'SPACE OPERA', x: 32, y: 65, orbit: 3, tone: 'blue', signals: 18 },
-  { id: 'hard-sf', label: '하드 SF', en: 'HARD SF', x: 58, y: 27, orbit: 1, tone: 'cyan', signals: 9 },
-  { id: 'dystopia', label: '디스토피아', en: 'DYSTOPIA', x: 61, y: 59, orbit: 2, tone: 'amber', signals: 16 },
-  { id: 'posthuman', label: '포스트휴먼', en: 'POST-HUMAN', x: 74, y: 42, orbit: 3, tone: 'amber', signals: 14 },
-  { id: 'ai-sf', label: 'AI SF', en: 'A.I', x: 20, y: 78, orbit: 2, tone: 'blue', signals: 10 },
-  { id: 'time-travel', label: '시간여행', en: 'TIME TRAVEL', x: 70, y: 78, orbit: 1, tone: 'cyan', signals: 11 },
-  { id: 'cosmic', label: '코즈믹 호러', en: 'COSMIC HORROR', x: 83, y: 23, orbit: 3, tone: 'blue', signals: 7 },
-  { id: 'apocalypse', label: '아포칼립스', en: 'APOCALYPSE', x: 87, y: 61, orbit: 3, tone: 'amber', signals: 13 },
-  { id: 'eco-sf', label: '생태 SF', en: 'ECO SF', x: 14, y: 50, orbit: 1, tone: 'cyan', signals: 8 },
+  { id: 'cyberpunk', label: '사이버펑크', en: 'CYBERPUNK', x: 24, y: 31, orbit: 2, tone: 'cyan', signals: 12, keywords: ['사이버펑크', '안드로이드', '기억', '네트워크', 'AI'], questions: ['기술은 인간의 신체와 기억을 어디까지 바꿀 수 있을까?', '도시는 왜 미래의 욕망과 불평등을 동시에 증폭시키는가?'], concepts: ['사이버펑크', '포스트휴먼', 'AI SF'] },
+  { id: 'space-opera', label: '스페이스 오페라', en: 'SPACE OPERA', x: 32, y: 65, orbit: 3, tone: 'blue', signals: 18, keywords: ['스페이스오페라', '스페이스 오페라', '은하', '제국', '우주', '함대'], questions: ['우주 규모의 정치와 전쟁은 인간 사회를 어떻게 확대해서 보여주는가?', '은하 제국의 서사는 왜 모험과 식민의 감각을 동시에 품는가?'], concepts: ['스페이스 오페라', '우주 서사', '문명'] },
+  { id: 'hard-sf', label: '하드 SF', en: 'HARD SF', x: 58, y: 27, orbit: 1, tone: 'cyan', signals: 9, keywords: ['하드SF', '하드 SF', '과학', '물리학', '우주공학', '시뮬레이션'], questions: ['과학적 개연성은 상상력의 제약일까, 추진력일까?', '정확한 과학 지식은 독자의 감각을 어떻게 바꾸는가?'], concepts: ['하드 SF', '과학적 개연성', '기술'] },
+  { id: 'dystopia', label: '디스토피아', en: 'DYSTOPIA', x: 61, y: 59, orbit: 2, tone: 'amber', signals: 16, keywords: ['디스토피아', '통제', '감시', '전체주의', '재난'], questions: ['디스토피아는 미래 예언보다 현재 진단에 가까운가?', '통제 사회에서 개인의 선택은 어디까지 가능한가?'], concepts: ['디스토피아', '감시사회', '저항'] },
+  { id: 'posthuman', label: '포스트휴먼', en: 'POST-HUMAN', x: 74, y: 42, orbit: 3, tone: 'amber', signals: 14, keywords: ['포스트휴먼', '신체', '의식', '인공생명', '공생'], questions: ['인간 이후에도 인간성이라는 말은 유효할까?', '신체가 바뀌면 윤리와 관계도 함께 바뀌는가?'], concepts: ['포스트휴먼', '신체성', '인공생명'] },
+  { id: 'ai-sf', label: 'AI SF', en: 'A.I', x: 20, y: 78, orbit: 2, tone: 'blue', signals: 10, keywords: ['AI', '인공지능', '안드로이드', '로봇', '기계'], questions: ['의식은 계산 가능한가?', '인공지능에게 권리와 책임을 부여할 수 있을까?'], concepts: ['AI SF', '의식', '기계지성'] },
+  { id: 'time-travel', label: '시간여행', en: 'TIME TRAVEL', x: 70, y: 78, orbit: 1, tone: 'cyan', signals: 11, keywords: ['시간여행', '시간', '루프', '타임', '평행세계'], questions: ['과거를 바꿀 수 있다면 책임은 어디까지 확장되는가?', '시간여행 서사는 왜 후회와 선택의 문제로 돌아오는가?'], concepts: ['시간여행', '루프', '인과율'] },
+  { id: 'cosmic', label: '코즈믹 호러', en: 'COSMIC HORROR', x: 83, y: 23, orbit: 3, tone: 'blue', signals: 7, keywords: ['코즈믹', '우주공포', '외계', '미지', '심연'], questions: ['인간이 이해할 수 없는 존재와 마주할 때 지식은 어떤 공포가 되는가?', '우주적 규모는 인간의 의미를 축소하는가 확장하는가?'], concepts: ['코즈믹 호러', '타자성', '미지'] },
+  { id: 'apocalypse', label: '아포칼립스', en: 'APOCALYPSE', x: 87, y: 61, orbit: 3, tone: 'amber', signals: 13, keywords: ['아포칼립스', '종말', '재난', '멸망', '생존'], questions: ['세계의 끝은 사회의 본질을 어떻게 드러내는가?', '생존 서사는 공동체를 회복하는가 파괴하는가?'], concepts: ['아포칼립스', '생존', '재난'] },
+  { id: 'eco-sf', label: '생태 SF', en: 'ECO SF', x: 14, y: 50, orbit: 1, tone: 'cyan', signals: 8, keywords: ['생태', '기후', '환경', '동물', '식물', '공생'], questions: ['비인간 존재를 이야기의 중심에 놓으면 세계관은 어떻게 바뀌는가?', '생태 위기는 기술 문제가 아니라 관계의 문제일까?'], concepts: ['생태 SF', '공생', '비인간'] },
 ];
 
 const mapConnections = [
@@ -302,12 +353,12 @@ const genreSubmaps = {
   'hard-sf': {
     description: '하드 SF는 과학적 가설, 기술적 가능성, 물리 법칙의 제약을 중심으로 다시 여러 탐사 경로로 갈라집니다.',
     nodes: [
-      { id: 'near-future', label: '근미래 기술 SF', en: 'NEAR FUTURE', x: 50, y: 19, orbit: 2, tone: 'cyan', signals: 8 },
-      { id: 'space-engineering', label: '우주 공학 SF', en: 'SPACE ENGINEERING', x: 75, y: 34, orbit: 3, tone: 'blue', signals: 7 },
-      { id: 'planetary-science', label: '행성과학 SF', en: 'PLANETARY SCIENCE', x: 77, y: 64, orbit: 2, tone: 'cyan', signals: 6 },
-      { id: 'first-contact', label: '퍼스트 콘택트', en: 'FIRST CONTACT', x: 50, y: 82, orbit: 2, tone: 'amber', signals: 9 },
-      { id: 'simulation', label: '시뮬레이션 SF', en: 'SIMULATION', x: 24, y: 64, orbit: 1, tone: 'blue', signals: 5 },
-      { id: 'astrobiology', label: '우주생물학', en: 'ASTROBIOLOGY', x: 24, y: 34, orbit: 1, tone: 'amber', signals: 6 },
+      { id: 'near-future', label: '근미래 기술 SF', en: 'NEAR FUTURE', x: 50, y: 19, orbit: 2, tone: 'cyan', signals: 8, keywords: ['근미래', '기술', 'AI', '로봇'], questions: ['가까운 미래의 기술은 지금 우리의 습관을 어떻게 비틀어 보여주는가?'], concepts: ['근미래', '기술사회'] },
+      { id: 'space-engineering', label: '우주 공학 SF', en: 'SPACE ENGINEERING', x: 75, y: 34, orbit: 3, tone: 'blue', signals: 7, keywords: ['우주공학', '우주', '공학', '궤도', '화성'], questions: ['우주 개발은 탐험인가, 또 다른 사회 시스템의 확장인가?'], concepts: ['우주공학', '궤도', '기술'] },
+      { id: 'planetary-science', label: '행성과학 SF', en: 'PLANETARY SCIENCE', x: 77, y: 64, orbit: 2, tone: 'cyan', signals: 6, keywords: ['행성', '화성', '테라포밍', '기후', '생태'], questions: ['행성 환경이 바뀌면 인간 사회의 규칙도 바뀌는가?'], concepts: ['행성과학', '테라포밍', '생태'] },
+      { id: 'first-contact', label: '퍼스트 콘택트', en: 'FIRST CONTACT', x: 50, y: 82, orbit: 2, tone: 'amber', signals: 9, keywords: ['퍼스트 콘택트', '외계', '조우', '언어', '타자'], questions: ['타자와의 첫 만남에서 가장 먼저 무너지는 것은 언어일까 세계관일까?'], concepts: ['퍼스트 콘택트', '타자성', '언어'] },
+      { id: 'simulation', label: '시뮬레이션 SF', en: 'SIMULATION', x: 24, y: 64, orbit: 1, tone: 'blue', signals: 5, keywords: ['시뮬레이션', '가상', '현실', '의식', '기억'], questions: ['현실이 계산된 것이라면 경험의 진짜성은 어디에 놓이는가?'], concepts: ['시뮬레이션', '가상현실', '의식'] },
+      { id: 'astrobiology', label: '우주생물학', en: 'ASTROBIOLOGY', x: 24, y: 34, orbit: 1, tone: 'amber', signals: 6, keywords: ['우주생물학', '생명', '외계생명', '공생', '진화'], questions: ['생명의 기준을 바꾸면 인간 중심의 사고는 얼마나 흔들리는가?'], concepts: ['우주생물학', '생명', '공생'] },
     ],
   },
 };
@@ -458,6 +509,7 @@ function SidePanel({ metrics, recentSignals, timestamp, activeGenre, archiveMode
 export default function Home() {
   const [works, setWorks] = useState(fallbackWorks);
   const [activeGenreId, setActiveGenreId] = useState(null);
+  const [selectedCoordinateId, setSelectedCoordinateId] = useState('hard-sf');
   const [archiveMode, setArchiveMode] = useState('random');
   const [randomWorkCodes, setRandomWorkCodes] = useState(() => getRandomWorks(fallbackWorks, 6).map(work => work.code));
   const [mediaItems, setMediaItems] = useState([]);
@@ -623,10 +675,17 @@ export default function Home() {
     ...(activeGenre ? [{ ...activeGenre, x: 50, y: 50 }] : []),
     ...visibleNodes,
   ];
+  const selectedCoordinate = mapPositions.find(node => node.id === selectedCoordinateId) ?? activeGenre ?? genreNodes[2];
+  const selectedCoordinateWorks = findRelatedWorksForNode(selectedCoordinate, works);
+  const selectedCoordinateConcepts = findRelatedConceptsForNode(selectedCoordinate, concepts);
+  const selectedCoordinateQuestions = selectedCoordinate.questions?.length
+    ? selectedCoordinate.questions
+    : ['이 좌표는 어떤 인간 이후의 조건을 상상하게 만드는가?'];
   const mapDescription = activeSubmap?.description
     ?? '탐사 좌표는 작품을 하나의 장르에 가두지 않습니다. 사이버펑크는 디스토피아와, 생태 SF는 스페이스 오페라와, 시간여행은 뉴웨이브와 겹치며 새로운 질문을 만듭니다.';
 
   const handleGenreNodeClick = node => {
+    setSelectedCoordinateId(node.id);
     if (genreSubmaps[node.id]) {
       setActiveGenreId(node.id);
     }
@@ -997,7 +1056,12 @@ export default function Home() {
               <button
                 className={`map-core ${activeGenre ? 'is-returnable' : ''}`}
                 type="button"
-                onClick={() => activeGenre && setActiveGenreId(null)}
+                onClick={() => {
+                  if (activeGenre) {
+                    setActiveGenreId(null);
+                    setSelectedCoordinateId(activeGenre.id);
+                  }
+                }}
                 aria-label={activeGenre ? '상위 SF 장르 지도로 돌아가기' : 'SF 중심 좌표'}
               >
                 <strong>{activeGenre ? activeGenre.label : 'SF'}</strong>
@@ -1020,7 +1084,7 @@ export default function Home() {
 
               {visibleNodes.map(node => (
                 <button
-                  className={`genre-node tone-${node.tone} ${genreSubmaps[node.id] ? 'has-submap' : ''}`}
+                  className={`genre-node tone-${node.tone} ${genreSubmaps[node.id] ? 'has-submap' : ''} ${selectedCoordinate.id === node.id ? 'is-selected' : ''}`}
                   type="button"
                   key={node.id}
                   onClick={() => handleGenreNodeClick(node)}
@@ -1038,22 +1102,66 @@ export default function Home() {
 
             <aside className="coordinate-brief">
               <span>MAP PROTOCOL</span>
-              <h3>{activeGenre ? `${activeGenre.label} 하위 좌표` : '장르를 고정하지 않고 연결하기'}</h3>
+              <h3>{selectedCoordinate.label}</h3>
               <p>{mapDescription}</p>
               <dl>
                 <div>
-                  <dt>NODES</dt>
-                  <dd>{visibleNodes.length} 장르 좌표</dd>
+                  <dt>SELECTED NODE</dt>
+                  <dd>{selectedCoordinate.en}</dd>
                 </div>
                 <div>
-                  <dt>LINKS</dt>
-                  <dd>{visibleConnections.length} 개념 연결선</dd>
+                  <dt>RELATED WORKS</dt>
+                  <dd>{selectedCoordinateWorks.length} 작품 신호</dd>
                 </div>
                 <div>
                   <dt>MODE</dt>
                   <dd>{activeGenre ? 'Subgenre Mapping' : 'Archive Mapping'}</dd>
                 </div>
               </dl>
+              <div className="coordinate-panel-section">
+                <span>RELATED WORKS</span>
+                {selectedCoordinateWorks.length > 0 ? (
+                  <div className="coordinate-work-list">
+                    {selectedCoordinateWorks.map(work => {
+                      const WorkLink = work.link ? 'a' : 'article';
+                      return (
+                        <WorkLink
+                          className="coordinate-work-item"
+                          href={work.link || undefined}
+                          key={work.code}
+                          rel={work.link ? 'noreferrer' : undefined}
+                          target={work.link ? '_blank' : undefined}
+                        >
+                          <strong>{work.title}</strong>
+                          <em>{work.medium}</em>
+                        </WorkLink>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="coordinate-empty-note">아직 이 좌표와 자동 연결된 작품이 없습니다.</p>
+                )}
+              </div>
+              <div className="coordinate-panel-section">
+                <span>CORE QUESTIONS</span>
+                <ul className="coordinate-question-list">
+                  {selectedCoordinateQuestions.map(question => <li key={question}>{question}</li>)}
+                </ul>
+              </div>
+              <div className="coordinate-panel-section">
+                <span>RELATED CONCEPTS</span>
+                <div className="coordinate-concept-list">
+                  {(selectedCoordinateConcepts.length > 0 ? selectedCoordinateConcepts : selectedCoordinate.concepts?.map(term => ({ code: term, term })) ?? []).map(concept => (
+                    <button
+                      key={concept.code || concept.term}
+                      onClick={() => concept.code && selectConcept(concept.code)}
+                      type="button"
+                    >
+                      {concept.term}
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="coordinate-minimap" aria-label="탐사 좌표 미니맵">
                 <div className="coordinate-minimap-top">
                   <span>MINI MAP</span>

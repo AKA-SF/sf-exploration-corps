@@ -253,7 +253,9 @@
 }
 
 .reading-mode .map-core,
-.reading-mode .genre-node span {
+.reading-mode .genre-node span,
+.reading-mode .coordinate-work-item,
+.reading-mode .coordinate-concept-list button {
   border-color: rgba(47, 111, 120, 0.32) !important;
   background: rgba(255, 252, 244, 0.92) !important;
   box-shadow: 0 10px 28px rgba(36, 28, 15, 0.12) !important;
@@ -262,7 +264,8 @@
 .reading-mode .map-core strong,
 .reading-mode .genre-node span b,
 .reading-mode .coordinate-brief h3,
-.reading-mode .works-brief h3 {
+.reading-mode .works-brief h3,
+.reading-mode .coordinate-work-item strong {
   color: #111827 !important;
 }
 
@@ -274,6 +277,8 @@
 .reading-mode .coordinate-brief dt,
 .reading-mode .coordinate-minimap-top,
 .reading-mode .coordinate-minimap-top *,
+.reading-mode .coordinate-panel-section > span,
+.reading-mode .coordinate-concept-list button,
 .reading-mode .works-brief > span,
 .reading-mode .works-brief dt,
 .reading-mode .archive-view-status {
@@ -283,7 +288,10 @@
 .reading-mode .coordinate-brief p,
 .reading-mode .works-brief p,
 .reading-mode .coordinate-brief dd,
-.reading-mode .works-brief dd {
+.reading-mode .works-brief dd,
+.reading-mode .coordinate-question-list li,
+.reading-mode .coordinate-empty-note,
+.reading-mode .coordinate-work-item em {
   color: #34444b !important;
 }
 
