@@ -509,7 +509,8 @@ function SidePanel({ metrics, recentSignals, timestamp, activeGenre, archiveMode
 export default function Home() {
   const [works, setWorks] = useState(fallbackWorks);
   const [activeGenreId, setActiveGenreId] = useState(null);
-  const [selectedCoordinateId, setSelectedCoordinateId] = useState('hard-sf');
+  const [selectedCoordinateId, setSelectedCoordinateId] = useState('');
+  const [mapZoom, setMapZoom] = useState(1);
   const [archiveMode, setArchiveMode] = useState('random');
   const [randomWorkCodes, setRandomWorkCodes] = useState(() => getRandomWorks(fallbackWorks, 6).map(work => work.code));
   const [mediaItems, setMediaItems] = useState([]);
@@ -676,6 +677,11 @@ export default function Home() {
     ...visibleNodes,
   ];
   const selectedCoordinate = mapPositions.find(node => node.id === selectedCoordinateId) ?? activeGenre ?? genreNodes[2];
+  const selectedCoordinateConnections = selectedCoordinateId
+    ? visibleConnections.filter(([from, to]) => from === selectedCoordinateId || to === selectedCoordinateId)
+    : [];
+  const relatedCoordinateIds = new Set(selectedCoordinateConnections.flat());
+  const hasCoordinateFocus = Boolean(selectedCoordinateId);
   const selectedCoordinateWorks = findRelatedWorksForNode(selectedCoordinate, works);
   const selectedCoordinateConcepts = findRelatedConceptsForNode(selectedCoordinate, concepts);
   const selectedCoordinateQuestions = selectedCoordinate.questions?.length
@@ -1024,7 +1030,13 @@ export default function Home() {
           </div>
 
           <div className="coordinate-map-layout">
-            <div className="genre-map" aria-label="SF 장르 노드 맵">
+            <div className={`genre-map ${hasCoordinateFocus ? 'is-focused' : ''}`} aria-label="SF 장르 노드 맵">
+              <div className="map-zoom-controls" aria-label="탐사 좌표 확대 축소">
+                <button type="button" onClick={() => setMapZoom(value => Math.min(1.22, Number((value + 0.08).toFixed(2))))}>+</button>
+                <button type="button" onClick={() => setMapZoom(1)}>100</button>
+                <button type="button" onClick={() => setMapZoom(value => Math.max(0.86, Number((value - 0.08).toFixed(2))))}>-</button>
+              </div>
+              <div className="map-projection" style={{ '--map-zoom': mapZoom }}>
               <div className="map-hud map-hud-top">
                 <span>{activeGenre ? 'SUB-SECTOR VIEW' : 'SECTOR VIEW'}</span>
                 <strong>{activeGenre ? activeGenre.en : 'ARCHIVE CARTOGRAPHY'}</strong>
@@ -1043,6 +1055,7 @@ export default function Home() {
                   if (!start || !end) return null;
                   return (
                     <line
+                      className={hasCoordinateFocus ? (from === selectedCoordinateId || to === selectedCoordinateId ? 'is-active' : 'is-muted') : ''}
                       key={`${from}-${to}`}
                       x1={start.x}
                       y1={start.y}
@@ -1084,7 +1097,7 @@ export default function Home() {
 
               {visibleNodes.map(node => (
                 <button
-                  className={`genre-node tone-${node.tone} ${genreSubmaps[node.id] ? 'has-submap' : ''} ${selectedCoordinate.id === node.id ? 'is-selected' : ''}`}
+                  className={`genre-node tone-${node.tone} ${genreSubmaps[node.id] ? 'has-submap' : ''} ${selectedCoordinate.id === node.id ? 'is-selected' : ''} ${hasCoordinateFocus && relatedCoordinateIds.has(node.id) && selectedCoordinate.id !== node.id ? 'is-related' : ''} ${hasCoordinateFocus && !relatedCoordinateIds.has(node.id) && selectedCoordinate.id !== node.id ? 'is-muted' : ''}`}
                   type="button"
                   key={node.id}
                   onClick={() => handleGenreNodeClick(node)}
@@ -1098,6 +1111,7 @@ export default function Home() {
                   </span>
                 </button>
               ))}
+              </div>
             </div>
 
             <aside className="coordinate-brief">

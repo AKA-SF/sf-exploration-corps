@@ -1906,13 +1906,15 @@
   grid-template-columns: minmax(660px, 1fr) minmax(280px, 0.34fr);
   gap: 28px;
   align-items: stretch;
+  height: 690px;
 }
 
 .genre-map {
   position: relative;
-  min-height: 690px;
+  height: 690px;
   border: 1px solid var(--line);
   overflow: hidden;
+  perspective: 1100px;
   background:
     radial-gradient(circle at 24% 31%, rgba(124, 199, 255, 0.12), transparent 13%),
     radial-gradient(circle at 74% 42%, rgba(240, 184, 90, 0.08), transparent 16%),
@@ -1922,6 +1924,45 @@
     linear-gradient(90deg, rgba(25, 247, 241, 0.035) 1px, transparent 1px),
     rgba(0, 12, 18, 0.62);
   background-size: auto, auto, auto, auto, 72px 72px, 72px 72px, auto;
+}
+
+.map-projection {
+  position: absolute;
+  inset: 0;
+  transform: scale(var(--map-zoom, 1)) rotateX(2deg) rotateZ(-0.4deg);
+  transform-origin: center;
+  transform-style: preserve-3d;
+  transition: transform 320ms ease;
+}
+
+.map-zoom-controls {
+  position: absolute;
+  z-index: 8;
+  top: 18px;
+  right: 18px;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid rgba(25, 247, 241, 0.24);
+  background: rgba(0, 12, 18, 0.72);
+}
+
+.map-zoom-controls button {
+  min-width: 32px;
+  height: 30px;
+  border: 1px solid rgba(25, 247, 241, 0.22);
+  color: var(--cyan);
+  background: rgba(0, 20, 26, 0.72);
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.map-zoom-controls button:hover,
+.map-zoom-controls button:focus-visible {
+  border-color: rgba(25, 247, 241, 0.72);
+  color: #fff;
 }
 
 .genre-map::before,
@@ -2036,6 +2077,17 @@
   stroke-width: 0.32;
   stroke-dasharray: 4 5;
   vector-effect: non-scaling-stroke;
+  transition: opacity 220ms ease, stroke 220ms ease, stroke-width 220ms ease;
+}
+
+.map-lines line.is-active {
+  stroke: rgba(240, 184, 90, 0.82);
+  stroke-width: 0.78;
+  stroke-dasharray: 0;
+}
+
+.map-lines line.is-muted {
+  opacity: 0.12;
 }
 
 .map-core {
@@ -2097,6 +2149,7 @@
   border: 0;
   transform: translate(-50%, -50%);
   cursor: pointer;
+  transition: opacity 220ms ease, filter 220ms ease, transform 260ms ease;
 }
 
 .genre-node i {
@@ -2170,9 +2223,27 @@
     linear-gradient(135deg, rgba(240, 184, 90, 0.18), rgba(0, 11, 17, 0.86));
 }
 
+.genre-node.is-selected {
+  z-index: 7;
+  transform: translate(-50%, -50%) scale(1.18) translateZ(40px);
+}
+
 .genre-node.is-selected i {
   border-color: rgba(240, 184, 90, 0.9);
   box-shadow: 0 0 28px rgba(240, 184, 90, 0.58);
+}
+
+.genre-node.is-related {
+  z-index: 6;
+  filter: saturate(1.2);
+  transform: translate(-50%, -50%) scale(1.04) translateZ(22px);
+}
+
+.genre-node.is-muted {
+  z-index: 3;
+  opacity: 0.22;
+  filter: grayscale(0.7) blur(0.2px);
+  transform: translate(-50%, -50%) scale(0.88) translateZ(-26px);
 }
 
 .map-signal-dot {
@@ -2187,6 +2258,8 @@
 .coordinate-brief {
   border: 1px solid var(--line);
   padding: 28px;
+  height: 690px;
+  overflow: auto;
   background:
     linear-gradient(135deg, rgba(25, 247, 241, 0.08), transparent 46%),
     rgba(0, 12, 18, 0.72);
@@ -2655,10 +2728,16 @@
 
   .coordinate-map-layout {
     grid-template-columns: 1fr;
+    height: auto;
   }
 
   .genre-map {
-    min-height: 560px;
+    height: 560px;
+  }
+
+  .coordinate-brief {
+    height: auto;
+    max-height: none;
   }
 
   .map-hud {
@@ -2850,7 +2929,7 @@
   }
 
   .genre-map {
-    min-height: 520px;
+    height: 520px;
   }
 
   .genre-node {
