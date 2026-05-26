@@ -13,6 +13,7 @@ import {
   Send,
   Sparkles,
 } from 'lucide-react';
+import CoordinateUniverse from '../components/CoordinateUniverse';
 import PageTransition from '../components/PageTransition';
 import './Home.css';
 
@@ -378,21 +379,6 @@ const genreSubmaps = {
   },
 };
 
-const mapSignalDots = [
-  { x: 18, y: 24, size: 2, delay: 0.1 },
-  { x: 28, y: 43, size: 3, delay: 0.4 },
-  { x: 42, y: 18, size: 2, delay: 0.8 },
-  { x: 52, y: 72, size: 3, delay: 1.1 },
-  { x: 67, y: 35, size: 2, delay: 1.4 },
-  { x: 79, y: 50, size: 3, delay: 1.7 },
-  { x: 35, y: 82, size: 2, delay: 2.0 },
-  { x: 90, y: 33, size: 2, delay: 2.3 },
-  { x: 11, y: 69, size: 3, delay: 2.6 },
-  { x: 48, y: 46, size: 2, delay: 2.9 },
-  { x: 56, y: 12, size: 2, delay: 3.2 },
-  { x: 73, y: 87, size: 3, delay: 3.5 },
-];
-
 function RadarDisplay() {
   const orbitDots = useMemo(() => (
     Array.from({ length: 44 }, (_, index) => {
@@ -525,9 +511,7 @@ export default function Home() {
   const [works, setWorks] = useState(fallbackWorks);
   const [activeGenreId, setActiveGenreId] = useState(null);
   const [selectedCoordinateId, setSelectedCoordinateId] = useState('');
-  const [mapView, setMapView] = useState({ zoom: 1, panX: 0, panY: 0 });
-  const [isMapPanning, setIsMapPanning] = useState(false);
-  const mapDragRef = useRef(null);
+  const [mapView, setMapView] = useState({ yaw: -0.24, pitch: 0.18, zoom: 1 });
   const [archiveMode, setArchiveMode] = useState('random');
   const [randomWorkCodes, setRandomWorkCodes] = useState(() => getRandomWorks(fallbackWorks, 6).map(work => work.code));
   const [mediaItems, setMediaItems] = useState([]);
@@ -563,8 +547,7 @@ export default function Home() {
   const resetCoordinateMap = () => {
     setActiveGenreId(null);
     setSelectedCoordinateId('');
-    setMapView({ zoom: 1, panX: 0, panY: 0 });
-    setIsMapPanning(false);
+    setMapView({ yaw: -0.24, pitch: 0.18, zoom: 1 });
   };
   const [currentTime, setCurrentTime] = useState(() => new Date());
 
@@ -718,50 +701,8 @@ export default function Home() {
   const minimapViewport = {
     width: minimapViewportWidth,
     height: minimapViewportHeight,
-    x: clamp(50 - mapView.panX / 7 - minimapViewportWidth / 2, 4, 96 - minimapViewportWidth),
-    y: clamp(50 - mapView.panY / 7 - minimapViewportHeight / 2, 4, 96 - minimapViewportHeight),
-  };
-
-  const zoomCoordinateMap = amount => {
-    setMapView(view => ({
-      ...view,
-      zoom: clamp(Number((view.zoom + amount).toFixed(2)), 0.72, 1.72),
-    }));
-  };
-
-  const handleMapWheel = event => {
-    event.preventDefault();
-    const direction = event.deltaY > 0 ? -0.08 : 0.08;
-    zoomCoordinateMap(direction);
-  };
-
-  const handleMapPointerDown = event => {
-    if (event.target.closest('button, a')) return;
-    mapDragRef.current = {
-      startX: event.clientX,
-      startY: event.clientY,
-      panX: mapView.panX,
-      panY: mapView.panY,
-    };
-    setIsMapPanning(true);
-    event.currentTarget.setPointerCapture?.(event.pointerId);
-  };
-
-  const handleMapPointerMove = event => {
-    if (!mapDragRef.current) return;
-    const nextPanX = mapDragRef.current.panX + event.clientX - mapDragRef.current.startX;
-    const nextPanY = mapDragRef.current.panY + event.clientY - mapDragRef.current.startY;
-    setMapView(view => ({
-      ...view,
-      panX: clamp(nextPanX, -260, 260),
-      panY: clamp(nextPanY, -210, 210),
-    }));
-  };
-
-  const endMapPan = event => {
-    mapDragRef.current = null;
-    setIsMapPanning(false);
-    event.currentTarget.releasePointerCapture?.(event.pointerId);
+    x: clamp(50 + (mapView.yaw * 16) - minimapViewportWidth / 2, 4, 96 - minimapViewportWidth),
+    y: clamp(50 + (mapView.pitch * 36) - minimapViewportHeight / 2, 4, 96 - minimapViewportHeight),
   };
 
   const handleGenreNodeClick = node => {
@@ -1109,112 +1050,18 @@ export default function Home() {
           </div>
 
           <div className="coordinate-map-layout">
-            <div
-              className={`genre-map ${hasCoordinateFocus ? 'is-focused' : ''} ${isMapPanning ? 'is-panning' : ''}`}
-              aria-label="SF 장르 노드 맵"
-              onPointerDown={handleMapPointerDown}
-              onPointerMove={handleMapPointerMove}
-              onPointerUp={endMapPan}
-              onPointerCancel={endMapPan}
-              onWheel={handleMapWheel}
-            >
-              <div className="map-zoom-controls" aria-label="탐사 좌표 확대 축소">
-                <button type="button" onClick={resetCoordinateMap}>ROOT</button>
-                <button type="button" onClick={() => zoomCoordinateMap(0.08)}>+</button>
-                <button type="button" onClick={() => setMapView(view => ({ ...view, zoom: 1, panX: 0, panY: 0 }))}>100</button>
-                <button type="button" onClick={() => zoomCoordinateMap(-0.08)}>-</button>
-              </div>
-              {activeGenre && (
-                <button className="map-back-button" type="button" onClick={resetCoordinateMap}>
-                  상위 좌표로 돌아가기
-                </button>
-              )}
-              <div
-                className="map-projection"
-                style={{
-                  '--map-zoom': mapView.zoom,
-                  '--map-pan-x': `${mapView.panX}px`,
-                  '--map-pan-y': `${mapView.panY}px`,
-                }}
-              >
-              <div className="map-hud map-hud-top">
-                <span>{activeGenre ? 'SUB-SECTOR VIEW' : 'SECTOR VIEW'}</span>
-                <strong>{activeGenre ? activeGenre.en : 'ARCHIVE CARTOGRAPHY'}</strong>
-              </div>
-              <div className="map-hud map-hud-bottom">
-                <span>CAMERA</span>
-                <strong>X 3986.21 / Y -210.93</strong>
-              </div>
-              <div className="map-grid-cross" aria-hidden="true" />
-              <div className="map-nebula map-nebula-a" aria-hidden="true" />
-              <div className="map-nebula map-nebula-b" aria-hidden="true" />
-              <svg className="map-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
-                {visibleConnections.map(([from, to]) => {
-                  const start = mapPositions.find(node => node.id === from);
-                  const end = mapPositions.find(node => node.id === to);
-                  if (!start || !end) return null;
-                  return (
-                    <line
-                      className={hasCoordinateFocus ? (from === selectedCoordinateId || to === selectedCoordinateId ? 'is-active' : 'is-muted') : ''}
-                      key={`${from}-${to}`}
-                      x1={start.x}
-                      y1={start.y}
-                      x2={end.x}
-                      y2={end.y}
-                    />
-                  );
-                })}
-              </svg>
-
-              <button
-                className={`map-core ${activeGenre ? 'is-returnable' : ''}`}
-                type="button"
-                onClick={() => {
-                  if (activeGenre) {
-                    setActiveGenreId(null);
-                    setSelectedCoordinateId('');
-                  } else {
-                    setSelectedCoordinateId('');
-                  }
-                }}
-                aria-label={activeGenre ? '상위 SF 장르 지도로 돌아가기' : 'SF 중심 좌표'}
-              >
-                <strong>{activeGenre ? activeGenre.label : 'SF'}</strong>
-                <span>{activeGenre ? 'BACK TO ROOT' : 'CORE'}</span>
-              </button>
-
-              {mapSignalDots.map(dot => (
-                <span
-                  className="map-signal-dot"
-                  key={`${dot.x}-${dot.y}`}
-                  style={{
-                    left: `${dot.x}%`,
-                    top: `${dot.y}%`,
-                    width: dot.size,
-                    height: dot.size,
-                    animationDelay: `${dot.delay}s`,
-                  }}
-                />
-              ))}
-
-              {visibleNodes.map(node => (
-                <button
-                  className={`genre-node tone-${node.tone} ${genreSubmaps[node.id] ? 'has-submap' : ''} ${selectedCoordinate.id === node.id ? 'is-selected' : ''} ${hasCoordinateFocus && relatedCoordinateIds.has(node.id) && selectedCoordinate.id !== node.id ? 'is-related' : ''} ${hasCoordinateFocus && !relatedCoordinateIds.has(node.id) && selectedCoordinate.id !== node.id ? 'is-muted' : ''}`}
-                  type="button"
-                  key={node.id}
-                  onClick={() => handleGenreNodeClick(node)}
-                  style={{ left: `${node.x}%`, top: `${node.y}%`, '--orbit': node.orbit }}
-                  aria-label={`${node.label} 좌표 ${genreSubmaps[node.id] ? '하위 지도 열기' : '탐사 신호'}`}
-                >
-                  <i />
-                  <span>
-                    <b>{node.label}</b>
-                    <em>{node.en} / {node.signals} SIGNALS</em>
-                  </span>
-                </button>
-              ))}
-              </div>
-            </div>
+            <CoordinateUniverse
+              activeGenre={activeGenre}
+              className={hasCoordinateFocus ? 'is-focused' : ''}
+              connections={visibleConnections}
+              hasFocus={hasCoordinateFocus}
+              nodes={mapPositions}
+              onNodeSelect={handleGenreNodeClick}
+              onReset={resetCoordinateMap}
+              onViewChange={setMapView}
+              relatedIds={relatedCoordinateIds}
+              selectedId={selectedCoordinateId}
+            />
 
             <aside className="coordinate-brief">
               <span>MAP PROTOCOL</span>
