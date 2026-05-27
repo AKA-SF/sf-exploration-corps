@@ -1716,6 +1716,16 @@ export default function Home() {
                       </div>
                       <div className="work-card-footer">
                         <span>DETAIL / COMMENTS</span>
+                        <button
+                          className="work-detail-open"
+                          onClick={event => {
+                            event.stopPropagation();
+                            openWorkDetail(work);
+                          }}
+                          type="button"
+                        >
+                          상세 보기
+                        </button>
                         <ChevronRight aria-hidden="true" />
                       </div>
                     </article>
