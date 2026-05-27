@@ -29,18 +29,24 @@ export default function Login() {
     try {
       if (!isConfigured || !supabase) throw new Error('Supabase 환경 변수가 아직 연결되지 않았습니다.');
       if (mode === 'signup') {
-        const { error } = await supabase.auth.signUp({
+        const redirectTo = `${window.location.origin}/profile`;
+        const { data, error } = await supabase.auth.signUp({
           email: form.email,
           password: form.password,
           options: {
+            emailRedirectTo: redirectTo,
             data: {
               nickname: form.nickname || form.email.split('@')[0],
             },
           },
         });
         if (error) throw error;
+        if (data.session) {
+          navigate('/profile');
+          return;
+        }
         setStatus('success');
-        setMessage('가입 메일을 확인해주세요. 확인 후 로그인할 수 있습니다.');
+        setMessage('등록 요청이 완료되었습니다. Supabase 이메일 확인 설정이 켜져 있다면 메일함에서 확인 링크를 눌러주세요.');
         return;
       }
 
@@ -63,7 +69,9 @@ export default function Login() {
           <span>CREW AUTHENTICATION</span>
           <h1>{mode === 'signup' ? '탐사 대원 등록' : '탐사 대원 로그인'}</h1>
           <p>
-            개인 탐사 프로필, 마일리지, 배지를 저장하기 위한 계정입니다.
+            {mode === 'signup'
+              ? '이메일과 비밀번호로 개인 탐사 프로필을 만듭니다.'
+              : '개인 탐사 프로필, 마일리지, 배지를 저장하기 위한 계정입니다.'}
           </p>
         </div>
 
@@ -112,10 +120,10 @@ export default function Login() {
 
           <button disabled={status === 'submitting'} type="submit">
             <LogIn aria-hidden="true" />
-            {status === 'submitting' ? '접속 중' : mode === 'signup' ? '등록하기' : '로그인'}
+            {status === 'submitting' ? '처리 중' : mode === 'signup' ? '계정 등록하기' : '로그인'}
           </button>
           <p className={`login-message is-${status}`}>
-            {message || (mode === 'signup' ? '가입 후 이메일 확인이 필요할 수 있습니다.' : '아직 계정이 없다면 아래에서 등록하세요.')}
+            {message || (mode === 'signup' ? '비밀번호는 6자 이상이어야 합니다.' : '아직 계정이 없다면 아래에서 등록하세요.')}
           </p>
         </form>
 
