@@ -61,18 +61,39 @@
   aspect-ratio: 9 / 11;
   overflow: hidden;
   border: 1px solid rgba(0, 255, 255, 0.36);
+  color: var(--primary-cyan);
   background:
-    linear-gradient(180deg, rgba(0, 255, 255, 0.08), transparent),
-    rgba(0, 0, 0, 0.54);
+    linear-gradient(rgba(0, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.035) 1px, transparent 1px),
+    rgba(0, 8, 12, 0.76);
+  background-size: 10px 10px;
   box-shadow:
     inset 0 0 22px rgba(0, 255, 255, 0.1),
     0 0 26px rgba(0, 255, 255, 0.08);
+  image-rendering: pixelated;
 }
 
 .crew-avatar svg {
   display: block;
   width: 100%;
   height: 100%;
+}
+
+.crew-avatar-bg {
+  fill: rgba(0, 12, 16, 0.76);
+}
+
+.crew-avatar-frame {
+  fill: currentColor;
+  opacity: 0.32;
+}
+
+.crew-avatar-serial {
+  fill: currentColor;
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
 }
 
 .profile-nickname-form {
