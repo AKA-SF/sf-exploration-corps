@@ -29,12 +29,10 @@ export default function Login() {
     try {
       if (!isConfigured || !supabase) throw new Error('Supabase 환경 변수가 아직 연결되지 않았습니다.');
       if (mode === 'signup') {
-        const redirectTo = `${window.location.origin}/profile`;
         const { data, error } = await supabase.auth.signUp({
           email: form.email,
           password: form.password,
           options: {
-            emailRedirectTo: redirectTo,
             data: {
               nickname: form.nickname || form.email.split('@')[0],
             },
