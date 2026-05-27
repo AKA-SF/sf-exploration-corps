@@ -1,0 +1,120 @@
+.login-page {
+  min-height: 100vh;
+  padding: 26px 18px 118px;
+}
+
+.login-panel {
+  display: grid;
+  gap: 22px;
+  width: min(520px, 100%);
+  margin: 42px auto 0;
+  border: 1px solid rgba(0, 255, 255, 0.24);
+  padding: 28px;
+  background:
+    linear-gradient(135deg, rgba(0, 255, 255, 0.08), transparent 44%),
+    rgba(0, 8, 12, 0.82);
+}
+
+.login-header span,
+.login-form label span {
+  color: var(--primary-cyan);
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.4px;
+}
+
+.login-header h1 {
+  margin: 12px 0;
+  color: var(--text-main);
+  font-size: 34px;
+  line-height: 1.05;
+}
+
+.login-header p,
+.login-message {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
+.login-form {
+  display: grid;
+  gap: 14px;
+}
+
+.login-form label {
+  display: grid;
+  gap: 8px;
+}
+
+.login-input {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  padding: 0 12px;
+  background: rgba(0, 0, 0, 0.38);
+}
+
+.login-input svg {
+  width: 16px;
+  height: 16px;
+  color: var(--primary-cyan);
+}
+
+.login-form input {
+  width: 100%;
+  min-height: 46px;
+  border: 0;
+  color: var(--text-main);
+  background: transparent;
+  font-size: 14px;
+}
+
+.login-form input:focus {
+  outline: 0;
+}
+
+.login-form > label > input {
+  min-height: 46px;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  padding: 0 12px;
+  color: var(--text-main);
+  background: rgba(0, 0, 0, 0.38);
+}
+
+.login-form button,
+.login-mode-switch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 46px;
+  border: 1px solid rgba(0, 255, 255, 0.42);
+  color: #001417;
+  background: var(--primary-cyan);
+  font-size: 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.login-form button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.login-mode-switch {
+  color: var(--primary-cyan);
+  background: rgba(0, 0, 0, 0.32);
+}
+
+.login-message.is-error {
+  color: var(--accent-amber);
+}
+
+.login-message.is-success {
+  color: var(--primary-cyan);
+}

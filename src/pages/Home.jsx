@@ -24,6 +24,7 @@ const navItems = [
   { label: '탐사 로그', href: '/exploration-log' },
   { label: 'SF 개념 사전', href: '#concept-dictionary' },
   { label: '커뮤니티게시판', href: '/questions' },
+  { label: '내 탐사 프로필', href: '/profile' },
   { label: 'Contact', href: '#contact' },
 ];
 

@@ -12,10 +12,12 @@ import Questions from './pages/Questions';
 import LogEntry from './pages/LogEntry';
 import LogResult from './pages/LogResult';
 import Profile from './pages/Profile';
+import Login from './pages/Login';
 import Network from './pages/Network';
 import NetworkDetail from './pages/NetworkDetail';
 import Navbar from './components/Navbar';
 import InteractiveBackground from './components/InteractiveBackground';
+import { AuthProvider } from './context/AuthContext';
 
 function App() {
   const location = useLocation();
@@ -31,7 +33,8 @@ function App() {
   }, [siteMode]);
 
   return (
-    <div className={`${isDesktopSurface ? 'mobile-container desktop-home' : 'mobile-container'} ${isReadingMode ? 'reading-mode' : 'console-mode'}`}>
+    <AuthProvider>
+      <div className={`${isDesktopSurface ? 'mobile-container desktop-home' : 'mobile-container'} ${isReadingMode ? 'reading-mode' : 'console-mode'}`}>
       <div className="app-wrapper">
         <InteractiveBackground />
         {isDesktopSurface && (
@@ -57,12 +60,14 @@ function App() {
               <Route path="/network" element={<Network />} />
               <Route path="/network/:id" element={<NetworkDetail />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/login" element={<Login />} />
             </Routes>
           </AnimatePresence>
         </div>
         <Navbar />
       </div>
-    </div>
+      </div>
+    </AuthProvider>
   );
 }
 
