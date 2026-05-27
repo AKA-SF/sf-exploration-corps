@@ -17,6 +17,7 @@ import {
 import CoordinateUniverse from '../components/CoordinateUniverse';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
+import { recordUserActivity } from '../lib/activityLogger';
 import { supabase } from '../lib/supabaseClient';
 import './Home.css';
 
@@ -1338,6 +1339,16 @@ export default function Home() {
         if (response.status === 401) throw new Error('비밀번호가 맞지 않습니다. 기본 비밀번호는 sf 입니다.');
         throw new Error(data?.notion?.message || data?.error || '저장에 실패했습니다.');
       }
+      await recordUserActivity(user, {
+        actionType: 'post',
+        points: 20,
+        genre: questionForm.category,
+        metadata: {
+          title: questionForm.title,
+          category: questionForm.category,
+          node: 'community-board',
+        },
+      });
       setQuestionForm({
         title: '',
         content: '',
@@ -1347,7 +1358,7 @@ export default function Home() {
         password: '',
       });
       setQuestionStatus('success');
-      setQuestionMessage('새 글이 저장되었습니다.');
+      setQuestionMessage(user ? '새 글이 저장되었습니다. +20 MP가 반영됩니다.' : '새 글이 저장되었습니다.');
     } catch (error) {
       setQuestionStatus('error');
       setQuestionMessage(error.message);
@@ -1396,14 +1407,8 @@ export default function Home() {
       return;
     }
 
-    await supabase.from('profiles').upsert({
-      id: user.id,
-      nickname: authorName,
-    }, { onConflict: 'id' });
-
-    await supabase.from('activity_logs').insert({
-      user_id: user.id,
-      action_type: 'comment',
+    await recordUserActivity(user, {
+      actionType: 'comment',
       points: 10,
       genre: selectedWork.medium,
       metadata: {

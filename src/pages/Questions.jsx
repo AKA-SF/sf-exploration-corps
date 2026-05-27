@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, MessageSquare, Send, Sparkles } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
+import { useAuth } from '../context/authContextValue';
+import { recordUserActivity } from '../lib/activityLogger';
 import './Questions.css';
 
 const fallbackQuestions = [];
@@ -17,6 +19,7 @@ const emptyForm = {
 
 export default function Questions() {
   const { questionId } = useParams();
+  const { user } = useAuth();
   const [questions, setQuestions] = useState(fallbackQuestions);
   const [activeQuestion, setActiveQuestion] = useState(null);
   const [comments, setComments] = useState([]);
@@ -112,9 +115,19 @@ export default function Questions() {
         if (response.status === 401) throw new Error('비밀번호가 맞지 않습니다. 기본 비밀번호는 sf 입니다.');
         throw new Error(data?.notion?.message || data?.error || '저장에 실패했습니다.');
       }
+      await recordUserActivity(user, {
+        actionType: 'post',
+        points: 20,
+        genre: questionForm.category,
+        metadata: {
+          title: questionForm.title,
+          category: questionForm.category,
+          node: 'community-board',
+        },
+      });
       setQuestionForm(emptyForm);
       setQuestionStatus('success');
-      setQuestionMessage('새 글이 저장되어 게시판에 표시됩니다.');
+      setQuestionMessage(user ? '새 글이 저장되었습니다. +20 MP가 반영됩니다.' : '새 글이 저장되어 게시판에 표시됩니다.');
       loadQuestions();
     } catch (error) {
       setQuestionStatus('error');
@@ -148,9 +161,20 @@ export default function Questions() {
         if (response.status === 401) throw new Error('비밀번호가 맞지 않습니다. 기본 비밀번호는 sf 입니다.');
         throw new Error(data?.notion?.message || data?.error || '댓글 저장에 실패했습니다.');
       }
+      await recordUserActivity(user, {
+        actionType: 'comment',
+        points: 10,
+        genre: activeQuestion?.category ?? '커뮤니티',
+        metadata: {
+          title: `${activeQuestion?.title ?? '커뮤니티 글'} 댓글`,
+          question_id: questionId,
+          question_title: activeQuestion?.title,
+          node: 'community-board',
+        },
+      });
       setCommentForm({ name: '', content: '', password: '' });
       setCommentStatus('success');
-      setCommentMessage('댓글이 저장되었습니다.');
+      setCommentMessage(user ? '댓글이 저장되었습니다. +10 MP가 반영됩니다.' : '댓글이 저장되었습니다.');
       loadQuestionDetail(questionId);
     } catch (error) {
       setCommentStatus('error');
