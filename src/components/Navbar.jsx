@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Crosshair, FilePlus, User, Radio } from 'lucide-react';
+import { Crosshair, User, Radio } from 'lucide-react';
 
 const Navbar = () => {
   return (
@@ -7,10 +7,6 @@ const Navbar = () => {
       <NavLink to="/" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
         <Crosshair />
         <span className="mono">MAP</span>
-      </NavLink>
-      <NavLink to="/log" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-        <FilePlus />
-        <span className="mono">NEW LOG</span>
       </NavLink>
       <NavLink to="/network" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
         <Radio />
