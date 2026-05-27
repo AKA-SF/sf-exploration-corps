@@ -15,6 +15,8 @@ import {
 } from 'lucide-react';
 import CoordinateUniverse from '../components/CoordinateUniverse';
 import PageTransition from '../components/PageTransition';
+import { useAuth } from '../context/authContextValue';
+import { supabase } from '../lib/supabaseClient';
 import './Home.css';
 
 const navItems = [
@@ -871,7 +873,101 @@ function SidePanel({ metrics, recentSignals, timestamp, activeGenre, archiveMode
   );
 }
 
+function WorkDetailModal({
+  commentMessage,
+  commentStatus,
+  commentText,
+  comments,
+  onClose,
+  onCommentSubmit,
+  onCommentTextChange,
+  user,
+  work,
+}) {
+  if (!work) return null;
+
+  return (
+    <div className="work-detail-modal" role="dialog" aria-modal="true" aria-label={`${work.title} 댓글`}>
+      <article className={`work-detail-panel ${work.cover ? 'has-cover' : ''}`}>
+        <header className="work-detail-head">
+          <div>
+            <span>{work.code}</span>
+            <h3>{work.title}</h3>
+            <p>{work.subtitle}</p>
+          </div>
+          <button onClick={onClose} type="button" aria-label="작품 상세 닫기">×</button>
+        </header>
+
+        <div className="work-detail-body">
+          {work.cover && (
+            <figure className="work-detail-cover">
+              <img src={work.cover} alt={`${work.title} 표지`} />
+            </figure>
+          )}
+          <div className="work-detail-meta">
+            <dl>
+              <div>
+                <dt>MEDIUM</dt>
+                <dd>{work.medium}</dd>
+              </div>
+              {work.recommender && (
+                <div>
+                  <dt>RECOMMENDER</dt>
+                  <dd>{work.recommender}</dd>
+                </div>
+              )}
+            </dl>
+            <div className="work-tags">
+              {(work.tags ?? []).map(tag => <span key={tag}>{tag}</span>)}
+            </div>
+            {work.link && (
+              <a className="work-archive-link" href={work.link} target="_blank" rel="noreferrer">
+                알라딘 링크 열기 <ChevronRight aria-hidden="true" />
+              </a>
+            )}
+          </div>
+        </div>
+
+        <section className="work-comment-section">
+          <div className="work-comment-head">
+            <span>COMMENT SIGNALS</span>
+            <strong>{comments.length} COMMENTS</strong>
+          </div>
+          <div className="work-comment-list">
+            {comments.length > 0 ? comments.map(comment => (
+              <article className="work-comment" key={comment.id}>
+                <div>
+                  <strong>{comment.author_name || '익명 탐사자'}</strong>
+                  <time>{new Date(comment.created_at).toLocaleDateString('ko-KR')}</time>
+                </div>
+                <p>{comment.body}</p>
+              </article>
+            )) : (
+              <p className="work-comment-empty">아직 댓글 신호가 없습니다. 첫 반응을 남겨보세요.</p>
+            )}
+          </div>
+          <form className="work-comment-form" onSubmit={onCommentSubmit}>
+            <textarea
+              disabled={!user || commentStatus === 'saving'}
+              onChange={event => onCommentTextChange(event.target.value)}
+              placeholder={user ? '이 작품에 대한 짧은 감상이나 질문을 남겨주세요.' : '댓글을 남기려면 먼저 로그인해주세요.'}
+              rows={3}
+              value={commentText}
+            />
+            <button disabled={!user || !commentText.trim() || commentStatus === 'saving'} type="submit">
+              <Send aria-hidden="true" />
+              댓글 저장
+            </button>
+          </form>
+          {commentMessage && <p className={`work-comment-message is-${commentStatus}`}>{commentMessage}</p>}
+        </section>
+      </article>
+    </div>
+  );
+}
+
 export default function Home() {
+  const { user } = useAuth();
   const [works, setWorks] = useState(fallbackWorks);
   const [activeGenreId, setActiveGenreId] = useState(null);
   const [selectedCoordinateId, setSelectedCoordinateId] = useState('');
@@ -898,6 +994,11 @@ export default function Home() {
   });
   const [questionStatus, setQuestionStatus] = useState('idle');
   const [questionMessage, setQuestionMessage] = useState('');
+  const [selectedWork, setSelectedWork] = useState(null);
+  const [workComments, setWorkComments] = useState([]);
+  const [commentText, setCommentText] = useState('');
+  const [commentStatus, setCommentStatus] = useState('idle');
+  const [commentMessage, setCommentMessage] = useState('');
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [coordinateLogUrl, setCoordinateLogUrl] = useState('');
   const [coordinateLogStatus, setCoordinateLogStatus] = useState('idle');
@@ -925,6 +1026,35 @@ export default function Home() {
     const timer = window.setInterval(() => setCurrentTime(new Date()), 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (!selectedWork || !supabase) {
+      return undefined;
+    }
+
+    let isMounted = true;
+
+    supabase
+      .from('work_comments')
+      .select('*')
+      .eq('work_code', selectedWork.code)
+      .order('created_at', { ascending: true })
+      .then(({ data, error }) => {
+        if (!isMounted) return;
+        if (error) {
+          setWorkComments([]);
+          setCommentStatus('error');
+          setCommentMessage('댓글 테이블 연결이 필요합니다. Supabase SQL 스키마를 다시 실행해주세요.');
+          return;
+        }
+        setWorkComments(data ?? []);
+        setCommentStatus('idle');
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedWork]);
 
   useEffect(() => {
     let isMounted = true;
@@ -1220,6 +1350,73 @@ export default function Home() {
     }
   };
 
+  const openWorkDetail = work => {
+    setSelectedWork(work);
+    setWorkComments([]);
+    setCommentText('');
+    setCommentStatus('loading');
+    setCommentMessage('');
+  };
+
+  const submitWorkComment = async event => {
+    event.preventDefault();
+    if (!selectedWork || !supabase) return;
+    if (!user) {
+      setCommentStatus('error');
+      setCommentMessage('댓글을 남기려면 먼저 로그인해주세요.');
+      return;
+    }
+
+    const body = commentText.trim();
+    if (!body) return;
+
+    setCommentStatus('saving');
+    setCommentMessage('');
+
+    const authorName = user.user_metadata?.nickname || user.email?.split('@')[0] || '탐사자';
+    const { data, error } = await supabase
+      .from('work_comments')
+      .insert({
+        work_code: selectedWork.code,
+        work_title: selectedWork.title,
+        user_id: user.id,
+        author_name: authorName,
+        body,
+      })
+      .select('*')
+      .single();
+
+    if (error) {
+      setCommentStatus('error');
+      setCommentMessage(error.message);
+      return;
+    }
+
+    await supabase.from('profiles').upsert({
+      id: user.id,
+      nickname: authorName,
+    }, { onConflict: 'id' });
+
+    await supabase.from('activity_logs').insert({
+      user_id: user.id,
+      action_type: 'comment',
+      points: 10,
+      genre: selectedWork.medium,
+      metadata: {
+        title: `${selectedWork.title} 댓글`,
+        work_code: selectedWork.code,
+        work_title: selectedWork.title,
+        tags: selectedWork.tags ?? [],
+        node: 'works-archive',
+      },
+    });
+
+    setWorkComments(current => [...current, data]);
+    setCommentText('');
+    setCommentStatus('success');
+    setCommentMessage('+10 MP. 댓글 신호가 저장되었습니다.');
+  };
+
   const displayedWorks = archiveMode === 'all'
     ? works
     : works.filter(work => randomWorkCodes.includes(work.code)).slice(0, 6);
@@ -1488,14 +1685,12 @@ export default function Home() {
 
               <div className="featured-work-grid" aria-label="대표 작품 신호">
                 {displayedWorks.map(work => {
-                  const WorkCard = work.link ? 'a' : 'article';
                   return (
-                    <WorkCard
-                      className={`work-card ${work.link ? 'is-linked' : ''} ${work.cover ? 'has-cover' : ''}`}
-                      href={work.link || undefined}
+                    <button
+                      className={`work-card ${work.cover ? 'has-cover' : ''}`}
                       key={work.code}
-                      rel={work.link ? 'noreferrer' : undefined}
-                      target={work.link ? '_blank' : undefined}
+                      onClick={() => openWorkDetail(work)}
+                      type="button"
                     >
                       <div className="work-card-top">
                         <span>{work.code}</span>
@@ -1513,10 +1708,10 @@ export default function Home() {
                         {work.tags.map(tag => <span key={tag}>{tag}</span>)}
                       </div>
                       <div className="work-card-footer">
-                        <span>{work.link ? 'ARCHIVE LINK' : 'ARCHIVE SIGNAL'}</span>
+                        <span>DETAIL / COMMENTS</span>
                         <ChevronRight aria-hidden="true" />
                       </div>
-                    </WorkCard>
+                    </button>
                   );
                 })}
               </div>
@@ -2001,6 +2196,21 @@ export default function Home() {
           </form>
         </div>
       )}
+
+      <WorkDetailModal
+        commentMessage={commentMessage}
+        commentStatus={commentStatus}
+        commentText={commentText}
+        comments={workComments}
+        onClose={() => {
+          setSelectedWork(null);
+          setWorkComments([]);
+        }}
+        onCommentSubmit={submitWorkComment}
+        onCommentTextChange={setCommentText}
+        user={user}
+        work={selectedWork}
+      />
     </PageTransition>
   );
 }

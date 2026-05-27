@@ -36,10 +36,24 @@ create table if not exists public.user_badges (
   primary key (user_id, badge_id)
 );
 
+create table if not exists public.work_comments (
+  id uuid primary key default gen_random_uuid(),
+  work_code text not null,
+  work_title text not null,
+  user_id uuid not null references auth.users(id) on delete cascade,
+  author_name text not null default '탐사자',
+  body text not null,
+  created_at timestamptz not null default now()
+);
+
+create index if not exists work_comments_work_code_created_at_idx
+  on public.work_comments (work_code, created_at);
+
 alter table public.profiles enable row level security;
 alter table public.activity_logs enable row level security;
 alter table public.badges enable row level security;
 alter table public.user_badges enable row level security;
+alter table public.work_comments enable row level security;
 
 drop policy if exists "profiles_select_own" on public.profiles;
 create policy "profiles_select_own" on public.profiles
@@ -69,12 +83,25 @@ drop policy if exists "user_badges_select_own" on public.user_badges;
 create policy "user_badges_select_own" on public.user_badges
   for select using (auth.uid() = user_id);
 
+drop policy if exists "work_comments_read_all" on public.work_comments;
+create policy "work_comments_read_all" on public.work_comments
+  for select using (true);
+
+drop policy if exists "work_comments_insert_own" on public.work_comments;
+create policy "work_comments_insert_own" on public.work_comments
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "work_comments_update_own" on public.work_comments;
+create policy "work_comments_update_own" on public.work_comments
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
 insert into public.badges (id, title, description, condition_key) values
   ('first-signal', '첫 신호 수신', '첫 활동 기록을 남기면 획득', 'total_activity_1'),
   ('archive-scribe', '아카이브 기록자', '리뷰/로그 5개 작성', 'reviews_5'),
   ('quantum-reader', '양자역학 탐서가', '하드 SF 관련 기록 5개', 'hard_sf_5'),
   ('android-dream', '안드로이드의 꿈', '필립 K. 딕 관련 활동 3개', 'android_3'),
-  ('resistance-leader', '저항군 리더', '디스토피아 관련 활동 5개', 'dystopia_5')
+  ('resistance-leader', '저항군 리더', '디스토피아 관련 활동 5개', 'dystopia_5'),
+  ('orbit-cartographer', '궤도 지도 제작자', '탐사 좌표/장르 관련 기록 3개', 'coordinates_3')
 on conflict (id) do update set
   title = excluded.title,
   description = excluded.description,
