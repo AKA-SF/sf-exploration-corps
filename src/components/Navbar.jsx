@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Crosshair, User, Radio } from 'lucide-react';
+import { Award, Crosshair, User, Radio } from 'lucide-react';
 
 const Navbar = () => {
   return (
@@ -11,6 +11,10 @@ const Navbar = () => {
       <NavLink to="/network" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
         <Radio />
         <span className="mono">NETWORK</span>
+      </NavLink>
+      <NavLink to="/badges" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+        <Award />
+        <span className="mono">BADGES</span>
       </NavLink>
       <NavLink to="/profile" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
         <User />

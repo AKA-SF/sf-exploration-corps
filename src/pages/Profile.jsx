@@ -1,46 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { Award, BadgeCheck, LogOut, Rocket, Shield, Sparkles, Trophy, UserRound } from 'lucide-react';
+import { BadgeCheck, LogOut, Rocket, UserRound } from 'lucide-react';
+import CrewAvatar from '../components/CrewAvatar';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
+import { getActivityStats, getBadges, getRank } from '../data/profileProgress';
 import { supabase } from '../lib/supabaseClient';
 import './Profile.css';
-
-const rankTable = [
-  { title: '수습 대원', min: 0 },
-  { title: '항해사', min: 100 },
-  { title: '선임 항해사', min: 300 },
-  { title: '함장', min: 700 },
-  { title: '포스트휴먼', min: 1500 },
-];
-
-const badgeRules = [
-  { id: 'first-signal', title: '첫 신호 수신', description: '첫 활동 기록을 남기면 획득', icon: Sparkles, condition: stats => stats.total >= 1, progress: stats => Math.min(100, stats.total * 100) },
-  { id: 'archive-scribe', title: '아카이브 기록자', description: '리뷰/로그 5개 작성', icon: Award, condition: stats => stats.reviews >= 5, progress: stats => Math.min(100, (stats.reviews / 5) * 100) },
-  { id: 'quantum-reader', title: '양자역학 탐서가', description: '하드 SF 관련 기록 5개', icon: Shield, condition: stats => stats.hardSf >= 5, progress: stats => Math.min(100, (stats.hardSf / 5) * 100) },
-  { id: 'android-dream', title: '안드로이드의 꿈', description: '필립 K. 딕 관련 활동 3개', icon: BadgeCheck, condition: stats => stats.android >= 3, progress: stats => Math.min(100, (stats.android / 3) * 100) },
-  { id: 'resistance-leader', title: '저항군 리더', description: '디스토피아 관련 활동 5개', icon: Trophy, condition: stats => stats.dystopia >= 5, progress: stats => Math.min(100, (stats.dystopia / 5) * 100) },
-];
-
-function getRank(points) {
-  const current = [...rankTable].reverse().find(rank => points >= rank.min) ?? rankTable[0];
-  const next = rankTable.find(rank => rank.min > points) ?? null;
-  const progress = next ? ((points - current.min) / (next.min - current.min)) * 100 : 100;
-  return { current, next, progress: Math.min(100, Math.max(0, progress)) };
-}
-
-function getActivityStats(activities) {
-  const text = activities.map(activity => [activity.action_type, activity.genre, activity.metadata?.title, activity.metadata?.work_title].filter(Boolean).join(' ')).join(' ').toLowerCase();
-  return {
-    total: activities.length,
-    comments: activities.filter(activity => activity.action_type === 'comment').length,
-    posts: activities.filter(activity => activity.action_type === 'post').length,
-    reviews: activities.filter(activity => ['review', 'exploration_log'].includes(activity.action_type)).length,
-    hardSf: (text.match(/하드|hard|과학|양자|물리/g) ?? []).length,
-    dystopia: (text.match(/디스토피아|dystopia|감시|저항/g) ?? []).length,
-    android: (text.match(/필립|philip|딕|dick|안드로이드|android/g) ?? []).length,
-  };
-}
 
 export default function Profile() {
   const { isConfigured, loading, user, signOut } = useAuth();
@@ -112,7 +78,7 @@ export default function Profile() {
   const points = profile?.mileage ?? activities.reduce((sum, activity) => sum + (activity.points ?? 0), 0);
   const rank = getRank(points);
   const stats = useMemo(() => getActivityStats(activities), [activities]);
-  const badges = badgeRules.map(rule => ({ ...rule, unlocked: rule.condition(stats), progress: rule.progress(stats) }));
+  const badges = getBadges(stats);
 
   if (!loading && !user) return <Navigate to="/login" replace />;
 
@@ -155,6 +121,7 @@ export default function Profile() {
       </header>
 
       <section className="profile-card panel profile-identity-card">
+        <CrewAvatar seed={user?.id || user?.email || nickname} label={nickname || '탐사 대원'} />
         <div className="agent-id">
           <span className="mono text-muted text-xs">EXPLORER_CALLSIGN</span>
           <h3 className="mono text-cyan">{nickname || '탐사 대원'}</h3>
@@ -181,6 +148,18 @@ export default function Profile() {
         <p className="mono">{rank.next ? `다음 등급 ${rank.next.title}까지 ${rank.next.min - points} MP 남았습니다.` : '최종 등급에 도달했습니다. 이제 인간 이후의 독서 감각을 기록하세요.'}</p>
       </section>
 
+      <section className="profile-launch-panel panel">
+        <div>
+          <span className="mono text-muted text-xs">MISSION START</span>
+          <h3 className="mono">작품 아카이브에서 탐사 시작</h3>
+          <p>작품 카드를 열고, 관심 있는 장르와 질문을 따라 다음 독서 좌표를 선택하세요.</p>
+        </div>
+        <a className="profile-primary-link" href="/#works-archive">
+          <Rocket size={16} />
+          탐사 시작
+        </a>
+      </section>
+
       <section className="profile-stat-grid">
         <article className="stat-block panel"><span className="mono text-muted text-xs">POSTS</span><strong>{stats.posts}</strong></article>
         <article className="stat-block panel"><span className="mono text-muted text-xs">COMMENTS</span><strong>{stats.comments}</strong></article>
@@ -188,27 +167,13 @@ export default function Profile() {
         <article className="stat-block panel"><span className="mono text-muted text-xs">BADGES</span><strong>{badges.filter(badge => badge.unlocked).length}</strong></article>
       </section>
 
-      <section className="profile-badge-section panel">
-        <div className="class-track-header">
-          <div>
-            <span className="mono text-muted text-xs">ACHIEVEMENT BADGES</span>
-            <h3 className="mono">독서 업적 배지</h3>
-          </div>
-          <Rocket className="text-cyan" size={22} />
+      <section className="profile-badge-summary panel">
+        <div>
+          <span className="mono text-muted text-xs">ACHIEVEMENT BADGES</span>
+          <h3 className="mono">독서 업적 배지 {badges.filter(badge => badge.unlocked).length} / {badges.length}</h3>
+          <p>업적 배지는 별도 탭에서 조건과 진행률을 확인할 수 있습니다.</p>
         </div>
-        <div className="profile-badge-grid">
-          {badges.map(badge => {
-            const Icon = badge.icon;
-            return (
-              <article className={`profile-badge ${badge.unlocked ? 'is-unlocked' : ''}`} key={badge.id}>
-                <Icon size={22} />
-                <strong>{badge.title}</strong>
-                <p>{badge.description}</p>
-                <div className="mission-progress" style={{ '--progress': `${badge.progress}%` }}><i /></div>
-              </article>
-            );
-          })}
-        </div>
+        <Link className="profile-secondary-link" to="/badges">배지 보관함 열기</Link>
       </section>
 
       <section className="profile-activity panel">

@@ -13,6 +13,7 @@ import LogEntry from './pages/LogEntry';
 import LogResult from './pages/LogResult';
 import Profile from './pages/Profile';
 import Login from './pages/Login';
+import Badges from './pages/Badges';
 import Network from './pages/Network';
 import NetworkDetail from './pages/NetworkDetail';
 import Navbar from './components/Navbar';
@@ -59,6 +60,7 @@ function App() {
               <Route path="/result/:id" element={<LogResult />} />
               <Route path="/network" element={<Network />} />
               <Route path="/network/:id" element={<NetworkDetail />} />
+              <Route path="/badges" element={<Badges />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/login" element={<Login />} />
             </Routes>

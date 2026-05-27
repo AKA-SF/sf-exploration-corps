@@ -16,7 +16,9 @@
 
 .profile-signout,
 .profile-nickname-form button,
-.profile-empty-state a {
+.profile-empty-state a,
+.profile-primary-link,
+.profile-secondary-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -32,10 +34,45 @@
   cursor: pointer;
 }
 
+.profile-primary-link {
+  min-height: 48px;
+  border-color: rgba(0, 255, 255, 0.52);
+  padding: 0 18px;
+  color: #001417;
+  background: var(--primary-cyan);
+}
+
+.profile-secondary-link {
+  min-height: 42px;
+  color: var(--accent-amber);
+  border-color: rgba(255, 176, 0, 0.32);
+  background: rgba(255, 176, 0, 0.06);
+}
+
 .profile-identity-card {
   display: grid;
-  grid-template-columns: 1fr minmax(240px, 0.52fr);
-  align-items: end;
+  grid-template-columns: auto 1fr minmax(240px, 0.52fr);
+  align-items: center;
+  gap: 18px;
+}
+
+.crew-avatar {
+  width: 118px;
+  aspect-ratio: 9 / 11;
+  overflow: hidden;
+  border: 1px solid rgba(0, 255, 255, 0.36);
+  background:
+    linear-gradient(180deg, rgba(0, 255, 255, 0.08), transparent),
+    rgba(0, 0, 0, 0.54);
+  box-shadow:
+    inset 0 0 22px rgba(0, 255, 255, 0.1),
+    0 0 26px rgba(0, 255, 255, 0.08);
+}
+
+.crew-avatar svg {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .profile-nickname-form {
@@ -76,16 +113,40 @@
 }
 
 .profile-badge-section,
-.profile-activity {
+.profile-activity,
+.profile-launch-panel,
+.profile-badge-summary,
+.profile-badge-hero {
   display: grid;
   gap: 16px;
   padding: 18px;
+}
+
+.profile-launch-panel,
+.profile-badge-summary,
+.profile-badge-hero {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.profile-launch-panel p,
+.profile-badge-summary p,
+.profile-badge-hero p {
+  max-width: 620px;
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.7;
 }
 
 .profile-badge-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
+}
+
+.profile-badge-grid.is-vault {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .profile-badge {
@@ -119,6 +180,12 @@
   color: var(--text-muted);
   font-size: 11px;
   line-height: 1.65;
+}
+
+.badge-progress-label {
+  color: var(--primary-cyan);
+  font-size: 10px;
+  font-weight: 900;
 }
 
 .profile-activity-row {
@@ -157,14 +224,22 @@
 @media (max-width: 760px) {
   .profile-page-header,
   .profile-identity-card,
-  .profile-nickname-form {
+  .profile-nickname-form,
+  .profile-launch-panel,
+  .profile-badge-summary,
+  .profile-badge-hero {
     grid-template-columns: 1fr;
   }
 
   .profile-stat-grid,
   .profile-badge-grid,
+  .profile-badge-grid.is-vault,
   .profile-activity-row {
     grid-template-columns: 1fr;
+  }
+
+  .crew-avatar {
+    width: 104px;
   }
 }
 
@@ -669,6 +744,13 @@
   font-size: 9px;
 }
 
+.profile-card.profile-identity-card {
+  display: grid;
+  grid-template-columns: auto 1fr minmax(240px, 0.52fr);
+  align-items: center;
+  gap: 18px;
+}
+
 @media (max-height: 760px) {
   .profile-card,
   .corps-pass,
@@ -695,6 +777,12 @@
   }
 
   .vector-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .profile-card.profile-identity-card {
     grid-template-columns: 1fr;
   }
 }
