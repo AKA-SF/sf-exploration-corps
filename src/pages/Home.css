@@ -1153,6 +1153,199 @@
   overflow-wrap: anywhere;
 }
 
+.taste-test-section {
+  position: relative;
+  z-index: 2;
+  padding: 92px 22px 108px;
+  border-top: 1px solid rgba(25, 247, 241, 0.2);
+  background:
+    radial-gradient(circle at 16% 22%, rgba(124, 199, 255, 0.1), transparent 27%),
+    radial-gradient(circle at 82% 70%, rgba(240, 184, 90, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(1, 4, 7, 0.98), rgba(2, 10, 15, 0.96));
+}
+
+.taste-test-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 0.42fr);
+  gap: 26px;
+  align-items: start;
+}
+
+.taste-questions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.taste-question-card,
+.taste-result-panel {
+  border: 1px solid var(--line);
+  background:
+    linear-gradient(135deg, rgba(25, 247, 241, 0.08), transparent 42%),
+    rgba(0, 12, 18, 0.72);
+}
+
+.taste-question-card {
+  min-height: 238px;
+  padding: 22px;
+}
+
+.taste-question-card > span,
+.taste-result-panel > span,
+.taste-recommendations > span,
+.taste-result-panel dt {
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+}
+
+.taste-question-card h3 {
+  margin: 14px 0 18px;
+  color: #fff;
+  font-size: 20px;
+  font-weight: 950;
+  line-height: 1.35;
+}
+
+.taste-options {
+  display: grid;
+  gap: 8px;
+}
+
+.taste-options button {
+  min-height: 42px;
+  border: 1px solid rgba(25, 247, 241, 0.2);
+  padding: 10px 12px;
+  color: #d8e9ed;
+  background: rgba(0, 17, 23, 0.54);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.35;
+  text-align: left;
+  cursor: pointer;
+}
+
+.taste-options button:hover,
+.taste-options button:focus-visible,
+.taste-options button.is-selected {
+  border-color: rgba(25, 247, 241, 0.72);
+  color: #fff;
+  background: rgba(25, 247, 241, 0.1);
+}
+
+.taste-result-panel {
+  position: sticky;
+  top: 96px;
+  min-height: 492px;
+  padding: 28px;
+}
+
+.taste-result-panel h3 {
+  margin: 16px 0 8px;
+  color: #fff;
+  font-size: 31px;
+  font-weight: 1000;
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+.taste-result-panel > strong {
+  display: block;
+  color: #8ff5f2;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.taste-result-panel p {
+  margin: 18px 0 22px;
+  color: #bfd0d6;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1.75;
+}
+
+.taste-result-panel dl {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 22px;
+}
+
+.taste-result-panel dl div {
+  padding-top: 12px;
+  border-top: 1px solid rgba(25, 247, 241, 0.16);
+}
+
+.taste-result-panel dd {
+  margin: 5px 0 0;
+  color: #e7f6f8;
+  font-size: 13px;
+  font-weight: 850;
+}
+
+.taste-recommendations {
+  display: grid;
+  gap: 8px;
+}
+
+.taste-book-link {
+  display: grid;
+  gap: 3px;
+  border: 1px solid rgba(25, 247, 241, 0.18);
+  padding: 10px 11px;
+  color: inherit;
+  background: rgba(0, 16, 22, 0.54);
+  text-decoration: none;
+}
+
+.taste-book-link strong {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.taste-book-link em {
+  color: #8fb0bc;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.taste-book-link:hover,
+.taste-book-link:focus-visible {
+  border-color: rgba(25, 247, 241, 0.62);
+}
+
+.taste-result-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.taste-result-actions a,
+.taste-result-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  border: 1px solid rgba(25, 247, 241, 0.32);
+  padding: 0 12px;
+  color: var(--cyan);
+  background: rgba(0, 18, 24, 0.62);
+  font-size: 12px;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.taste-result-actions a {
+  color: #061316;
+  background: var(--cyan);
+}
+
 .work-card h3 {
   position: relative;
   z-index: 1;
@@ -2955,6 +3148,16 @@
     grid-template-columns: 1fr;
   }
 
+  .taste-test-layout,
+  .taste-questions {
+    grid-template-columns: 1fr;
+  }
+
+  .taste-result-panel {
+    position: static;
+    min-height: auto;
+  }
+
   .archive-view-status {
     grid-column: 1;
   }
@@ -3111,7 +3314,8 @@
     border-bottom: 1px solid rgba(25, 247, 241, 0.16);
   }
 
-  .works-archive-section {
+  .works-archive-section,
+  .taste-test-section {
     padding: 62px 14px 78px;
   }
 
@@ -3131,8 +3335,17 @@
 
   .archive-category-grid,
   .featured-work-grid,
+  .taste-questions,
   .concept-grid,
   .media-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .taste-question-card {
+    min-height: auto;
+  }
+
+  .taste-result-actions {
     grid-template-columns: 1fr;
   }
 

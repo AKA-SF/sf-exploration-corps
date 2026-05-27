@@ -82,6 +82,96 @@ const workCategories = [
   { label: 'ANIMATION', title: '애니메이션', count: '011 SIGNALS' },
 ];
 
+const tasteProfiles = {
+  engineer: {
+    code: 'TYPE-01',
+    title: '하드웨어 엔지니어',
+    genre: '하드 SF형',
+    vessel: '정밀 관측선 오비터',
+    summary: '과학적 고증, 기술적 개연성, 우주 공학의 디테일에서 가장 큰 즐거움을 느끼는 탐사 대원입니다.',
+    keywords: ['하드', '과학', '물리', '우주공학', '화성', '기술', '프로젝트', '솔라리스'],
+  },
+  linguist: {
+    code: 'TYPE-02',
+    title: '외계 생명체 언어학자',
+    genre: '뉴웨이브 / 퍼스트 콘택트형',
+    vessel: '심우주 번역선 에코',
+    summary: '낯선 존재와 언어, 타자성, 감각의 변화처럼 인간의 인식 자체를 흔드는 이야기에 끌립니다.',
+    keywords: ['외계', '언어', '타자', '문명', '콘택트', '솔라리스', '어둠의 왼손', '르 귄'],
+  },
+  navigator: {
+    code: 'TYPE-03',
+    title: '은하 항로 개척자',
+    genre: '스페이스 오페라형',
+    vessel: '은하 항로선 노바',
+    summary: '제국, 함대, 행성, 문명 충돌처럼 우주 규모로 펼쳐지는 큰 서사와 모험에 강하게 반응합니다.',
+    keywords: ['스페이스', '오페라', '은하', '제국', '우주', '듄', '파운데이션', '나인폭스'],
+  },
+  hacker: {
+    code: 'TYPE-04',
+    title: '도시 네트워크 해커',
+    genre: '사이버펑크 / 포스트휴먼형',
+    vessel: '궤도 침투선 글리치',
+    summary: '인공지능, 기억, 신체 개조, 거대 도시와 통제 시스템의 어두운 빛에 민감한 탐사자입니다.',
+    keywords: ['사이버', '안드로이드', '인공지능', 'AI', '기억', '신체', '네트워크', '포스트휴먼'],
+  },
+  archivist: {
+    code: 'TYPE-05',
+    title: '폐허 기록 보관자',
+    genre: '디스토피아 / 아포칼립스형',
+    vessel: '잔해 수집선 아카이브',
+    summary: '무너진 세계와 감시 사회, 재난 이후의 공동체처럼 현재의 불안을 밀도 있게 읽는 성향입니다.',
+    keywords: ['디스토피아', '아포칼립스', '재난', '통제', '감시', '생존', '화씨', '온실'],
+  },
+  ecologist: {
+    code: 'TYPE-06',
+    title: '비인간 생태학자',
+    genre: '생태 SF / 공생형',
+    vessel: '행성 생태선 리프',
+    summary: '기후, 식물, 동물, 비인간 존재와의 공생처럼 인간 중심 바깥의 세계를 탐사합니다.',
+    keywords: ['생태', '기후', '환경', '동물', '식물', '공생', '비인간', '온실'],
+  },
+};
+
+const tasteQuestions = [
+  {
+    id: 'q1',
+    question: '처음 보는 SF를 고를 때 가장 먼저 끌리는 것은?',
+    options: [
+      { label: '과학 설정이 얼마나 설득력 있는지', scores: { engineer: 3, navigator: 1 } },
+      { label: '낯선 존재와 세계를 만나는 감각', scores: { linguist: 3, ecologist: 1 } },
+      { label: '무너진 사회와 살아남는 사람들', scores: { archivist: 3, hacker: 1 } },
+    ],
+  },
+  {
+    id: 'q2',
+    question: '가장 오래 생각나는 장면은 어느 쪽인가요?',
+    options: [
+      { label: '거대한 우주선, 행성, 은하 정치', scores: { navigator: 3, engineer: 1 } },
+      { label: '기억이 조작되거나 몸이 바뀌는 순간', scores: { hacker: 3, linguist: 1 } },
+      { label: '인간이 아닌 존재와 관계를 맺는 순간', scores: { ecologist: 3, linguist: 2 } },
+    ],
+  },
+  {
+    id: 'q3',
+    question: '토론 모임에서 가장 던지고 싶은 질문은?',
+    options: [
+      { label: '이 기술은 실제로 가능할까?', scores: { engineer: 3, hacker: 1 } },
+      { label: '우리는 무엇을 인간이라고 부를 수 있을까?', scores: { hacker: 2, linguist: 2 } },
+      { label: '세계가 망한 뒤 공동체는 어떻게 다시 생길까?', scores: { archivist: 3, ecologist: 1 } },
+    ],
+  },
+  {
+    id: 'q4',
+    question: '당신에게 더 매력적인 탐사 임무는?',
+    options: [
+      { label: '미지의 행성 궤도와 물리 조건 분석', scores: { engineer: 3, navigator: 1 } },
+      { label: '외계 문명의 언어와 의례 기록', scores: { linguist: 3, ecologist: 1 } },
+      { label: '거대 도시의 은폐된 시스템 침투', scores: { hacker: 3, archivist: 1 } },
+    ],
+  },
+];
+
 function getRandomWorks(items, count) {
   return [...items]
     .sort(() => Math.random() - 0.5)
@@ -279,6 +369,52 @@ function getWorkSearchText(work) {
     work.recommender,
     ...(work.tags ?? []),
   ].filter(Boolean).join(' ').toLowerCase();
+}
+
+function getTasteProfile(answers) {
+  const scores = Object.keys(tasteProfiles).reduce((result, key) => ({ ...result, [key]: 0 }), {});
+
+  tasteQuestions.forEach(question => {
+    const selectedIndex = answers[question.id];
+    const selectedOption = question.options[selectedIndex];
+    if (!selectedOption) return;
+
+    Object.entries(selectedOption.scores).forEach(([profile, score]) => {
+      scores[profile] = (scores[profile] ?? 0) + score;
+    });
+  });
+
+  const winner = Object.entries(scores).sort((a, b) => b[1] - a[1])[0]?.[0] ?? 'engineer';
+  return tasteProfiles[winner];
+}
+
+function getTasteRecommendations(items, profile) {
+  if (!profile) return [];
+
+  const bookLikeWorks = items.filter(work => {
+    const medium = String(work.medium ?? '').toLowerCase();
+    return medium.includes('novel') || medium.includes('소설') || medium.includes('이론서') || medium.includes('archive');
+  });
+  const source = bookLikeWorks.length > 0 ? bookLikeWorks : items;
+  const keywords = profile.keywords.map(keyword => keyword.toLowerCase());
+
+  const ranked = source
+    .map(work => {
+      const searchText = getWorkSearchText(work);
+      const score = keywords.reduce((total, keyword) => (
+        searchText.includes(keyword.replace(/\s/g, '').toLowerCase()) || searchText.includes(keyword)
+          ? total + 2
+          : total
+      ), 0);
+      return { work, score };
+    })
+    .sort((a, b) => b.score - a.score);
+
+  return ranked
+    .filter(item => item.score > 0)
+    .map(item => item.work)
+    .concat(source.filter(work => !ranked.some(item => item.work.code === work.code)))
+    .slice(0, 5);
 }
 
 function findRelatedWorksForNode(node, works) {
@@ -591,6 +727,7 @@ export default function Home() {
   const [activeGenreId, setActiveGenreId] = useState(null);
   const [selectedCoordinateId, setSelectedCoordinateId] = useState('');
   const [mapView, setMapView] = useState({ yaw: -0.24, pitch: 0.18, zoom: 1 });
+  const [tasteAnswers, setTasteAnswers] = useState({});
   const [archiveMode, setArchiveMode] = useState('random');
   const [randomWorkCodes, setRandomWorkCodes] = useState(() => getRandomWorks(fallbackWorks, 6).map(work => work.code));
   const [mediaItems, setMediaItems] = useState([]);
@@ -936,6 +1073,9 @@ export default function Home() {
   const displayedWorks = archiveMode === 'all'
     ? works
     : works.filter(work => randomWorkCodes.includes(work.code)).slice(0, 6);
+  const isTasteComplete = Object.keys(tasteAnswers).length === tasteQuestions.length;
+  const tasteProfile = isTasteComplete ? getTasteProfile(tasteAnswers) : null;
+  const tasteRecommendations = getTasteRecommendations(works, tasteProfile);
   const displayedMedia = sortMediaByLatest(
     mediaItems.filter(item => normalizeMediaCategory(item.category) === activeMediaCategory),
   );
@@ -1050,6 +1190,87 @@ export default function Home() {
             </a>
           );
         })}
+      </section>
+
+      <section className="taste-test-section" id="taste-test">
+        <div className="section-shell">
+          <div className="section-heading">
+            <span>CREW PROFILING</span>
+            <h2>나의 SF 성향 테스트</h2>
+            <p>
+              당신은 어떤 우주선에 어울리는 탐사 대원인가요?
+              네 개의 가벼운 질문을 지나면, 성향에 맞는 탐사 경로와 추천 도서가 열립니다.
+            </p>
+          </div>
+
+          <div className="taste-test-layout">
+            <div className="taste-questions">
+              {tasteQuestions.map((question, questionIndex) => (
+                <article className="taste-question-card" key={question.id}>
+                  <span>QUESTION {String(questionIndex + 1).padStart(2, '0')}</span>
+                  <h3>{question.question}</h3>
+                  <div className="taste-options">
+                    {question.options.map((option, optionIndex) => (
+                      <button
+                        className={tasteAnswers[question.id] === optionIndex ? 'is-selected' : ''}
+                        key={option.label}
+                        onClick={() => setTasteAnswers(answer => ({ ...answer, [question.id]: optionIndex }))}
+                        type="button"
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+
+            <aside className={`taste-result-panel ${tasteProfile ? 'is-complete' : ''}`}>
+              <span>{tasteProfile?.code ?? 'TYPE SCAN'}</span>
+              <h3>{tasteProfile?.title ?? '탐사 성향 분석 중'}</h3>
+              <strong>{tasteProfile?.genre ?? `${Object.keys(tasteAnswers).length} / ${tasteQuestions.length} 응답 완료`}</strong>
+              <p>
+                {tasteProfile?.summary ?? '질문에 답하면 당신에게 어울리는 탐사 대원 유형과 추천 도서 5권이 표시됩니다.'}
+              </p>
+              {tasteProfile && (
+                <>
+                  <dl>
+                    <div>
+                      <dt>ASSIGNED VESSEL</dt>
+                      <dd>{tasteProfile.vessel}</dd>
+                    </div>
+                    <div>
+                      <dt>RECOMMENDED ROUTE</dt>
+                      <dd>{tasteProfile.genre}</dd>
+                    </div>
+                  </dl>
+                  <div className="taste-recommendations">
+                    <span>추천 도서 5권</span>
+                    {tasteRecommendations.map(work => {
+                      const WorkLink = work.link ? 'a' : 'article';
+                      return (
+                        <WorkLink
+                          className="taste-book-link"
+                          href={work.link || undefined}
+                          key={work.code}
+                          rel={work.link ? 'noreferrer' : undefined}
+                          target={work.link ? '_blank' : undefined}
+                        >
+                          <strong>{work.title}</strong>
+                          <em>{work.subtitle}</em>
+                        </WorkLink>
+                      );
+                    })}
+                  </div>
+                  <div className="taste-result-actions">
+                    <a href="#works-archive">작품 아카이브로 이동</a>
+                    <button type="button" onClick={() => setTasteAnswers({})}>다시 테스트</button>
+                  </div>
+                </>
+              )}
+            </aside>
+          </div>
+        </div>
       </section>
 
       <section className="works-archive-section" id="works-archive">
