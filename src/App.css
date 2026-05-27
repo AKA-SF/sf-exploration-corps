@@ -441,6 +441,70 @@
   border-color: rgba(47, 111, 120, 0.32) !important;
 }
 
+.reading-mode .work-detail-open {
+  border-color: rgba(47, 111, 120, 0.36) !important;
+  color: #f8faf7 !important;
+  background: #2f6f78 !important;
+}
+
+body.reading-mode-active .work-detail-modal {
+  background:
+    radial-gradient(circle at 50% 38%, rgba(47, 111, 120, 0.12), transparent 34%),
+    rgba(31, 29, 23, 0.42) !important;
+}
+
+body.reading-mode-active .work-detail-panel {
+  border-color: rgba(46, 72, 77, 0.24) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(232, 222, 202, 0.48)),
+    rgba(255, 252, 244, 0.98) !important;
+  color: #172126 !important;
+  box-shadow: 0 24px 80px rgba(36, 28, 15, 0.2) !important;
+}
+
+body.reading-mode-active .work-detail-head h3,
+body.reading-mode-active .work-detail-meta dd,
+body.reading-mode-active .work-comment-head strong,
+body.reading-mode-active .work-comment strong {
+  color: #111827 !important;
+}
+
+body.reading-mode-active .work-detail-head p,
+body.reading-mode-active .work-comment p,
+body.reading-mode-active .work-comment-empty,
+body.reading-mode-active .work-comment-message,
+body.reading-mode-active .work-comment time {
+  color: #34444b !important;
+}
+
+body.reading-mode-active .work-detail-head span,
+body.reading-mode-active .work-comment-head span,
+body.reading-mode-active .work-detail-meta dt {
+  color: #2f6f78 !important;
+}
+
+body.reading-mode-active .work-detail-head button {
+  border-color: rgba(47, 111, 120, 0.28) !important;
+  color: #2f6f78 !important;
+  background: rgba(255, 252, 244, 0.76) !important;
+}
+
+body.reading-mode-active .work-comment,
+body.reading-mode-active .work-comment-empty,
+body.reading-mode-active .work-comment-form textarea {
+  border-color: rgba(46, 72, 77, 0.2) !important;
+  background: rgba(255, 255, 255, 0.68) !important;
+  color: #172126 !important;
+}
+
+body.reading-mode-active .work-archive-link,
+body.reading-mode-active .work-archive-link:visited,
+body.reading-mode-active .work-comment-form button {
+  border-color: rgba(47, 111, 120, 0.36) !important;
+  color: #f8faf7 !important;
+  background: #2f6f78 !important;
+}
+
 .page-container:has(.home-container) {
   padding: 10px;
   padding-bottom: 68px;

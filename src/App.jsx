@@ -31,6 +31,10 @@ function App() {
 
   useEffect(() => {
     localStorage.setItem('sf-site-mode', siteMode);
+    document.body.classList.toggle('reading-mode-active', siteMode === 'reading');
+    return () => {
+      document.body.classList.remove('reading-mode-active');
+    };
   }, [siteMode]);
 
   return (
