@@ -1686,11 +1686,18 @@ export default function Home() {
               <div className="featured-work-grid" aria-label="대표 작품 신호">
                 {displayedWorks.map(work => {
                   return (
-                    <button
+                    <article
                       className={`work-card ${work.cover ? 'has-cover' : ''}`}
                       key={work.code}
                       onClick={() => openWorkDetail(work)}
-                      type="button"
+                      onKeyDown={event => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          openWorkDetail(work);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
                     >
                       <div className="work-card-top">
                         <span>{work.code}</span>
@@ -1711,7 +1718,7 @@ export default function Home() {
                         <span>DETAIL / COMMENTS</span>
                         <ChevronRight aria-hidden="true" />
                       </div>
-                    </button>
+                    </article>
                   );
                 })}
               </div>
