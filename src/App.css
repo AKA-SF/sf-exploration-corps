@@ -177,6 +177,9 @@
 .reading-mode .archive-view-status,
 .reading-mode .category-tile,
 .reading-mode .work-card,
+.reading-mode .taste-question-card,
+.reading-mode .taste-result-panel,
+.reading-mode .taste-book-link,
 .reading-mode .mission-card,
 .reading-mode .media-card,
 .reading-mode .media-empty,
@@ -349,6 +352,10 @@
 .reading-mode .media-archive-search,
 .reading-mode .media-archive-search *,
 .reading-mode .work-card-code,
+.reading-mode .taste-question-card > span,
+.reading-mode .taste-result-panel > span,
+.reading-mode .taste-recommendations > span,
+.reading-mode .taste-result-panel dt,
 .reading-mode .log-card-top,
 .reading-mode .log-card-top *,
 .reading-mode .log-card-link,
@@ -381,6 +388,29 @@
   color: #111827 !important;
 }
 
+.reading-mode .taste-options button,
+.reading-mode .taste-result-actions button,
+.reading-mode .taste-result-actions a {
+  border-color: rgba(46, 72, 77, 0.24) !important;
+  background: rgba(255, 255, 255, 0.62) !important;
+  color: #245f68 !important;
+}
+
+.reading-mode .taste-options button.is-selected,
+.reading-mode .taste-options button:hover,
+.reading-mode .taste-options button:focus-visible,
+.reading-mode .taste-result-actions a {
+  background: rgba(221, 242, 239, 0.9) !important;
+  border-color: rgba(47, 111, 120, 0.44) !important;
+}
+
+.reading-mode .taste-result-panel h3,
+.reading-mode .taste-book-link strong,
+.reading-mode .taste-result-panel dd,
+.reading-mode .taste-result-panel > strong {
+  color: #111827 !important;
+}
+
 .reading-mode .section-heading p,
 .reading-mode .concept-feature-card p,
 .reading-mode .concept-meta-list dd,
@@ -395,6 +425,9 @@
 .reading-mode .log-card p,
 .reading-mode .media-card p,
 .reading-mode .work-card p,
+.reading-mode .taste-question-card h3,
+.reading-mode .taste-result-panel p,
+.reading-mode .taste-book-link em,
 .reading-mode .mission-card span,
 .reading-mode .mission-card em {
   color: #34444b !important;

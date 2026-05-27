@@ -170,7 +170,155 @@ const tasteQuestions = [
       { label: '거대 도시의 은폐된 시스템 침투', scores: { hacker: 3, archivist: 1 } },
     ],
   },
+  {
+    id: 'q5',
+    question: '책장을 덮은 뒤 가장 만족스러운 감정은?',
+    options: [
+      { label: '설정이 정교하게 맞물렸다는 쾌감', scores: { engineer: 3, navigator: 1 } },
+      { label: '내가 알던 인간의 기준이 흔들리는 감각', scores: { linguist: 2, hacker: 2 } },
+      { label: '지금 사회를 다시 보게 되는 불편함', scores: { archivist: 3, ecologist: 1 } },
+    ],
+  },
+  {
+    id: 'q6',
+    question: '가장 궁금한 미래 기술은?',
+    options: [
+      { label: '우주 항행, 궤도 거주, 테라포밍', scores: { engineer: 2, navigator: 2 } },
+      { label: '의식 업로드, 인공 신체, 네트워크 자아', scores: { hacker: 3, linguist: 1 } },
+      { label: '기후 복원, 생태 네트워크, 공생 기술', scores: { ecologist: 3, archivist: 1 } },
+    ],
+  },
+  {
+    id: 'q7',
+    question: '당신이 선호하는 주인공은?',
+    options: [
+      { label: '문제를 계산하고 해결하는 과학자/엔지니어', scores: { engineer: 3 } },
+      { label: '낯선 문화 사이를 통역하는 관찰자', scores: { linguist: 3, navigator: 1 } },
+      { label: '붕괴한 세계에서 기록을 남기는 생존자', scores: { archivist: 3 } },
+    ],
+  },
+  {
+    id: 'q8',
+    question: '가장 끌리는 배경은?',
+    options: [
+      { label: '거대한 행성 도시와 데이터 네트워크', scores: { hacker: 3, navigator: 1 } },
+      { label: '은하 제국의 변경 지대', scores: { navigator: 3 } },
+      { label: '인간보다 오래된 숲과 바다', scores: { ecologist: 3, linguist: 1 } },
+    ],
+  },
+  {
+    id: 'q9',
+    question: '당신이 더 오래 붙잡는 질문은?',
+    options: [
+      { label: '이 세계의 물리 법칙은 어떻게 작동할까?', scores: { engineer: 3 } },
+      { label: '타자의 언어를 정말 이해할 수 있을까?', scores: { linguist: 3 } },
+      { label: '감시와 편의는 어디서 갈라질까?', scores: { hacker: 2, archivist: 2 } },
+    ],
+  },
+  {
+    id: 'q10',
+    question: 'SF에서 가장 피하고 싶은 것은?',
+    options: [
+      { label: '과학 설정이 너무 헐거운 이야기', scores: { engineer: 3 } },
+      { label: '우주 규모인데 인간 사회가 너무 단순한 이야기', scores: { navigator: 2, linguist: 1 } },
+      { label: '세계가 무너졌는데 공동체 질문이 없는 이야기', scores: { archivist: 2, ecologist: 1 } },
+    ],
+  },
+  {
+    id: 'q11',
+    question: '당신의 탐사 장비를 하나 고른다면?',
+    options: [
+      { label: '정밀 센서와 계산 모듈', scores: { engineer: 3 } },
+      { label: '언어 샘플러와 문화 기록 장치', scores: { linguist: 3 } },
+      { label: '암호 해독기와 접속 단말', scores: { hacker: 3 } },
+    ],
+  },
+  {
+    id: 'q12',
+    question: '더 읽고 싶은 갈등은?',
+    options: [
+      { label: '행성 환경과 기술 한계의 충돌', scores: { engineer: 2, ecologist: 2 } },
+      { label: '문명과 문명의 오해', scores: { linguist: 2, navigator: 2 } },
+      { label: '개인과 통제 시스템의 충돌', scores: { hacker: 2, archivist: 2 } },
+    ],
+  },
+  {
+    id: 'q13',
+    question: '가장 매력적인 제목의 느낌은?',
+    options: [
+      { label: '방정식, 궤도, 실험, 임계점', scores: { engineer: 3 } },
+      { label: '제국, 항로, 함대, 성간', scores: { navigator: 3 } },
+      { label: '폐허, 금지구역, 마지막 기록', scores: { archivist: 3 } },
+    ],
+  },
+  {
+    id: 'q14',
+    question: '작품 속 AI를 볼 때 먼저 드는 생각은?',
+    options: [
+      { label: '어떤 구조와 학습 방식으로 작동할까?', scores: { engineer: 2, hacker: 1 } },
+      { label: '의식이나 권리를 가질 수 있을까?', scores: { hacker: 2, linguist: 1 } },
+      { label: '인간 사회의 통제 도구가 되지 않을까?', scores: { archivist: 2, hacker: 1 } },
+    ],
+  },
+  {
+    id: 'q15',
+    question: '당신에게 좋은 SF 세계관이란?',
+    options: [
+      { label: '내부 규칙이 단단한 세계', scores: { engineer: 3 } },
+      { label: '규모가 크고 역사성이 느껴지는 세계', scores: { navigator: 3 } },
+      { label: '비인간 존재까지 살아 있는 세계', scores: { ecologist: 3 } },
+    ],
+  },
+  {
+    id: 'q16',
+    question: '가장 마음이 가는 결말은?',
+    options: [
+      { label: '문제의 원리를 이해하고 다음 실험으로 나아간다', scores: { engineer: 3 } },
+      { label: '완전한 이해 대신 공존의 가능성을 남긴다', scores: { linguist: 2, ecologist: 2 } },
+      { label: '낡은 체제가 무너지고 작은 공동체가 살아남는다', scores: { archivist: 3 } },
+    ],
+  },
+  {
+    id: 'q17',
+    question: '독서 모임에서 맡고 싶은 역할은?',
+    options: [
+      { label: '설정 오류와 과학적 가능성 체크', scores: { engineer: 3 } },
+      { label: '상징, 언어, 타자성 해석', scores: { linguist: 3 } },
+      { label: '사회 구조와 권력 관계 분석', scores: { archivist: 3, hacker: 1 } },
+    ],
+  },
+  {
+    id: 'q18',
+    question: '가장 흥미로운 공포는?',
+    options: [
+      { label: '우주의 규모 앞에서 느끼는 압도감', scores: { navigator: 2, linguist: 1 } },
+      { label: '내 기억과 몸이 내 것이 아닐 수 있다는 감각', scores: { hacker: 3 } },
+      { label: '기후와 생태계가 되돌릴 수 없게 바뀌는 감각', scores: { ecologist: 3, archivist: 1 } },
+    ],
+  },
+  {
+    id: 'q19',
+    question: '작품을 추천받는다면 어떤 문장이 좋나요?',
+    options: [
+      { label: '과학 설정이 탄탄해서 천천히 파고들 맛이 있어요.', scores: { engineer: 3 } },
+      { label: '읽고 나면 인간이라는 말이 이상해져요.', scores: { linguist: 2, hacker: 2 } },
+      { label: '세계가 망하는데도 이상하게 따뜻해요.', scores: { archivist: 2, ecologist: 2 } },
+    ],
+  },
+  {
+    id: 'q20',
+    question: '당신의 우주선 항로를 정한다면?',
+    options: [
+      { label: '검증되지 않은 과학 가설을 따라간다', scores: { engineer: 3 } },
+      { label: '은하 외곽의 오래된 문명을 찾아간다', scores: { navigator: 2, linguist: 2 } },
+      { label: '버려진 지구 생태권의 회복 신호를 따라간다', scores: { ecologist: 3, archivist: 1 } },
+    ],
+  },
 ];
+
+function getRandomTasteQuestions() {
+  return [...tasteQuestions].sort(() => Math.random() - 0.5).slice(0, 4);
+}
 
 function getRandomWorks(items, count) {
   return [...items]
@@ -371,10 +519,10 @@ function getWorkSearchText(work) {
   ].filter(Boolean).join(' ').toLowerCase();
 }
 
-function getTasteProfile(answers) {
+function getTasteProfile(answers, questions) {
   const scores = Object.keys(tasteProfiles).reduce((result, key) => ({ ...result, [key]: 0 }), {});
 
-  tasteQuestions.forEach(question => {
+  questions.forEach(question => {
     const selectedIndex = answers[question.id];
     const selectedOption = question.options[selectedIndex];
     if (!selectedOption) return;
@@ -414,7 +562,7 @@ function getTasteRecommendations(items, profile) {
     .filter(item => item.score > 0)
     .map(item => item.work)
     .concat(source.filter(work => !ranked.some(item => item.work.code === work.code)))
-    .slice(0, 5);
+    .slice(0, 3);
 }
 
 function findRelatedWorksForNode(node, works) {
@@ -727,6 +875,7 @@ export default function Home() {
   const [activeGenreId, setActiveGenreId] = useState(null);
   const [selectedCoordinateId, setSelectedCoordinateId] = useState('');
   const [mapView, setMapView] = useState({ yaw: -0.24, pitch: 0.18, zoom: 1 });
+  const [tasteQuestionSet, setTasteQuestionSet] = useState(() => getRandomTasteQuestions());
   const [tasteAnswers, setTasteAnswers] = useState({});
   const [archiveMode, setArchiveMode] = useState('random');
   const [randomWorkCodes, setRandomWorkCodes] = useState(() => getRandomWorks(fallbackWorks, 6).map(work => work.code));
@@ -1073,8 +1222,8 @@ export default function Home() {
   const displayedWorks = archiveMode === 'all'
     ? works
     : works.filter(work => randomWorkCodes.includes(work.code)).slice(0, 6);
-  const isTasteComplete = Object.keys(tasteAnswers).length === tasteQuestions.length;
-  const tasteProfile = isTasteComplete ? getTasteProfile(tasteAnswers) : null;
+  const isTasteComplete = Object.keys(tasteAnswers).length === tasteQuestionSet.length;
+  const tasteProfile = isTasteComplete ? getTasteProfile(tasteAnswers, tasteQuestionSet) : null;
   const tasteRecommendations = getTasteRecommendations(works, tasteProfile);
   const displayedMedia = sortMediaByLatest(
     mediaItems.filter(item => normalizeMediaCategory(item.category) === activeMediaCategory),
@@ -1196,7 +1345,7 @@ export default function Home() {
         <div className="section-shell">
           <div className="section-heading">
             <span>CREW PROFILING</span>
-            <h2>나의 SF 성향 테스트</h2>
+            <h2>나의 SF 성향<br />테스트</h2>
             <p>
               당신은 어떤 우주선에 어울리는 탐사 대원인가요?
               네 개의 가벼운 질문을 지나면, 성향에 맞는 탐사 경로와 추천 도서가 열립니다.
@@ -1205,7 +1354,7 @@ export default function Home() {
 
           <div className="taste-test-layout">
             <div className="taste-questions">
-              {tasteQuestions.map((question, questionIndex) => (
+              {tasteQuestionSet.map((question, questionIndex) => (
                 <article className="taste-question-card" key={question.id}>
                   <span>QUESTION {String(questionIndex + 1).padStart(2, '0')}</span>
                   <h3>{question.question}</h3>
@@ -1228,9 +1377,9 @@ export default function Home() {
             <aside className={`taste-result-panel ${tasteProfile ? 'is-complete' : ''}`}>
               <span>{tasteProfile?.code ?? 'TYPE SCAN'}</span>
               <h3>{tasteProfile?.title ?? '탐사 성향 분석 중'}</h3>
-              <strong>{tasteProfile?.genre ?? `${Object.keys(tasteAnswers).length} / ${tasteQuestions.length} 응답 완료`}</strong>
+              <strong>{tasteProfile?.genre ?? `${Object.keys(tasteAnswers).length} / ${tasteQuestionSet.length} 응답 완료`}</strong>
               <p>
-                {tasteProfile?.summary ?? '질문에 답하면 당신에게 어울리는 탐사 대원 유형과 추천 도서 5권이 표시됩니다.'}
+                {tasteProfile?.summary ?? '질문에 답하면 당신에게 어울리는 탐사 대원 유형과 추천 도서 3권이 표시됩니다.'}
               </p>
               {tasteProfile && (
                 <>
@@ -1245,7 +1394,7 @@ export default function Home() {
                     </div>
                   </dl>
                   <div className="taste-recommendations">
-                    <span>추천 도서 5권</span>
+                    <span>추천 도서 3권</span>
                     {tasteRecommendations.map(work => {
                       const WorkLink = work.link ? 'a' : 'article';
                       return (
@@ -1264,7 +1413,15 @@ export default function Home() {
                   </div>
                   <div className="taste-result-actions">
                     <a href="#works-archive">작품 아카이브로 이동</a>
-                    <button type="button" onClick={() => setTasteAnswers({})}>다시 테스트</button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTasteAnswers({});
+                        setTasteQuestionSet(getRandomTasteQuestions());
+                      }}
+                    >
+                      다시 테스트
+                    </button>
                   </div>
                 </>
               )}
