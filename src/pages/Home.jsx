@@ -1,4 +1,5 @@
-import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import {
@@ -886,8 +887,8 @@ function WorkDetailPanel({
 }) {
   if (!work) return null;
 
-  return (
-    <div className="work-detail-inline" role="region" aria-label={`${work.title} 댓글`}>
+  const panel = (
+    <div className="work-detail-modal" role="dialog" aria-modal="true" aria-label={`${work.title} 댓글`}>
       <article className={`work-detail-panel ${work.cover ? 'has-cover' : ''}`}>
         <header className="work-detail-head">
           <div>
@@ -964,6 +965,9 @@ function WorkDetailPanel({
       </article>
     </div>
   );
+
+  if (typeof document === 'undefined') return panel;
+  return createPortal(panel, document.body);
 }
 
 export default function Home() {
@@ -1686,66 +1690,49 @@ export default function Home() {
               <div className="featured-work-grid" aria-label="대표 작품 신호">
                 {displayedWorks.map(work => {
                   return (
-                    <Fragment key={work.code}>
-                      <article
-                        className={`work-card ${selectedWork?.code === work.code ? 'is-expanded' : ''} ${work.cover ? 'has-cover' : ''}`}
-                        onClick={() => openWorkDetail(work)}
-                        onKeyDown={event => {
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault();
-                            openWorkDetail(work);
-                          }
-                        }}
-                        role="button"
-                        tabIndex={0}
-                      >
-                        <div className="work-card-top">
-                          <span>{work.code}</span>
-                          <em>{work.medium}</em>
-                        </div>
-                        {work.cover && (
-                          <figure className="work-cover">
-                            <img src={work.cover} alt={`${work.title} 표지`} loading="lazy" />
-                          </figure>
-                        )}
-                        <h3>{work.title}</h3>
-                        <p>{work.subtitle}</p>
-                        {work.recommender && <span className="work-recommender">추천자 {work.recommender}</span>}
-                        <div className="work-tags">
-                          {work.tags.map(tag => <span key={tag}>{tag}</span>)}
-                        </div>
-                        <div className="work-card-footer">
-                          <span>DETAIL / COMMENTS</span>
-                          <button
-                            className="work-detail-open"
-                            onClick={event => {
-                              event.stopPropagation();
-                              openWorkDetail(work);
-                            }}
-                            type="button"
-                          >
-                            상세 보기
-                          </button>
-                          <ChevronRight aria-hidden="true" />
-                        </div>
-                      </article>
-                      {selectedWork?.code === work.code && (
-                        <WorkDetailPanel
-                          commentMessage={commentMessage}
-                          commentStatus={commentStatus}
-                          commentText={commentText}
-                          comments={workComments}
-                          onClose={() => {
-                            setSelectedWork(null);
-                            setWorkComments([]);
-                          }}
-                          onCommentSubmit={submitWorkComment}
-                          onCommentTextChange={setCommentText}
-                          user={user}
-                          work={selectedWork}
-                        />
+                    <article
+                      className={`work-card ${selectedWork?.code === work.code ? 'is-expanded' : ''} ${work.cover ? 'has-cover' : ''}`}
+                      key={work.code}
+                      onClick={() => openWorkDetail(work)}
+                      onKeyDown={event => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          openWorkDetail(work);
+                        }
+                      }}
+                      role="button"
+                      tabIndex={0}
+                    >
+                      <div className="work-card-top">
+                        <span>{work.code}</span>
+                        <em>{work.medium}</em>
+                      </div>
+                      {work.cover && (
+                        <figure className="work-cover">
+                          <img src={work.cover} alt={`${work.title} 표지`} loading="lazy" />
+                        </figure>
                       )}
-                    </Fragment>
+                      <h3>{work.title}</h3>
+                      <p>{work.subtitle}</p>
+                      {work.recommender && <span className="work-recommender">추천자 {work.recommender}</span>}
+                      <div className="work-tags">
+                        {work.tags.map(tag => <span key={tag}>{tag}</span>)}
+                      </div>
+                      <div className="work-card-footer">
+                        <span>DETAIL / COMMENTS</span>
+                        <button
+                          className="work-detail-open"
+                          onClick={event => {
+                            event.stopPropagation();
+                            openWorkDetail(work);
+                          }}
+                          type="button"
+                        >
+                          상세 보기
+                        </button>
+                        <ChevronRight aria-hidden="true" />
+                      </div>
+                    </article>
                   );
                 })}
               </div>
@@ -2231,6 +2218,20 @@ export default function Home() {
         </div>
       )}
 
+      <WorkDetailPanel
+        commentMessage={commentMessage}
+        commentStatus={commentStatus}
+        commentText={commentText}
+        comments={workComments}
+        onClose={() => {
+          setSelectedWork(null);
+          setWorkComments([]);
+        }}
+        onCommentSubmit={submitWorkComment}
+        onCommentTextChange={setCommentText}
+        user={user}
+        work={selectedWork}
+      />
     </PageTransition>
   );
 }
