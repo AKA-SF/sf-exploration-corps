@@ -1581,11 +1581,19 @@
   min-height: 42px;
   border: 1px solid rgba(25, 247, 241, 0.32);
   padding: 0 14px;
-  color: #00161a;
-  background: var(--cyan);
+  color: #00161a !important;
+  background: #19f7f1;
   font-size: 12px;
   font-weight: 950;
   text-decoration: none;
+}
+
+.work-archive-link:visited,
+.work-archive-link:hover,
+.work-archive-link:focus-visible,
+.work-archive-link svg {
+  color: #00161a !important;
+  stroke: #00161a !important;
 }
 
 .work-comment-section {

@@ -505,6 +505,13 @@ body.reading-mode-active .work-comment-form button {
   background: #2f6f78 !important;
 }
 
+body.reading-mode-active .work-archive-link:hover,
+body.reading-mode-active .work-archive-link:focus-visible,
+body.reading-mode-active .work-archive-link svg {
+  color: #f8faf7 !important;
+  stroke: #f8faf7 !important;
+}
+
 .page-container:has(.home-container) {
   padding: 10px;
   padding-bottom: 68px;
