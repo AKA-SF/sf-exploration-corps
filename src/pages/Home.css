@@ -2157,6 +2157,77 @@
   color: #b8cbd2;
 }
 
+.reading-mode .media-section {
+  border-top-color: rgba(46, 72, 77, 0.2) !important;
+  background:
+    linear-gradient(180deg, rgba(255, 252, 244, 0.98), rgba(239, 233, 219, 0.96)) !important;
+  color: #172126 !important;
+}
+
+.reading-mode .media-tabs button,
+.reading-mode .media-full-link {
+  border-color: rgba(47, 111, 120, 0.28) !important;
+  background: rgba(255, 252, 244, 0.72) !important;
+  color: #2f6f78 !important;
+  box-shadow: none !important;
+}
+
+.reading-mode .media-tabs button:hover,
+.reading-mode .media-tabs button:focus-visible,
+.reading-mode .media-tabs button.is-active,
+.reading-mode .media-full-link:hover,
+.reading-mode .media-full-link:focus-visible {
+  border-color: rgba(47, 111, 120, 0.5) !important;
+  background: #2f6f78 !important;
+  color: #fffdf6 !important;
+}
+
+.reading-mode .media-card,
+.reading-mode .media-empty {
+  border-color: rgba(46, 72, 77, 0.22) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.66), rgba(232, 222, 202, 0.34)),
+    rgba(255, 252, 244, 0.9) !important;
+  box-shadow: none !important;
+}
+
+.reading-mode .media-card:hover,
+.reading-mode .media-card:focus-visible {
+  border-color: rgba(47, 111, 120, 0.46) !important;
+  background:
+    linear-gradient(135deg, rgba(221, 242, 239, 0.84), rgba(255, 252, 244, 0.92)) !important;
+  box-shadow: 0 16px 34px rgba(36, 28, 15, 0.1) !important;
+}
+
+.reading-mode .media-thumb {
+  border-bottom-color: rgba(46, 72, 77, 0.16) !important;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(47, 111, 120, 0.12), transparent 38%),
+    rgba(255, 255, 255, 0.58) !important;
+  color: #2f6f78 !important;
+}
+
+.reading-mode .media-card h3 {
+  color: #111827 !important;
+}
+
+.reading-mode .media-card p,
+.reading-mode .media-empty {
+  color: #34444b !important;
+}
+
+.reading-mode .media-card-body > span,
+.reading-mode .media-empty strong {
+  color: #2f6f78 !important;
+}
+
+.reading-mode .media-meta em,
+.reading-mode .media-tags span {
+  border-color: rgba(47, 111, 120, 0.24) !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  color: #2f6f78 !important;
+}
+
 .question-section {
   position: relative;
   z-index: 2;

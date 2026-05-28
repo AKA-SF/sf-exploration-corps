@@ -291,6 +291,104 @@
   letter-spacing: 1.4px;
 }
 
+.reading-mode .page-container:has(.media-archive-page),
+.reading-mode.page-container:has(.media-archive-page) {
+  background: #f3efe6 !important;
+}
+
+.reading-mode .media-archive-page {
+  --cyan: #2f6f78;
+  --line: rgba(35, 73, 82, 0.2);
+  background:
+    linear-gradient(180deg, rgba(255, 252, 244, 0.98), rgba(239, 233, 219, 0.98)) !important;
+  color: #172126 !important;
+}
+
+.reading-mode .media-archive-header,
+.reading-mode .media-archive-card,
+.reading-mode .media-archive-empty,
+.reading-mode .media-archive-search {
+  border-color: rgba(46, 72, 77, 0.22) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.66), rgba(232, 222, 202, 0.34)),
+    rgba(255, 252, 244, 0.9) !important;
+  box-shadow: none !important;
+}
+
+.reading-mode .media-back-link,
+.reading-mode .media-archive-status,
+.reading-mode .media-archive-tabs a {
+  border-color: rgba(47, 111, 120, 0.28) !important;
+  background: rgba(255, 252, 244, 0.72) !important;
+  color: #2f6f78 !important;
+  box-shadow: none !important;
+}
+
+.reading-mode .media-archive-tabs a:hover,
+.reading-mode .media-archive-tabs a:focus-visible,
+.reading-mode .media-archive-tabs a.is-active {
+  border-color: rgba(47, 111, 120, 0.5) !important;
+  background: #2f6f78 !important;
+  color: #fffdf6 !important;
+}
+
+.reading-mode .media-archive-thumb {
+  border-bottom-color: rgba(46, 72, 77, 0.16) !important;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(47, 111, 120, 0.12), transparent 38%),
+    rgba(255, 255, 255, 0.58) !important;
+  color: #2f6f78 !important;
+}
+
+.reading-mode .media-archive-header h1,
+.reading-mode .media-archive-body h2 {
+  color: #111827 !important;
+}
+
+.reading-mode .media-archive-header p,
+.reading-mode .media-archive-body p,
+.reading-mode .media-archive-empty {
+  color: #34444b !important;
+}
+
+.reading-mode .media-archive-header span,
+.reading-mode .media-archive-status,
+.reading-mode .media-archive-card > span,
+.reading-mode .media-archive-body > span,
+.reading-mode .media-archive-link,
+.reading-mode .media-archive-search,
+.reading-mode .media-archive-search span,
+.reading-mode .media-archive-empty strong {
+  color: #2f6f78 !important;
+}
+
+.reading-mode .media-archive-search input {
+  color: #172126 !important;
+}
+
+.reading-mode .media-archive-search input::placeholder {
+  color: rgba(52, 68, 75, 0.5) !important;
+}
+
+.reading-mode .media-archive-meta em,
+.reading-mode .media-archive-tags span {
+  border-color: rgba(47, 111, 120, 0.24) !important;
+  background: rgba(255, 255, 255, 0.5) !important;
+  color: #2f6f78 !important;
+}
+
+.reading-mode .media-archive-link {
+  border-top-color: rgba(46, 72, 77, 0.16) !important;
+}
+
+.reading-mode .media-archive-card:hover,
+.reading-mode .media-archive-card:focus-visible {
+  border-color: rgba(47, 111, 120, 0.46) !important;
+  background:
+    linear-gradient(135deg, rgba(221, 242, 239, 0.84), rgba(255, 252, 244, 0.92)) !important;
+  box-shadow: 0 16px 34px rgba(36, 28, 15, 0.1) !important;
+}
+
 @media (max-width: 1180px) {
   .media-archive-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
