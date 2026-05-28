@@ -196,11 +196,7 @@ export default function Profile() {
         <div className="profile-hub-main">
           <span className="mono text-muted text-xs">TODAY'S HUB</span>
           <h3 className="mono">오늘의 탐사 상태</h3>
-          <p>{dailyLoginReceived ? '오늘 접속 보너스 +5 MP가 기록되었습니다.' : '오늘 접속 보너스가 곧 기록됩니다.'}</p>
-          <div className="profile-hub-actions">
-            <a className="profile-primary-link" href="/#works-archive"><Rocket size={16} /> 작품 탐사</a>
-            <Link className="profile-secondary-link" to="/questions">커뮤니티 이동</Link>
-          </div>
+          <p>{dailyLoginReceived ? '+5 MP 접속 보너스 수신 완료' : '접속 보너스 확인 중'}</p>
         </div>
         <div className="profile-hub-grid">
           <article>

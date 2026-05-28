@@ -162,9 +162,9 @@
 
 .profile-hub-panel {
   display: grid;
-  grid-template-columns: minmax(260px, 0.62fr) minmax(0, 1fr);
-  gap: 16px;
-  padding: 18px;
+  grid-template-columns: minmax(210px, 0.42fr) minmax(0, 1fr);
+  gap: 12px;
+  padding: 14px;
   border-color: rgba(0, 255, 255, 0.24);
   background:
     radial-gradient(circle at 12% 18%, rgba(0, 255, 255, 0.1), transparent 32%),
@@ -175,14 +175,15 @@
 .profile-hub-main {
   display: grid;
   align-content: center;
-  gap: 10px;
+  gap: 6px;
 }
 
 .profile-hub-main h3,
 .profile-reading-panel h3 {
   margin: 0;
   color: var(--text-main);
-  font-size: 22px;
+  font-size: 17px;
+  line-height: 1.25;
 }
 
 .profile-hub-main p,
@@ -194,26 +195,21 @@
   line-height: 1.7;
 }
 
-.profile-hub-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 9px;
-  margin-top: 4px;
-}
-
 .profile-hub-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .profile-hub-grid article {
   display: grid;
-  gap: 7px;
-  min-height: 88px;
+  align-content: start;
+  gap: 6px;
+  min-height: 62px;
   border: 1px solid rgba(0, 255, 255, 0.14);
-  padding: 12px;
+  padding: 9px;
   background: rgba(0, 0, 0, 0.3);
+  min-width: 0;
 }
 
 .profile-hub-grid span,
@@ -226,8 +222,10 @@
 
 .profile-hub-grid strong {
   color: var(--text-main);
-  font-size: 13px;
-  line-height: 1.4;
+  font-size: 11px;
+  line-height: 1.35;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
 }
 
 .mission-tree-panel {
