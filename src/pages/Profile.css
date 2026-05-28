@@ -162,8 +162,8 @@
 
 .profile-hub-panel {
   display: grid;
-  grid-template-columns: minmax(210px, 0.42fr) minmax(0, 1fr);
-  gap: 12px;
+  grid-template-columns: 1fr;
+  gap: 10px;
   padding: 14px;
   border-color: rgba(0, 255, 255, 0.24);
   background:
@@ -173,9 +173,11 @@
 }
 
 .profile-hub-main {
-  display: grid;
-  align-content: center;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
   gap: 6px;
+  min-width: 0;
 }
 
 .profile-hub-main h3,
@@ -197,8 +199,8 @@
 
 .profile-hub-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
 }
 
 .profile-hub-grid article {
@@ -215,15 +217,18 @@
 .profile-hub-grid span,
 .profile-reading-grid span {
   color: var(--primary-cyan);
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 900;
-  letter-spacing: 1px;
+  letter-spacing: 0.8px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .profile-hub-grid strong {
   color: var(--text-main);
-  font-size: 11px;
-  line-height: 1.35;
+  font-size: 12px;
+  line-height: 1.45;
   word-break: keep-all;
   overflow-wrap: anywhere;
 }
