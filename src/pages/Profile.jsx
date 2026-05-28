@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { BadgeCheck, LogOut, Rocket, UserRound } from 'lucide-react';
+import { BadgeCheck, CheckCircle2, GitBranch, LockKeyhole, LogOut, Rocket, UserRound } from 'lucide-react';
 import CrewAvatar from '../components/CrewAvatar';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
-import { getActivityStats, getBadges, getRank } from '../data/profileProgress';
+import { getActivityStats, getBadges, getMissionTree, getRank } from '../data/profileProgress';
 import { supabase } from '../lib/supabaseClient';
 import './Profile.css';
 
@@ -15,6 +15,7 @@ export default function Profile() {
   const [nickname, setNickname] = useState('');
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
+  const [selectedMissionRoute, setSelectedMissionRoute] = useState('');
 
   useEffect(() => {
     if (!user || !supabase) return;
@@ -64,6 +65,7 @@ export default function Profile() {
         setProfile(nextProfile);
         setNickname(nextProfile.nickname ?? fallbackNickname);
         setActivities(activityError ? [] : activityData ?? []);
+        setSelectedMissionRoute(localStorage.getItem(`sf-selected-mission-route:${user.id}`) || '');
         setStatus(activityError ? 'partial' : 'ready');
         setMessage(activityError ? activityError.message : '');
       }
@@ -79,6 +81,7 @@ export default function Profile() {
   const rank = getRank(points);
   const stats = useMemo(() => getActivityStats(activities), [activities]);
   const badges = getBadges(stats);
+  const missionTree = useMemo(() => getMissionTree(stats, selectedMissionRoute), [selectedMissionRoute, stats]);
 
   if (!loading && !user) return <Navigate to="/login" replace />;
 
@@ -100,6 +103,12 @@ export default function Profile() {
     setProfile(data);
     setStatus('ready');
     setMessage('프로필이 저장되었습니다.');
+  };
+
+  const chooseMissionRoute = routeId => {
+    if (!missionTree.trainingComplete) return;
+    setSelectedMissionRoute(routeId);
+    if (user) localStorage.setItem(`sf-selected-mission-route:${user.id}`, routeId);
   };
 
   if (!isConfigured) {
@@ -158,6 +167,65 @@ export default function Profile() {
           <Rocket size={16} />
           탐사 시작
         </a>
+      </section>
+
+      <section className="mission-tree-panel panel">
+        <div className="mission-tree-header">
+          <div>
+            <span className="mono text-muted text-xs">MISSION TREE</span>
+            <h3 className="mono">대원 임무 트리</h3>
+            <p>기본 훈련을 완료하면 정식 대원 임무 카드와 분기 루트가 해금됩니다.</p>
+          </div>
+          <strong className={`mono mission-unlock-badge ${missionTree.trainingComplete ? 'is-unlocked' : ''}`}>
+            {missionTree.trainingComplete ? 'FORMAL CREW UNLOCKED' : 'BASIC TRAINING'}
+          </strong>
+        </div>
+
+        <div className="mission-training-grid">
+          {missionTree.training.map(mission => (
+            <article className={`mission-node ${mission.complete ? 'is-complete' : ''}`} key={mission.id}>
+              <div className="mission-node-icon">
+                {mission.complete ? <CheckCircle2 aria-hidden="true" /> : <span />}
+              </div>
+              <div>
+                <strong>{mission.title}</strong>
+                <p>{mission.description}</p>
+                <em className="mono">{Math.min(mission.value, mission.target)} / {mission.target}</em>
+                <div className="mission-progress" style={{ '--progress': `${mission.progress}%` }}><i /></div>
+              </div>
+            </article>
+          ))}
+        </div>
+
+        <div className={`mission-route-grid ${missionTree.trainingComplete ? 'is-unlocked' : 'is-locked'}`}>
+          {missionTree.routes.map(route => (
+            <article className={`mission-route-card ${route.selected ? 'is-selected' : ''}`} key={route.id}>
+              <div className="mission-route-top">
+                <GitBranch aria-hidden="true" />
+                <span className="mono">{route.unlocked ? 'ROUTE AVAILABLE' : 'LOCKED ROUTE'}</span>
+              </div>
+              <h4 className="mono">{route.title}</h4>
+              <strong>{route.subtitle}</strong>
+              <p>{route.description}</p>
+              <div className="mission-route-list">
+                {route.missions.map(mission => (
+                  <div className={`mission-route-step ${mission.complete ? 'is-complete' : ''} ${mission.locked ? 'is-locked' : ''}`} key={mission.id}>
+                    <span className="mono">{mission.locked ? <LockKeyhole size={12} aria-hidden="true" /> : `${Math.min(mission.value, mission.target)}/${mission.target}`}</span>
+                    <strong>{mission.title}</strong>
+                    <div className="mission-progress" style={{ '--progress': `${mission.progress}%` }}><i /></div>
+                  </div>
+                ))}
+              </div>
+              <button
+                disabled={!route.unlocked}
+                onClick={() => chooseMissionRoute(route.id)}
+                type="button"
+              >
+                {route.selected ? '선택된 루트' : route.unlocked ? '이 루트 선택' : '기본 훈련 필요'}
+              </button>
+            </article>
+          ))}
+        </div>
       </section>
 
       <section className="profile-stat-grid">

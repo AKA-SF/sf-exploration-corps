@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ExternalLink, Play, Search, Sparkles } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
+import { useAuth } from '../context/authContextValue';
+import { recordUserActivity } from '../lib/activityLogger';
 import './MediaArchive.css';
 
 const mediaCategories = [
@@ -34,11 +36,29 @@ function sortMediaByLatest(items) {
 }
 
 export default function MediaArchive() {
+  const { user } = useAuth();
   const { categorySlug = 'interviews' } = useParams();
   const [items, setItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [status, setStatus] = useState('loading');
   const activeCategory = mediaCategories.find(category => category.slug === categorySlug) ?? mediaCategories[0];
+
+  const recordMissionSignal = useCallback(async item => {
+    if (!user) return;
+    const storageKey = `sf-mission-signal:${user.id}:media:${item.code}`;
+    if (localStorage.getItem(storageKey)) return;
+    const result = await recordUserActivity(user, {
+      actionType: 'media_visit',
+      points: 3,
+      genre: item.category || activeCategory.label,
+      metadata: {
+        title: item.title,
+        media_code: item.code,
+        node: 'media-archive',
+      },
+    });
+    if (result?.ok) localStorage.setItem(storageKey, '1');
+  }, [activeCategory.label, user]);
 
   useEffect(() => {
     let isMounted = true;
@@ -128,7 +148,14 @@ export default function MediaArchive() {
 
       <section className="media-archive-grid" aria-label={`${activeCategory.label} 전체 목록`}>
         {visibleItems.length > 0 ? visibleItems.map(item => (
-          <a className="media-archive-card" href={item.link} key={item.code} rel="noreferrer" target="_blank">
+          <a
+            className="media-archive-card"
+            href={item.link}
+            key={item.code}
+            onClick={() => recordMissionSignal(item)}
+            rel="noreferrer"
+            target="_blank"
+          >
             <div className="media-archive-thumb">
               {item.thumbnail ? <img src={item.thumbnail} alt={`${item.title} 썸네일`} loading="lazy" /> : <Play aria-hidden="true" />}
             </div>

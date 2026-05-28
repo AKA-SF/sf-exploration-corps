@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
@@ -1020,6 +1020,14 @@ export default function Home() {
     },
   });
 
+  const recordMissionSignal = useCallback(async (signalKey, activity) => {
+    if (!user) return;
+    const storageKey = `sf-mission-signal:${user.id}:${signalKey}`;
+    if (localStorage.getItem(storageKey)) return;
+    const result = await recordUserActivity(user, activity);
+    if (result?.ok) localStorage.setItem(storageKey, '1');
+  }, [user]);
+
   const resetCoordinateMap = () => {
     setActiveGenreId(null);
     setSelectedCoordinateId('');
@@ -1304,6 +1312,17 @@ export default function Home() {
 
   const selectConcept = code => {
     setActiveConceptCode(code);
+    const concept = concepts.find(entry => entry.code === code);
+    recordMissionSignal(`concept:${code}`, {
+      actionType: 'concept_read',
+      points: 5,
+      genre: concept?.category || 'SF 개념 사전',
+      metadata: {
+        title: concept?.term || code,
+        concept_code: code,
+        node: 'concept-dictionary',
+      },
+    });
 
     if (showAllConcepts) {
       requestAnimationFrame(() => {
@@ -1432,6 +1451,22 @@ export default function Home() {
   const isTasteComplete = Object.keys(tasteAnswers).length === tasteQuestionSet.length;
   const tasteProfile = isTasteComplete ? getTasteProfile(tasteAnswers, tasteQuestionSet) : null;
   const tasteRecommendations = getTasteRecommendations(works, tasteProfile);
+
+  useEffect(() => {
+    if (!isTasteComplete || !tasteProfile) return;
+    recordMissionSignal(`taste:${tasteProfile.code}`, {
+      actionType: 'taste_test',
+      points: 10,
+      genre: tasteProfile.genre,
+      metadata: {
+        title: '나의 SF 성향 테스트 완료',
+        taste_code: tasteProfile.code,
+        taste_title: tasteProfile.title,
+        node: 'taste-test',
+      },
+    });
+  }, [isTasteComplete, recordMissionSignal, tasteProfile]);
+
   const displayedMedia = sortMediaByLatest(
     mediaItems.filter(item => normalizeMediaCategory(item.category) === activeMediaCategory),
   );
@@ -1774,7 +1809,23 @@ export default function Home() {
 
           <div className="media-grid">
             {previewMedia.length > 0 ? previewMedia.map(item => (
-              <a className="media-card" href={item.link} key={item.code} rel="noreferrer" target="_blank">
+              <a
+                className="media-card"
+                href={item.link}
+                key={item.code}
+                onClick={() => recordMissionSignal(`media:${item.code}`, {
+                  actionType: 'media_visit',
+                  points: 3,
+                  genre: item.category || activeMediaCategory,
+                  metadata: {
+                    title: item.title,
+                    media_code: item.code,
+                    node: 'media-archive',
+                  },
+                })}
+                rel="noreferrer"
+                target="_blank"
+              >
                 <div className="media-thumb">
                   {item.thumbnail ? <img src={item.thumbnail} alt={`${item.title} 썸네일`} loading="lazy" /> : <Play aria-hidden="true" />}
                 </div>

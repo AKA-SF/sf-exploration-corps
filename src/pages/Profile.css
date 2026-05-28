@@ -160,6 +160,223 @@
   line-height: 1.7;
 }
 
+.mission-tree-panel {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border-color: rgba(255, 176, 0, 0.18);
+  background:
+    radial-gradient(circle at 88% 12%, rgba(255, 176, 0, 0.09), transparent 28%),
+    linear-gradient(135deg, rgba(0, 255, 255, 0.055), transparent 45%),
+    rgba(0, 0, 0, 0.46);
+}
+
+.mission-tree-header,
+.mission-route-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mission-tree-header h3 {
+  margin: 2px 0 0;
+  color: var(--accent-amber);
+  font-size: 18px;
+}
+
+.mission-tree-header p,
+.mission-route-card p,
+.mission-node p {
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.65;
+}
+
+.mission-unlock-badge {
+  width: fit-content;
+  border: 1px solid rgba(255, 176, 0, 0.28);
+  padding: 8px 10px;
+  color: var(--accent-amber);
+  background: rgba(255, 176, 0, 0.06);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.mission-unlock-badge.is-unlocked {
+  border-color: rgba(0, 255, 255, 0.34);
+  color: var(--primary-cyan);
+  background: rgba(0, 255, 255, 0.055);
+}
+
+.mission-training-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.mission-node {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 10px;
+  min-height: 150px;
+  border: 1px solid rgba(0, 255, 255, 0.13);
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.32);
+  opacity: 0.72;
+}
+
+.mission-node.is-complete {
+  border-color: rgba(0, 255, 255, 0.34);
+  background: rgba(0, 255, 255, 0.05);
+  opacity: 1;
+}
+
+.mission-node-icon {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  color: var(--primary-cyan);
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.mission-node-icon span {
+  width: 8px;
+  height: 8px;
+  border: 1px solid currentColor;
+  transform: rotate(45deg);
+}
+
+.mission-node-icon svg {
+  width: 15px;
+  height: 15px;
+}
+
+.mission-node strong,
+.mission-route-step strong {
+  display: block;
+  color: var(--text-main);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.mission-node em {
+  display: block;
+  margin: 10px 0 6px;
+  color: var(--primary-cyan);
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.mission-route-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mission-route-card {
+  display: grid;
+  gap: 12px;
+  border: 1px solid rgba(0, 255, 255, 0.13);
+  padding: 16px;
+  background:
+    linear-gradient(135deg, rgba(0, 255, 255, 0.055), transparent 48%),
+    rgba(0, 0, 0, 0.34);
+}
+
+.mission-route-grid.is-locked .mission-route-card {
+  opacity: 0.5;
+}
+
+.mission-route-card.is-selected {
+  border-color: rgba(255, 176, 0, 0.42);
+  background:
+    linear-gradient(135deg, rgba(255, 176, 0, 0.08), transparent 48%),
+    rgba(0, 0, 0, 0.38);
+}
+
+.mission-route-top {
+  align-items: center;
+  color: var(--primary-cyan);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.mission-route-top svg {
+  width: 17px;
+  height: 17px;
+}
+
+.mission-route-card h4 {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 18px;
+}
+
+.mission-route-card > strong {
+  color: var(--accent-amber);
+  font-size: 11px;
+}
+
+.mission-route-list {
+  display: grid;
+  gap: 8px;
+}
+
+.mission-route-step {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid rgba(0, 255, 255, 0.12);
+  padding: 9px;
+  background: rgba(0, 0, 0, 0.24);
+}
+
+.mission-route-step span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--primary-cyan);
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.mission-route-step .mission-progress {
+  grid-column: 1 / -1;
+}
+
+.mission-route-step.is-complete {
+  border-color: rgba(255, 176, 0, 0.32);
+}
+
+.mission-route-card button {
+  min-height: 42px;
+  border: 1px solid rgba(0, 255, 255, 0.32);
+  color: #001417;
+  background: var(--primary-cyan);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 1000;
+}
+
+.mission-route-card.is-selected button {
+  border-color: rgba(255, 176, 0, 0.42);
+  background: var(--accent-amber);
+}
+
+.mission-route-card button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.42);
+}
+
 .profile-badge-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -247,12 +464,15 @@
   .profile-identity-card,
   .profile-nickname-form,
   .profile-launch-panel,
+  .mission-tree-header,
   .profile-badge-summary,
   .profile-badge-hero {
     grid-template-columns: 1fr;
   }
 
   .profile-stat-grid,
+  .mission-training-grid,
+  .mission-route-grid,
   .profile-badge-grid,
   .profile-badge-grid.is-vault,
   .profile-activity-row {
