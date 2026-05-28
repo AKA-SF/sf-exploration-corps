@@ -8,6 +8,17 @@ import { getActivityStats, getBadges, getMissionTree, getRank } from '../data/pr
 import { supabase } from '../lib/supabaseClient';
 import './Profile.css';
 
+const activityLabels = {
+  comment: '댓글',
+  concept_read: '개념 읽기',
+  daily_login: '일일 접속',
+  exploration_log: '탐사 로그',
+  media_visit: '미디어 방문',
+  post: '게시글',
+  review: '리뷰',
+  taste_test: '성향 테스트',
+};
+
 export default function Profile() {
   const { isConfigured, loading, user, signOut } = useAuth();
   const [profile, setProfile] = useState(null);
@@ -253,7 +264,7 @@ export default function Profile() {
         </div>
         {activities.length > 0 ? activities.slice(0, 8).map(activity => (
           <article className="profile-activity-row" key={activity.id}>
-            <span>{activity.action_type}</span>
+            <span>{activityLabels[activity.action_type] || activity.action_type}</span>
             <strong>{activity.metadata?.title || activity.metadata?.work_title || activity.genre || '탐사 활동'}</strong>
             <em>+{activity.points ?? 0} MP</em>
           </article>
