@@ -162,8 +162,10 @@
 
 .mission-tree-panel {
   display: grid;
-  gap: 16px;
-  padding: 18px;
+  gap: 18px;
+  width: min(100%, 980px);
+  margin: 0 auto;
+  padding: 22px;
   border-color: rgba(255, 176, 0, 0.18);
   background:
     radial-gradient(circle at 88% 12%, rgba(255, 176, 0, 0.09), transparent 28%),
@@ -182,7 +184,7 @@
 .mission-tree-header h3 {
   margin: 2px 0 0;
   color: var(--accent-amber);
-  font-size: 18px;
+  font-size: 22px;
 }
 
 .mission-tree-header p,
@@ -212,19 +214,32 @@
 
 .mission-training-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
+  padding-left: 13px;
+  border-left: 1px solid rgba(0, 255, 255, 0.18);
 }
 
 .mission-node {
+  position: relative;
   display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 10px;
-  min-height: 150px;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  min-height: 0;
   border: 1px solid rgba(0, 255, 255, 0.13);
-  padding: 12px;
+  padding: 12px 14px;
   background: rgba(0, 0, 0, 0.32);
   opacity: 0.72;
+}
+
+.mission-node::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: -14px;
+  width: 14px;
+  height: 1px;
+  background: rgba(0, 255, 255, 0.22);
 }
 
 .mission-node.is-complete {
@@ -236,8 +251,8 @@
 .mission-node-icon {
   display: grid;
   place-items: center;
-  width: 26px;
-  height: 26px;
+  width: 30px;
+  height: 30px;
   border: 1px solid rgba(0, 255, 255, 0.2);
   color: var(--primary-cyan);
   background: rgba(0, 0, 0, 0.3);
@@ -259,22 +274,29 @@
 .mission-route-step strong {
   display: block;
   color: var(--text-main);
-  font-size: 12px;
+  font-size: 13px;
   line-height: 1.35;
 }
 
 .mission-node em {
   display: block;
-  margin: 10px 0 6px;
+  min-width: 44px;
+  margin: 0;
   color: var(--primary-cyan);
   font-size: 10px;
   font-style: normal;
   font-weight: 900;
+  text-align: right;
+}
+
+.mission-node .mission-progress {
+  grid-column: 2 / -1;
+  margin-top: -3px;
 }
 
 .mission-route-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 12px;
 }
 
@@ -330,7 +352,7 @@
 
 .mission-route-step {
   display: grid;
-  grid-template-columns: 48px 1fr;
+  grid-template-columns: 52px minmax(0, 1fr);
   gap: 10px;
   align-items: center;
   border: 1px solid rgba(0, 255, 255, 0.12);
@@ -477,6 +499,24 @@
   .profile-badge-grid.is-vault,
   .profile-activity-row {
     grid-template-columns: 1fr;
+  }
+
+  .mission-tree-panel {
+    width: 100%;
+    padding: 16px;
+  }
+
+  .mission-node {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .mission-node em {
+    grid-column: 2;
+    text-align: left;
+  }
+
+  .mission-node .mission-progress {
+    grid-column: 1 / -1;
   }
 
   .crew-avatar {
