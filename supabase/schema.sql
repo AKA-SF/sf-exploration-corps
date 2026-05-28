@@ -46,14 +46,27 @@ create table if not exists public.work_comments (
   created_at timestamptz not null default now()
 );
 
+create table if not exists public.work_statuses (
+  user_id uuid not null references auth.users(id) on delete cascade,
+  work_code text not null,
+  work_title text not null,
+  status text not null check (status in ('want', 'reading', 'done')),
+  updated_at timestamptz not null default now(),
+  primary key (user_id, work_code)
+);
+
 create index if not exists work_comments_work_code_created_at_idx
   on public.work_comments (work_code, created_at);
+
+create index if not exists work_statuses_user_status_idx
+  on public.work_statuses (user_id, status);
 
 alter table public.profiles enable row level security;
 alter table public.activity_logs enable row level security;
 alter table public.badges enable row level security;
 alter table public.user_badges enable row level security;
 alter table public.work_comments enable row level security;
+alter table public.work_statuses enable row level security;
 
 drop policy if exists "profiles_select_own" on public.profiles;
 create policy "profiles_select_own" on public.profiles
@@ -93,6 +106,18 @@ create policy "work_comments_insert_own" on public.work_comments
 
 drop policy if exists "work_comments_update_own" on public.work_comments;
 create policy "work_comments_update_own" on public.work_comments
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "work_statuses_select_own" on public.work_statuses;
+create policy "work_statuses_select_own" on public.work_statuses
+  for select using (auth.uid() = user_id);
+
+drop policy if exists "work_statuses_insert_own" on public.work_statuses;
+create policy "work_statuses_insert_own" on public.work_statuses
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "work_statuses_update_own" on public.work_statuses;
+create policy "work_statuses_update_own" on public.work_statuses
   for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 insert into public.badges (id, title, description, condition_key) values

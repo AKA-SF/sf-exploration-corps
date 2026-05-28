@@ -1596,6 +1596,53 @@
   stroke: #00161a !important;
 }
 
+.work-status-control {
+  display: grid;
+  gap: 9px;
+}
+
+.work-status-control > span {
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
+}
+
+.work-status-control > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.work-status-control button {
+  min-height: 34px;
+  border: 1px solid rgba(25, 247, 241, 0.26);
+  padding: 0 10px;
+  color: #dffcff;
+  background: rgba(0, 18, 24, 0.62);
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.work-status-control button:hover,
+.work-status-control button:focus-visible,
+.work-status-control button.is-active {
+  color: #00161a;
+  background: #19f7f1;
+}
+
+.work-status-control button:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.work-status-control em {
+  color: #8fb0bc;
+  font-size: 11px;
+  font-style: normal;
+}
+
 .work-comment-section {
   display: grid;
   gap: 14px;

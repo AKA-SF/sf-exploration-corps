@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, Navigate } from 'react-router-dom';
-import { BadgeCheck, CheckCircle2, GitBranch, LockKeyhole, LogOut, Rocket, UserRound } from 'lucide-react';
+import { BadgeCheck, BookMarked, CheckCircle2, GitBranch, LockKeyhole, LogOut, Rocket, UserRound } from 'lucide-react';
 import CrewAvatar from '../components/CrewAvatar';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
@@ -19,6 +19,12 @@ const activityLabels = {
   taste_test: '성향 테스트',
 };
 
+const workStatusLabels = {
+  want: '읽고 싶어요',
+  reading: '읽는 중',
+  done: '읽었어요',
+};
+
 export default function Profile() {
   const { isConfigured, loading, user, signOut } = useAuth();
   const [profile, setProfile] = useState(null);
@@ -27,6 +33,7 @@ export default function Profile() {
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
   const [selectedMissionRoute, setSelectedMissionRoute] = useState('');
+  const [workStatuses, setWorkStatuses] = useState([]);
 
   useEffect(() => {
     if (!user || !supabase) return;
@@ -72,10 +79,24 @@ export default function Profile() {
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
+      const localWorkStatuses = JSON.parse(localStorage.getItem(`sf-work-statuses:${user.id}`) || '{}');
+      const { data: statusData, error: statusError } = await supabase
+        .from('work_statuses')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('updated_at', { ascending: false });
+
       if (isMounted) {
         setProfile(nextProfile);
         setNickname(nextProfile.nickname ?? fallbackNickname);
         setActivities(activityError ? [] : activityData ?? []);
+        setWorkStatuses(statusError
+          ? Object.entries(localWorkStatuses).map(([workCode, readStatus]) => ({
+              work_code: workCode,
+              work_title: workCode,
+              status: readStatus,
+            }))
+          : statusData ?? []);
         setSelectedMissionRoute(localStorage.getItem(`sf-selected-mission-route:${user.id}`) || '');
         setStatus(activityError ? 'partial' : 'ready');
         setMessage(activityError ? activityError.message : '');
@@ -93,6 +114,21 @@ export default function Profile() {
   const stats = useMemo(() => getActivityStats(activities), [activities]);
   const badges = getBadges(stats);
   const missionTree = useMemo(() => getMissionTree(stats, selectedMissionRoute), [selectedMissionRoute, stats]);
+  const unlockedBadges = badges.filter(badge => badge.unlocked);
+  const todayKey = new Date().toLocaleDateString('sv-SE');
+  const dailyLoginReceived = activities.some(activity => (
+    activity.action_type === 'daily_login'
+    && new Date(activity.created_at).toLocaleDateString('sv-SE') === todayKey
+  ));
+  const nextMission = missionTree.training.find(mission => !mission.complete)
+    || missionTree.selectedRoute?.missions.find(mission => !mission.complete)
+    || missionTree.routes.find(route => route.unlocked)?.missions.find(mission => !mission.complete)
+    || null;
+  const statusCounts = workStatuses.reduce((result, item) => ({
+    ...result,
+    [item.status]: (result[item.status] ?? 0) + 1,
+  }), {});
+  const latestWorkStatus = workStatuses[0] ?? null;
 
   if (!loading && !user) return <Navigate to="/login" replace />;
 
@@ -154,6 +190,36 @@ export default function Profile() {
           </label>
           <button disabled={status === 'saving'} type="submit">저장</button>
         </form>
+      </section>
+
+      <section className="profile-hub-panel panel">
+        <div className="profile-hub-main">
+          <span className="mono text-muted text-xs">TODAY'S HUB</span>
+          <h3 className="mono">오늘의 탐사 상태</h3>
+          <p>{dailyLoginReceived ? '오늘 접속 보너스 +5 MP가 기록되었습니다.' : '오늘 접속 보너스가 곧 기록됩니다.'}</p>
+          <div className="profile-hub-actions">
+            <a className="profile-primary-link" href="/#works-archive"><Rocket size={16} /> 작품 탐사</a>
+            <Link className="profile-secondary-link" to="/questions">커뮤니티 이동</Link>
+          </div>
+        </div>
+        <div className="profile-hub-grid">
+          <article>
+            <span className="mono">NEXT LEVEL</span>
+            <strong>{rank.next ? `${rank.next.title}까지 ${rank.next.min - points} MP` : '최종 등급 도달'}</strong>
+          </article>
+          <article>
+            <span className="mono">NEXT MISSION</span>
+            <strong>{nextMission?.title ?? '모든 기본 임무 완료'}</strong>
+          </article>
+          <article>
+            <span className="mono">REP BADGE</span>
+            <strong>{unlockedBadges[0]?.title ?? '첫 배지 대기 중'}</strong>
+          </article>
+          <article>
+            <span className="mono">READING LOG</span>
+            <strong>{workStatuses.length} 작품 저장</strong>
+          </article>
+        </div>
       </section>
 
       <section className="class-track panel">
@@ -244,6 +310,28 @@ export default function Profile() {
         <article className="stat-block panel"><span className="mono text-muted text-xs">COMMENTS</span><strong>{stats.comments}</strong></article>
         <article className="stat-block panel"><span className="mono text-muted text-xs">REVIEWS</span><strong>{stats.reviews}</strong></article>
         <article className="stat-block panel"><span className="mono text-muted text-xs">BADGES</span><strong>{badges.filter(badge => badge.unlocked).length}</strong></article>
+      </section>
+
+      <section className="profile-reading-panel panel">
+        <div>
+          <span className="mono text-muted text-xs">READING STATUS</span>
+          <h3 className="mono">작품 상태 보드</h3>
+          <p>작품 카드에서 저장한 읽고 싶어요, 읽는 중, 읽었어요 상태가 여기에 모입니다.</p>
+        </div>
+        <div className="profile-reading-grid">
+          {Object.entries(workStatusLabels).map(([key, label]) => (
+            <article key={key}>
+              <BookMarked aria-hidden="true" />
+              <span>{label}</span>
+              <strong>{statusCounts[key] ?? 0}</strong>
+            </article>
+          ))}
+        </div>
+        {latestWorkStatus && (
+          <p className="profile-reading-latest">
+            최근 저장: <strong>{latestWorkStatus.work_title}</strong> / {workStatusLabels[latestWorkStatus.status] ?? latestWorkStatus.status}
+          </p>
+        )}
       </section>
 
       <section className="profile-badge-summary panel">

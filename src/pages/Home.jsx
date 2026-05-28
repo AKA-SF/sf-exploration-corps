@@ -883,10 +883,19 @@ function WorkDetailPanel({
   onClose,
   onCommentSubmit,
   onCommentTextChange,
+  onWorkStatusChange,
   user,
   work,
+  workStatus,
+  workStatusSaving,
 }) {
   if (!work) return null;
+
+  const statusOptions = [
+    { value: 'want', label: '읽고 싶어요' },
+    { value: 'reading', label: '읽는 중' },
+    { value: 'done', label: '읽었어요' },
+  ];
 
   const panel = (
     <div className="work-detail-modal" role="dialog" aria-modal="true" aria-label={`${work.title} 댓글`}>
@@ -927,6 +936,23 @@ function WorkDetailPanel({
                 알라딘 링크 열기 <ChevronRight aria-hidden="true" />
               </a>
             )}
+            <div className="work-status-control" aria-label="작품 독서 상태">
+              <span>READING STATUS</span>
+              <div>
+                {statusOptions.map(option => (
+                  <button
+                    className={workStatus === option.value ? 'is-active' : ''}
+                    disabled={!user || workStatusSaving}
+                    key={option.value}
+                    onClick={() => onWorkStatusChange(option.value)}
+                    type="button"
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              {!user && <em>로그인하면 독서 상태를 저장할 수 있습니다.</em>}
+            </div>
           </div>
         </div>
 
@@ -1004,6 +1030,8 @@ export default function Home() {
   const [commentText, setCommentText] = useState('');
   const [commentStatus, setCommentStatus] = useState('idle');
   const [commentMessage, setCommentMessage] = useState('');
+  const [workStatuses, setWorkStatuses] = useState({});
+  const [workStatusSaving, setWorkStatusSaving] = useState(false);
   const [isLogModalOpen, setIsLogModalOpen] = useState(false);
   const [coordinateLogUrl, setCoordinateLogUrl] = useState('');
   const [coordinateLogStatus, setCoordinateLogStatus] = useState('idle');
@@ -1039,6 +1067,29 @@ export default function Home() {
     const timer = window.setInterval(() => setCurrentTime(new Date()), 1000);
     return () => window.clearInterval(timer);
   }, []);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const localKey = `sf-work-statuses:${user.id}`;
+    if (!supabase) return;
+    let isMounted = true;
+
+    supabase
+      .from('work_statuses')
+      .select('*')
+      .eq('user_id', user.id)
+      .then(({ data, error }) => {
+        if (!isMounted || error) return;
+        const nextStatuses = Object.fromEntries((data ?? []).map(item => [item.work_code, item.status]));
+        setWorkStatuses(nextStatuses);
+        localStorage.setItem(localKey, JSON.stringify(nextStatuses));
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
 
   useEffect(() => {
     if (!selectedWork || !supabase) {
@@ -1390,6 +1441,46 @@ export default function Home() {
     setCommentText('');
     setCommentStatus('loading');
     setCommentMessage('');
+  };
+
+  const updateWorkStatus = async nextStatus => {
+    if (!selectedWork) return;
+    if (!user) {
+      setCommentStatus('error');
+      setCommentMessage('독서 상태를 저장하려면 먼저 로그인해주세요.');
+      return;
+    }
+
+    const localKey = `sf-work-statuses:${user.id}`;
+    const nextStatuses = { ...workStatuses, [selectedWork.code]: nextStatus };
+    setWorkStatuses(nextStatuses);
+    localStorage.setItem(localKey, JSON.stringify(nextStatuses));
+    setWorkStatusSaving(true);
+
+    if (!supabase) {
+      setWorkStatusSaving(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('work_statuses')
+      .upsert({
+        user_id: user.id,
+        work_code: selectedWork.code,
+        work_title: selectedWork.title,
+        status: nextStatus,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,work_code' });
+
+    setWorkStatusSaving(false);
+    if (error) {
+      setCommentStatus('error');
+      setCommentMessage('독서 상태 테이블 연결이 필요합니다. Supabase SQL 스키마를 다시 실행해주세요.');
+      return;
+    }
+
+    setCommentStatus('success');
+    setCommentMessage('독서 상태가 저장되었습니다.');
   };
 
   const submitWorkComment = async event => {
@@ -2285,8 +2376,11 @@ export default function Home() {
         }}
         onCommentSubmit={submitWorkComment}
         onCommentTextChange={setCommentText}
+        onWorkStatusChange={updateWorkStatus}
         user={user}
         work={selectedWork}
+        workStatus={selectedWork ? workStatuses[selectedWork.code] : ''}
+        workStatusSaving={workStatusSaving}
       />
     </PageTransition>
   );
