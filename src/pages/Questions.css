@@ -464,6 +464,146 @@
   height: 17px;
 }
 
+.reading-mode .page-container:has(.questions-page),
+.reading-mode.page-container:has(.questions-page) {
+  background: #f3efe6 !important;
+}
+
+.reading-mode .questions-page {
+  background:
+    linear-gradient(180deg, rgba(255, 252, 244, 0.98), rgba(239, 233, 219, 0.98)) !important;
+  color: #172126 !important;
+}
+
+.reading-mode .questions-header,
+.reading-mode .questions-board,
+.reading-mode .questions-empty,
+.reading-mode .question-write-panel,
+.reading-mode .question-detail,
+.reading-mode .comments-panel {
+  border-color: rgba(46, 72, 77, 0.22) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.66), rgba(232, 222, 202, 0.34)),
+    rgba(255, 252, 244, 0.9) !important;
+  box-shadow: none !important;
+}
+
+.reading-mode .questions-back-link,
+.reading-mode .questions-status,
+.reading-mode .questions-filter button,
+.reading-mode .question-reading-toggle {
+  border-color: rgba(47, 111, 120, 0.28) !important;
+  background: rgba(255, 252, 244, 0.72) !important;
+  color: #2f6f78 !important;
+  box-shadow: none !important;
+}
+
+.reading-mode .questions-filter button:hover,
+.reading-mode .questions-filter button:focus-visible,
+.reading-mode .questions-filter button.is-active,
+.reading-mode .question-reading-toggle:hover,
+.reading-mode .question-reading-toggle:focus-visible {
+  border-color: rgba(47, 111, 120, 0.5) !important;
+  background: #2f6f78 !important;
+  color: #fffdf6 !important;
+}
+
+.reading-mode .questions-board-head {
+  border-bottom-color: rgba(46, 72, 77, 0.22) !important;
+  color: #2f6f78 !important;
+  background: rgba(230, 222, 203, 0.36) !important;
+}
+
+.reading-mode .question-row {
+  border-bottom-color: rgba(46, 72, 77, 0.14) !important;
+  color: #172126 !important;
+}
+
+.reading-mode .question-row:hover,
+.reading-mode .question-row:focus-visible {
+  background: rgba(47, 111, 120, 0.1) !important;
+  color: #245f68 !important;
+}
+
+.reading-mode .question-row strong,
+.reading-mode .questions-empty strong,
+.reading-mode .question-write-brief h2,
+.reading-mode .question-detail h2 {
+  color: #111827 !important;
+}
+
+.reading-mode .question-row span,
+.reading-mode .question-row time,
+.reading-mode .questions-header span,
+.reading-mode .questions-status,
+.reading-mode .public-question-top,
+.reading-mode .public-question-meta,
+.reading-mode .question-write-brief span,
+.reading-mode .question-form label span,
+.reading-mode .question-status,
+.reading-mode .question-detail-top,
+.reading-mode .question-detail-meta,
+.reading-mode .comments-heading,
+.reading-mode .comment-item div,
+.reading-mode .question-detail-top em {
+  color: #2f6f78 !important;
+}
+
+.reading-mode .questions-header p,
+.reading-mode .questions-empty,
+.reading-mode .question-write-brief p,
+.reading-mode .question-detail > p,
+.reading-mode .comment-item p,
+.reading-mode .comments-empty {
+  color: #34444b !important;
+}
+
+.reading-mode .comments-heading,
+.reading-mode .comment-item {
+  border-bottom-color: rgba(46, 72, 77, 0.16) !important;
+}
+
+.reading-mode .question-form input,
+.reading-mode .question-form textarea,
+.reading-mode .question-form select {
+  border-color: rgba(46, 72, 77, 0.24) !important;
+  background: rgba(255, 255, 255, 0.68) !important;
+  color: #172126 !important;
+  box-shadow: none !important;
+}
+
+.reading-mode .question-form input::placeholder,
+.reading-mode .question-form textarea::placeholder {
+  color: rgba(52, 68, 75, 0.48) !important;
+}
+
+.reading-mode .question-form input:focus,
+.reading-mode .question-form textarea:focus,
+.reading-mode .question-form select:focus {
+  border-color: rgba(47, 111, 120, 0.54) !important;
+  box-shadow: 0 0 0 1px rgba(47, 111, 120, 0.16) !important;
+}
+
+.reading-mode .question-form button {
+  border: 1px solid rgba(47, 111, 120, 0.36) !important;
+  background: #2f6f78 !important;
+  color: #fffdf6 !important;
+  box-shadow: 0 12px 28px rgba(36, 28, 15, 0.12) !important;
+}
+
+.reading-mode .question-form button:disabled {
+  background: rgba(47, 111, 120, 0.46) !important;
+  color: rgba(255, 253, 246, 0.78) !important;
+}
+
+.reading-mode .question-status.is-success {
+  color: #24715a !important;
+}
+
+.reading-mode .question-status.is-error {
+  color: #9b4d22 !important;
+}
+
 @media (max-width: 1050px) {
   .questions-header,
   .question-write-panel,
