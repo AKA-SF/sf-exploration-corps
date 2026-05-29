@@ -531,9 +531,9 @@ export default function WorksArchive() {
         <div className="works-full-status">
           <Sparkles aria-hidden="true" />
           <strong>{visibleWorks.length} SIGNALS</strong>
-          <button onClick={openWorkSubmit} type="button">
+          <button className="works-full-submit-button" onClick={openWorkSubmit} type="button">
             <Database aria-hidden="true" />
-            작품 아카이브
+            <span>작품 아카이브</span>
           </button>
         </div>
       </header>

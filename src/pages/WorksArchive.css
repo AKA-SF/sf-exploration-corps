@@ -98,30 +98,41 @@
   height: 17px;
 }
 
-.works-full-status button {
+.works-full-status .works-full-submit-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
   width: 100%;
-  min-height: 38px;
-  border: 1px solid rgba(25, 247, 241, 0.38);
-  color: #00161a;
-  background: var(--cyan);
-  font-size: 12px;
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid rgba(25, 247, 241, 0.72);
+  color: #021015 !important;
+  background: #2ffcff;
+  font-family: "Pretendard", "Noto Sans KR", system-ui, sans-serif;
+  font-size: 13px;
   font-weight: 900;
+  letter-spacing: 0;
+  text-shadow: none !important;
   cursor: pointer;
 }
 
-.works-full-status button,
-.works-full-status button span,
-.works-full-status button svg {
-  color: #00161a !important;
+.works-full-status .works-full-submit-button span {
+  display: inline-block;
+  color: #021015 !important;
+  font-family: "Pretendard", "Noto Sans KR", system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1;
+  text-shadow: none !important;
 }
 
-.works-full-status button svg {
+.works-full-status .works-full-submit-button svg {
   width: 14px;
   height: 14px;
+  color: #021015 !important;
+  stroke: #021015 !important;
 }
 
 .works-full-tabs {
@@ -377,14 +388,16 @@
   color: #fffdf6 !important;
 }
 
-.reading-mode .works-full-status button {
+.reading-mode .works-full-status .works-full-submit-button {
   border-color: rgba(47, 111, 120, 0.42) !important;
   background: #2f6f78 !important;
 }
 
-.reading-mode .works-full-status button,
-.reading-mode .works-full-status button svg {
+.reading-mode .works-full-status .works-full-submit-button,
+.reading-mode .works-full-status .works-full-submit-button span,
+.reading-mode .works-full-status .works-full-submit-button svg {
   color: #fffdf6 !important;
+  stroke: #fffdf6 !important;
 }
 
 .reading-mode .works-full-header h1,
