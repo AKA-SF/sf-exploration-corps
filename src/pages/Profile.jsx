@@ -171,12 +171,23 @@ export default function Profile() {
 
   return (
     <PageTransition className="profile-container">
-      <header className="page-header profile-page-header">
-        <h2 className="mono title-glitch profile-page-title"><UserRound size={20} /> <span>내 탐사 프로필</span> <span className="text-muted text-xs">/ CREW DOSSIER</span></h2>
-        <button className="profile-signout" onClick={signOut} type="button"><LogOut size={15} /> 로그아웃</button>
-      </header>
+      <div className="personal-terminal">
+        <div className="terminal-topbar" aria-hidden="true">
+          <span className="mono">PERSONAL TERMINAL</span>
+          <div>
+            <i />
+            <i />
+            <i />
+          </div>
+          <span className="mono">CREW LINK ACTIVE</span>
+        </div>
+        <div className="terminal-screen">
+          <header className="page-header profile-page-header">
+            <h2 className="mono title-glitch profile-page-title"><UserRound size={20} /> <span>내 탐사 프로필</span> <span className="text-muted text-xs">/ CREW DOSSIER</span></h2>
+            <button className="profile-signout" onClick={signOut} type="button"><LogOut size={15} /> 로그아웃</button>
+          </header>
 
-      <section className="profile-card panel profile-identity-card">
+          <section className="profile-card panel profile-identity-card">
         <CrewAvatar seed={user?.id || user?.email || nickname} label={nickname || '탐사 대원'} />
         <div className="agent-id">
           <span className="mono text-muted text-xs">EXPLORER_CALLSIGN</span>
@@ -190,9 +201,9 @@ export default function Profile() {
           </label>
           <button disabled={status === 'saving'} type="submit">저장</button>
         </form>
-      </section>
+          </section>
 
-      <section className="profile-hub-panel panel">
+          <section className="profile-hub-panel panel">
         <div className="profile-hub-main">
           <span className="mono text-muted text-xs">TODAY'S HUB</span>
           <h3 className="mono">오늘의 탐사 상태</h3>
@@ -216,9 +227,9 @@ export default function Profile() {
             <strong>{workStatuses.length} 작품 저장</strong>
           </article>
         </div>
-      </section>
+          </section>
 
-      <section className="class-track panel">
+          <section className="class-track panel">
         <div className="class-track-header">
           <div>
             <span className="mono text-muted text-xs">EXPLORATION MILEAGE</span>
@@ -228,9 +239,9 @@ export default function Profile() {
         </div>
         <div className="class-progress-bar" style={{ '--progress': `${rank.progress}%` }}><span /></div>
         <p className="mono">{rank.next ? `다음 등급 ${rank.next.title}까지 ${rank.next.min - points} MP 남았습니다.` : '최종 등급에 도달했습니다. 이제 인간 이후의 독서 감각을 기록하세요.'}</p>
-      </section>
+          </section>
 
-      <section className="profile-launch-panel panel">
+          <section className="profile-launch-panel panel">
         <div>
           <span className="mono text-muted text-xs">MISSION START</span>
           <h3 className="mono">작품 아카이브에서 탐사 시작</h3>
@@ -240,9 +251,9 @@ export default function Profile() {
           <Rocket size={16} />
           탐사 시작
         </a>
-      </section>
+          </section>
 
-      <section className="mission-tree-panel panel">
+          <section className="mission-tree-panel panel">
         <div className="mission-tree-header">
           <div>
             <span className="mono text-muted text-xs">MISSION TREE</span>
@@ -299,16 +310,16 @@ export default function Profile() {
             </article>
           ))}
         </div>
-      </section>
+          </section>
 
-      <section className="profile-stat-grid">
+          <section className="profile-stat-grid">
         <article className="stat-block panel"><span className="mono text-muted text-xs">POSTS</span><strong>{stats.posts}</strong></article>
         <article className="stat-block panel"><span className="mono text-muted text-xs">COMMENTS</span><strong>{stats.comments}</strong></article>
         <article className="stat-block panel"><span className="mono text-muted text-xs">REVIEWS</span><strong>{stats.reviews}</strong></article>
         <article className="stat-block panel"><span className="mono text-muted text-xs">BADGES</span><strong>{badges.filter(badge => badge.unlocked).length}</strong></article>
-      </section>
+          </section>
 
-      <section className="profile-reading-panel panel">
+          <section className="profile-reading-panel panel">
         <div>
           <span className="mono text-muted text-xs">READING STATUS</span>
           <h3 className="mono">작품 상태 보드</h3>
@@ -328,18 +339,18 @@ export default function Profile() {
             최근 저장: <strong>{latestWorkStatus.work_title}</strong> / {workStatusLabels[latestWorkStatus.status] ?? latestWorkStatus.status}
           </p>
         )}
-      </section>
+          </section>
 
-      <section className="profile-badge-summary panel">
+          <section className="profile-badge-summary panel">
         <div>
           <span className="mono text-muted text-xs">ACHIEVEMENT BADGES</span>
           <h3 className="mono">독서 업적 배지 {badges.filter(badge => badge.unlocked).length} / {badges.length}</h3>
           <p>업적 배지는 별도 탭에서 조건과 진행률을 확인할 수 있습니다.</p>
         </div>
         <Link className="profile-secondary-link" to="/badges">배지 보관함 열기</Link>
-      </section>
+          </section>
 
-      <section className="profile-activity panel">
+          <section className="profile-activity panel">
         <div className="class-track-header">
           <div>
             <span className="mono text-muted text-xs">RECENT SIGNALS</span>
@@ -359,7 +370,9 @@ export default function Profile() {
           </div>
         )}
         {message && <p className={`profile-message is-${status}`}>{message}</p>}
-      </section>
+          </section>
+        </div>
+      </div>
     </PageTransition>
   );
 }
