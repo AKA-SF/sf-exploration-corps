@@ -35,6 +35,14 @@ const workStatusLabels = {
   done: '읽었어요',
 };
 
+function activityTitle(activity) {
+  return activity.metadata?.title
+    || activity.metadata?.work_title
+    || activity.metadata?.node
+    || activity.genre
+    || '탐사 활동';
+}
+
 export default function Profile() {
   const { isConfigured, loading, user, signOut } = useAuth();
   const [profile, setProfile] = useState(null);
@@ -139,6 +147,15 @@ export default function Profile() {
     [item.status]: (result[item.status] ?? 0) + 1,
   }), {});
   const latestWorkStatus = workStatuses[0] ?? null;
+  const activitySummary = {
+    posts: activities.filter(activity => activity.action_type === 'post').slice(0, 3),
+    comments: activities.filter(activity => activity.action_type === 'comment').slice(0, 3),
+    badges: unlockedBadges.slice(0, 3),
+    missions: [
+      ...missionTree.training,
+      ...(missionTree.selectedRoute?.missions ?? []),
+    ].filter(mission => !mission.complete).slice(0, 3),
+  };
 
   if (!loading && !user) return <Navigate to="/login" replace />;
 
@@ -228,6 +245,8 @@ export default function Profile() {
           <ProfileActivityPanel
             activities={activities}
             activityLabels={activityLabels}
+            activitySummary={activitySummary}
+            activityTitle={activityTitle}
             message={message}
             status={status}
           />

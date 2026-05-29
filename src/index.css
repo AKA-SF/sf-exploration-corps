@@ -30,9 +30,16 @@
 
   --mode-reading-bg: #f3efe6;
   --mode-reading-panel: #fffdf6;
+  --mode-reading-panel-soft: rgba(255, 252, 244, 0.9);
+  --mode-reading-panel-wash: rgba(255, 252, 244, 0.72);
   --mode-reading-cyan: #2f6f78;
+  --mode-reading-link: #245f68;
   --mode-reading-line: rgba(35, 73, 82, 0.2);
   --mode-reading-text: #172126;
+  --mode-reading-heading: #111827;
+  --mode-reading-muted: #34444b;
+  --mode-reading-shadow: rgba(36, 28, 15, 0.14);
+  --mode-reading-contrast: #fffdf6;
   
   /* Typography */
   --font-main: 'Outfit', sans-serif;

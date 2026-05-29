@@ -348,6 +348,10 @@
   min-width: 0;
 }
 
+.profile-hub-item {
+  overflow: hidden;
+}
+
 .profile-hub-grid span,
 .profile-reading-grid span {
   color: var(--primary-cyan);
@@ -365,6 +369,45 @@
   line-height: 1.45;
   word-break: keep-all;
   overflow-wrap: anywhere;
+}
+
+.profile-activity-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.profile-activity-summary article {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+  border: 1px solid rgba(0, 255, 255, 0.12);
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.24);
+}
+
+.profile-activity-summary span {
+  color: var(--primary-cyan);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+}
+
+.profile-activity-summary strong,
+.profile-activity-summary em {
+  min-width: 0;
+  color: var(--text-main);
+  font-size: 11px;
+  font-style: normal;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.profile-activity-summary em {
+  color: var(--text-muted);
 }
 
 .mission-tree-panel {
@@ -729,12 +772,12 @@
     linear-gradient(135deg, rgba(47, 111, 120, 0.08), transparent 28%),
     radial-gradient(circle at 50% 0%, rgba(47, 111, 120, 0.1), transparent 42%),
     rgba(250, 247, 239, 0.96);
-  box-shadow: 0 18px 42px rgba(36, 28, 15, 0.16);
+  box-shadow: 0 18px 42px var(--mode-reading-shadow);
 }
 
 .reading-mode .personal-terminal::before,
 .reading-mode .personal-terminal::after {
-  border-color: #2f6f78;
+  border-color: var(--mode-reading-cyan);
 }
 
 .reading-mode .terminal-topbar,
@@ -742,8 +785,8 @@
   border-color: rgba(46, 72, 77, 0.2);
   background:
     linear-gradient(rgba(47, 111, 120, 0.025) 1px, transparent 1px),
-    rgba(255, 252, 244, 0.9);
-  color: #56656b;
+    var(--mode-reading-panel-soft);
+  color: var(--mode-reading-muted);
 }
 
 .reading-mode .terminal-screen::after {
@@ -780,6 +823,7 @@
 
   .profile-stat-grid,
   .profile-hub-grid,
+  .profile-activity-summary,
   .profile-reading-grid,
   .mission-training-grid,
   .mission-route-grid,

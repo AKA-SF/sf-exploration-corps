@@ -162,15 +162,15 @@
 
 .reading-mode .route-loader {
   border-color: rgba(46, 72, 77, 0.22);
-  color: #2f6f78;
+  color: var(--mode-reading-cyan);
   background:
     radial-gradient(circle at 50% 45%, rgba(47, 111, 120, 0.08), transparent 30%),
-    rgba(255, 252, 244, 0.9);
+    var(--mode-reading-panel-soft);
 }
 
 .reading-mode .route-loader i {
   border-color: rgba(46, 72, 77, 0.18);
-  border-top-color: #2f6f78;
+  border-top-color: var(--mode-reading-cyan);
   box-shadow: none;
 }
 
@@ -178,19 +178,19 @@
   border-color: rgba(46, 72, 77, 0.22) !important;
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(232, 222, 202, 0.45)),
-    rgba(255, 252, 244, 0.9) !important;
+    var(--mode-reading-panel-soft) !important;
 }
 
 .reading-mode .system-status span {
-  color: #2f6f78 !important;
+  color: var(--mode-reading-cyan) !important;
 }
 
 .reading-mode .system-status strong {
-  color: #111827 !important;
+  color: var(--mode-reading-heading) !important;
 }
 
 .reading-mode .system-status i {
-  background: #2f6f78 !important;
+  background: var(--mode-reading-cyan) !important;
   box-shadow: 0 0 12px rgba(47, 111, 120, 0.3) !important;
 }
 
@@ -231,7 +231,7 @@
 .reading-mode .comments-panel,
 .reading-mode .log-card {
   border-color: rgba(46, 72, 77, 0.22) !important;
-  background: rgba(255, 252, 244, 0.9) !important;
+  background: var(--mode-reading-panel-soft) !important;
   box-shadow: none !important;
 }
 
@@ -240,7 +240,7 @@
 .reading-mode .media-archive-search,
 .reading-mode .media-archive-tabs a {
   border-color: rgba(46, 72, 77, 0.22) !important;
-  background: rgba(255, 252, 244, 0.9) !important;
+  background: var(--mode-reading-panel-soft) !important;
   box-shadow: none !important;
 }
 
@@ -252,7 +252,7 @@
 .reading-mode .media-archive-card h2,
 .reading-mode .questions-header h1,
 .reading-mode .log-card h2 {
-  color: #111827 !important;
+  color: var(--mode-reading-heading) !important;
 }
 
 .reading-mode .section-heading p,
@@ -263,7 +263,7 @@
 .reading-mode .media-archive-card p,
 .reading-mode .media-archive-header p,
 .reading-mode .log-card p {
-  color: #34444b !important;
+  color: var(--mode-reading-muted) !important;
 }
 
 .reading-mode .concept-feature-card p,
@@ -331,7 +331,7 @@
 .reading-mode .question-form select {
   border-color: rgba(46, 72, 77, 0.2) !important;
   background: rgba(255, 255, 255, 0.68) !important;
-  color: #172126 !important;
+  color: var(--mode-reading-text) !important;
 }
 
 .reading-mode .question-form input::placeholder,
@@ -373,7 +373,7 @@
 .reading-mode .coordinate-brief h3,
 .reading-mode .works-brief h3,
 .reading-mode .coordinate-work-item strong {
-  color: #111827 !important;
+  color: var(--mode-reading-heading) !important;
 }
 
 .reading-mode .map-core span,
@@ -389,7 +389,7 @@
 .reading-mode .works-brief > span,
 .reading-mode .works-brief dt,
 .reading-mode .archive-view-status {
-  color: #2f6f78 !important;
+  color: var(--mode-reading-cyan) !important;
 }
 
 .reading-mode .coordinate-brief p,
@@ -399,14 +399,14 @@
 .reading-mode .coordinate-question-list li,
 .reading-mode .coordinate-empty-note,
 .reading-mode .coordinate-work-item em {
-  color: #34444b !important;
+  color: var(--mode-reading-muted) !important;
 }
 
 .reading-mode .genre-node i,
 .reading-mode .map-signal-dot,
 .reading-mode .coordinate-mini-space b,
 .reading-mode .mini-node {
-  background: #2f6f78 !important;
+  background: var(--mode-reading-cyan) !important;
   box-shadow: 0 0 12px rgba(47, 111, 120, 0.28) !important;
 }
 
@@ -424,7 +424,7 @@
 .reading-mode .exploration-log-page *,
 .reading-mode .media-archive-page *,
 .reading-mode .questions-page * {
-  color: #172126;
+  color: var(--mode-reading-text);
   text-shadow: none !important;
 }
 
@@ -437,7 +437,7 @@
 .reading-mode .exploration-log-page button,
 .reading-mode .media-archive-page button,
 .reading-mode .questions-page button {
-  color: #245f68;
+  color: var(--mode-reading-link);
 }
 
 .reading-mode .section-heading span,
@@ -471,7 +471,7 @@
 .reading-mode .comments-heading *,
 .reading-mode .comment-item div,
 .reading-mode .comment-item div * {
-  color: #2f6f78 !important;
+  color: var(--mode-reading-cyan) !important;
 }
 
 .reading-mode .home-topbar,
@@ -488,7 +488,7 @@
 .reading-mode .media-archive-card h2,
 .reading-mode .questions-header h1,
 .reading-mode .log-card h2 {
-  color: #111827 !important;
+  color: var(--mode-reading-heading) !important;
 }
 
 .reading-mode .taste-options button,
@@ -496,7 +496,7 @@
 .reading-mode .taste-result-actions a {
   border-color: rgba(46, 72, 77, 0.24) !important;
   background: rgba(255, 255, 255, 0.62) !important;
-  color: #245f68 !important;
+  color: var(--mode-reading-link) !important;
 }
 
 .reading-mode .taste-options button.is-selected,
@@ -511,7 +511,7 @@
 .reading-mode .taste-book-link strong,
 .reading-mode .taste-result-panel dd,
 .reading-mode .taste-result-panel > strong {
-  color: #111827 !important;
+  color: var(--mode-reading-heading) !important;
 }
 
 .reading-mode .section-heading p,
@@ -533,11 +533,11 @@
 .reading-mode .taste-book-link em,
 .reading-mode .mission-card span,
 .reading-mode .mission-card em {
-  color: #34444b !important;
+  color: var(--mode-reading-muted) !important;
 }
 
 .reading-mode .mission-card strong {
-  color: #2f6f78 !important;
+  color: var(--mode-reading-cyan) !important;
 }
 
 .reading-mode .wire-globe {
@@ -547,7 +547,7 @@
 .reading-mode .work-detail-open {
   border-color: rgba(47, 111, 120, 0.36) !important;
   color: #f8faf7 !important;
-  background: #2f6f78 !important;
+  background: var(--mode-reading-cyan) !important;
 }
 
 body.reading-mode-active .work-detail-modal {
@@ -561,7 +561,7 @@ body.reading-mode-active .work-detail-panel {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(232, 222, 202, 0.48)),
     rgba(255, 252, 244, 0.98) !important;
-  color: #172126 !important;
+  color: var(--mode-reading-text) !important;
   box-shadow: 0 24px 80px rgba(36, 28, 15, 0.2) !important;
 }
 
@@ -569,7 +569,7 @@ body.reading-mode-active .work-detail-head h3,
 body.reading-mode-active .work-detail-meta dd,
 body.reading-mode-active .work-comment-head strong,
 body.reading-mode-active .work-comment strong {
-  color: #111827 !important;
+  color: var(--mode-reading-heading) !important;
 }
 
 body.reading-mode-active .work-detail-head p,
@@ -577,19 +577,19 @@ body.reading-mode-active .work-comment p,
 body.reading-mode-active .work-comment-empty,
 body.reading-mode-active .work-comment-message,
 body.reading-mode-active .work-comment time {
-  color: #34444b !important;
+  color: var(--mode-reading-muted) !important;
 }
 
 body.reading-mode-active .work-detail-head span,
 body.reading-mode-active .work-comment-head span,
 body.reading-mode-active .work-detail-meta dt,
 body.reading-mode-active .work-status-control > span {
-  color: #2f6f78 !important;
+  color: var(--mode-reading-cyan) !important;
 }
 
 body.reading-mode-active .work-detail-head button {
   border-color: rgba(47, 111, 120, 0.28) !important;
-  color: #2f6f78 !important;
+  color: var(--mode-reading-cyan) !important;
   background: rgba(255, 252, 244, 0.76) !important;
 }
 
@@ -599,7 +599,7 @@ body.reading-mode-active .work-comment-form textarea,
 body.reading-mode-active .work-status-control button {
   border-color: rgba(46, 72, 77, 0.2) !important;
   background: rgba(255, 255, 255, 0.68) !important;
-  color: #172126 !important;
+  color: var(--mode-reading-text) !important;
 }
 
 body.reading-mode-active .work-status-control button:hover,
@@ -607,11 +607,11 @@ body.reading-mode-active .work-status-control button:focus-visible,
 body.reading-mode-active .work-status-control button.is-active {
   border-color: rgba(47, 111, 120, 0.36) !important;
   color: #f8faf7 !important;
-  background: #2f6f78 !important;
+  background: var(--mode-reading-cyan) !important;
 }
 
 body.reading-mode-active .work-status-control em {
-  color: #34444b !important;
+  color: var(--mode-reading-muted) !important;
 }
 
 body.reading-mode-active .work-archive-link,
@@ -619,7 +619,7 @@ body.reading-mode-active .work-archive-link:visited,
 body.reading-mode-active .work-comment-form button {
   border-color: rgba(47, 111, 120, 0.36) !important;
   color: #f8faf7 !important;
-  background: #2f6f78 !important;
+  background: var(--mode-reading-cyan) !important;
 }
 
 body.reading-mode-active .work-archive-link:hover,
