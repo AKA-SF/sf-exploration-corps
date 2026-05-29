@@ -2,6 +2,16 @@ const NOTION_VERSION = '2022-06-28';
 const NOTION_PAGE_SIZE = 100;
 const ALADIN_LOOKUP_ENDPOINT = 'http://www.aladin.co.kr/ttb/api/ItemLookUp.aspx';
 const ALADIN_SEARCH_ENDPOINT = 'http://www.aladin.co.kr/ttb/api/ItemSearch.aspx';
+const WORKS_CACHE_TTL_MS = 10 * 60 * 1000;
+const COVER_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
+const EMPTY_COVER_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
+
+const apiCache = globalThis.__sfWorksApiCache ??= {
+  works: null,
+  worksExpiresAt: 0,
+  coverCache: new Map(),
+  pendingCovers: new Map(),
+};
 
 function plainText(value) {
   if (!value) return '';
@@ -48,6 +58,15 @@ function getAladinItemId(link) {
 
 function normalizeCoverUrl(cover) {
   return cover ? cover.replace('coversum', 'cover200') : '';
+}
+
+function getCoverCacheKey(work) {
+  return [
+    getAladinItemId(work.link),
+    work.link,
+    work.title,
+    work.subtitle,
+  ].filter(Boolean).join('|').toLowerCase();
 }
 
 function getPrimaryAuthor(subtitle = '') {
@@ -180,6 +199,33 @@ async function fetchAladinCover(work, apiKey) {
     || await searchAladinCover(work, apiKey, title, 'Keyword');
 }
 
+async function getCachedAladinCover(work, apiKey) {
+  if (!apiKey) return '';
+
+  const cacheKey = getCoverCacheKey(work);
+  const cached = apiCache.coverCache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) return cached.cover;
+
+  if (apiCache.pendingCovers.has(cacheKey)) {
+    return apiCache.pendingCovers.get(cacheKey);
+  }
+
+  const promise = fetchAladinCover(work, apiKey)
+    .then(cover => {
+      apiCache.coverCache.set(cacheKey, {
+        cover,
+        expiresAt: Date.now() + (cover ? COVER_CACHE_TTL_MS : EMPTY_COVER_CACHE_TTL_MS),
+      });
+      return cover;
+    })
+    .finally(() => {
+      apiCache.pendingCovers.delete(cacheKey);
+    });
+
+  apiCache.pendingCovers.set(cacheKey, promise);
+  return promise;
+}
+
 function mapPageToWork(page, index) {
   const properties = page.properties ?? {};
   const title = plainText(pick(properties, ['제목', '작품명', 'Title', 'Name', '이름']));
@@ -205,7 +251,7 @@ function mapPageToWork(page, index) {
 }
 
 export default async function handler(request, response) {
-  response.setHeader('Cache-Control', 'no-store');
+  response.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=3600');
 
   if (request.method !== 'GET') {
     response.setHeader('Allow', 'GET');
@@ -215,6 +261,8 @@ export default async function handler(request, response) {
   const token = process.env.NOTION_TOKEN;
   const databaseId = normalizeNotionId(process.env.NOTION_WORKS_DATABASE_ID);
   const aladinApiKey = process.env.ALADIN_TTB_KEY || process.env.VITE_ALADIN_TTB_KEY;
+  const requestUrl = new URL(request.url ?? '/api/works', `https://${request.headers.host ?? 'localhost'}`);
+  const shouldRefresh = requestUrl.searchParams.get('refresh') === '1';
 
   if (!token || !databaseId) {
     return response.status(503).json({
@@ -225,6 +273,11 @@ export default async function handler(request, response) {
         !databaseId ? 'NOTION_WORKS_DATABASE_ID' : null,
       ].filter(Boolean),
     });
+  }
+
+  if (!shouldRefresh && apiCache.works && apiCache.worksExpiresAt > Date.now()) {
+    response.setHeader('X-SF-Archive-Cache', 'HIT');
+    return response.status(200).json({ works: apiCache.works });
   }
 
   const results = [];
@@ -277,8 +330,12 @@ export default async function handler(request, response) {
     }));
   const works = await mapWithConcurrency(worksWithoutCovers, 4, async work => ({
     ...work,
-    cover: await fetchAladinCover(work, aladinApiKey),
+    cover: await getCachedAladinCover(work, aladinApiKey),
   }));
+
+  apiCache.works = works;
+  apiCache.worksExpiresAt = Date.now() + WORKS_CACHE_TTL_MS;
+  response.setHeader('X-SF-Archive-Cache', 'MISS');
 
   return response.status(200).json({ works });
 }

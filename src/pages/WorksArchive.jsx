@@ -192,7 +192,7 @@ export default function WorksArchive() {
   useEffect(() => {
     let isMounted = true;
 
-    fetch('/api/works', { cache: 'no-store' })
+    fetch('/api/works')
       .then(response => {
         if (!response.ok) throw new Error('Works archive unavailable');
         return response.json();
