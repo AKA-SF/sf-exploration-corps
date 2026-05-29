@@ -34,6 +34,10 @@ function pick(properties, names) {
   return names.map(name => properties[name]).find(Boolean);
 }
 
+function pickName(properties, names) {
+  return names.find(name => properties[name]);
+}
+
 function normalizeNotionId(value) {
   const source = value?.trim() ?? '';
   const compactId = source.match(/(?:^|[^0-9a-f])([0-9a-f]{32})(?:[^0-9a-f]|$)/i)?.[1];
@@ -250,11 +254,116 @@ function mapPageToWork(page, index) {
   };
 }
 
+function richTextValue(text) {
+  return text ? [{ type: 'text', text: { content: String(text).slice(0, 2000) } }] : [];
+}
+
+function splitTags(value) {
+  if (Array.isArray(value)) return value.map(tag => String(tag).trim()).filter(Boolean);
+  return String(value ?? '')
+    .split(',')
+    .map(tag => tag.trim())
+    .filter(Boolean);
+}
+
+function notionPropertyValue(schema, value, fallbackType = 'rich_text') {
+  const type = schema?.type ?? fallbackType;
+  if (type === 'title') return { title: richTextValue(value) };
+  if (type === 'rich_text') return { rich_text: richTextValue(value) };
+  if (type === 'url') return { url: value || null };
+  if (type === 'select') return { select: value ? { name: String(value) } : null };
+  if (type === 'multi_select') return { multi_select: splitTags(value).map(name => ({ name })) };
+  if (type === 'number') {
+    const number = Number(value);
+    return { number: Number.isFinite(number) ? number : null };
+  }
+  return { rich_text: richTextValue(value) };
+}
+
+function assignNotionProperty(properties, databaseProperties, names, value, fallbackType) {
+  const propertyName = pickName(databaseProperties, names);
+  if (!propertyName) return;
+  properties[propertyName] = notionPropertyValue(databaseProperties[propertyName], value, fallbackType);
+}
+
+async function getNotionDatabase(token, databaseId) {
+  const databaseResponse = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Notion-Version': NOTION_VERSION,
+    },
+  });
+
+  if (!databaseResponse.ok) {
+    let notionError;
+    try {
+      notionError = await databaseResponse.json();
+    } catch {
+      notionError = { message: await databaseResponse.text() };
+    }
+    const error = new Error(notionError?.message || 'Notion database request failed');
+    error.status = databaseResponse.status;
+    error.notion = notionError;
+    throw error;
+  }
+
+  return databaseResponse.json();
+}
+
+async function createNotionWork(token, databaseId, body) {
+  const database = await getNotionDatabase(token, databaseId);
+  const databaseProperties = database.properties ?? {};
+  const properties = {};
+  const title = String(body.title ?? '').trim();
+  const author = String(body.author ?? '').trim();
+  const publisher = String(body.publisher ?? '').trim();
+  const category = String(body.category ?? '소설').trim();
+  const link = String(body.link ?? '').trim();
+  const recommender = String(body.recommender ?? '').trim();
+  const tags = splitTags(body.tags);
+
+  assignNotionProperty(properties, databaseProperties, ['제목', '작품명', 'Title', 'Name', '이름'], title, 'title');
+  assignNotionProperty(properties, databaseProperties, ['저자', 'Author', 'Creator'], author, 'rich_text');
+  assignNotionProperty(properties, databaseProperties, ['출판사', 'Publisher', 'Studio'], publisher, 'rich_text');
+  assignNotionProperty(properties, databaseProperties, ['카테고리', '매체', 'Medium', 'Type', '분류'], category, 'select');
+  assignNotionProperty(properties, databaseProperties, ['링크', 'Link', 'URL', 'Url'], link, 'url');
+  assignNotionProperty(properties, databaseProperties, ['태그', 'Tags', '키워드', 'Keywords'], tags, 'multi_select');
+  assignNotionProperty(properties, databaseProperties, ['추천자', 'Recommender', '추천'], recommender, 'rich_text');
+
+  const notionResponse = await fetch('https://api.notion.com/v1/pages', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      'Notion-Version': NOTION_VERSION,
+    },
+    body: JSON.stringify({
+      parent: { database_id: databaseId },
+      properties,
+    }),
+  });
+
+  if (!notionResponse.ok) {
+    let notionError;
+    try {
+      notionError = await notionResponse.json();
+    } catch {
+      notionError = { message: await notionResponse.text() };
+    }
+    const error = new Error(notionError?.message || 'Notion page create failed');
+    error.status = notionResponse.status;
+    error.notion = notionError;
+    throw error;
+  }
+
+  return notionResponse.json();
+}
+
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=3600');
 
-  if (request.method !== 'GET') {
-    response.setHeader('Allow', 'GET');
+  if (!['GET', 'POST'].includes(request.method)) {
+    response.setHeader('Allow', 'GET, POST');
     return response.status(405).json({ error: 'Method not allowed' });
   }
 
@@ -273,6 +382,41 @@ export default async function handler(request, response) {
         !databaseId ? 'NOTION_WORKS_DATABASE_ID' : null,
       ].filter(Boolean),
     });
+  }
+
+  if (request.method === 'POST') {
+    const body = typeof request.body === 'string' ? JSON.parse(request.body || '{}') : (request.body ?? {});
+    if (!String(body.title ?? '').trim()) {
+      return response.status(400).json({ error: '작품 제목을 입력해주세요.' });
+    }
+
+    try {
+      const page = await createNotionWork(token, databaseId, body);
+      apiCache.works = null;
+      apiCache.worksExpiresAt = 0;
+      return response.status(201).json({
+        ok: true,
+        pageId: page.id,
+        work: {
+          code: 'NEW',
+          medium: body.category || '소설',
+          title: body.title,
+          subtitle: [body.author, body.publisher].filter(Boolean).join(' / ') || '새로 저장된 작품 신호',
+          link: body.link || '',
+          recommender: body.recommender || '',
+          tags: splitTags(body.tags),
+          cover: '',
+        },
+      });
+    } catch (error) {
+      return response.status(error.status || 500).json({
+        error: 'Notion work create failed',
+        notion: {
+          code: error.notion?.code,
+          message: error.notion?.message || error.message,
+        },
+      });
+    }
   }
 
   if (!shouldRefresh && apiCache.works && apiCache.worksExpiresAt > Date.now()) {
