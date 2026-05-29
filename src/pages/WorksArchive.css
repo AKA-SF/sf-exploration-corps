@@ -183,6 +183,7 @@
   padding: 18px;
   color: inherit;
   text-decoration: none;
+  cursor: pointer;
   transition: border-color 180ms ease, transform 180ms ease;
 }
 
@@ -273,10 +274,20 @@
 
 .works-full-link {
   display: flex;
+  align-items: center;
   justify-content: space-between;
+  gap: 12px;
   margin-top: auto;
   padding-top: 16px;
   border-top: 1px solid rgba(25, 247, 241, 0.14);
+}
+
+.works-full-link a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--cyan);
+  text-decoration: none;
 }
 
 .works-full-link svg {

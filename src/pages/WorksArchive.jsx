@@ -1,8 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowLeft, BookOpen, ExternalLink, Search, Sparkles } from 'lucide-react';
+import { createPortal } from 'react-dom';
+import { ArrowLeft, BookOpen, ChevronRight, ExternalLink, Search, Send, Sparkles } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
+import { useAuth } from '../context/authContextValue';
 import { getWorkCategorySlug, workCategories } from '../data/workArchive';
+import { recordUserActivity } from '../lib/activityLogger';
+import { supabase } from '../lib/supabaseClient';
 import './WorksArchive.css';
 
 const fallbackWorks = [
@@ -48,11 +52,141 @@ function getWorkSearchText(work) {
   ].filter(Boolean).join(' ').toLowerCase();
 }
 
+function WorkDetailPanel({
+  commentMessage,
+  commentStatus,
+  comments,
+  commentText,
+  onClose,
+  onCommentSubmit,
+  onCommentTextChange,
+  onWorkStatusChange,
+  user,
+  work,
+  workStatus,
+  workStatusSaving,
+}) {
+  if (!work) return null;
+
+  const statusOptions = [
+    { value: 'want', label: '읽고 싶어요' },
+    { value: 'reading', label: '읽는 중' },
+    { value: 'done', label: '읽었어요' },
+  ];
+
+  const panel = (
+    <div className="work-detail-modal" role="dialog" aria-modal="true" aria-label={`${work.title} 댓글`}>
+      <article className={`work-detail-panel ${work.cover ? 'has-cover' : ''}`}>
+        <header className="work-detail-head">
+          <div>
+            <span>{work.code}</span>
+            <h3>{work.title}</h3>
+            <p>{work.subtitle}</p>
+          </div>
+          <button onClick={onClose} type="button" aria-label="작품 상세 닫기">×</button>
+        </header>
+
+        <div className="work-detail-body">
+          {work.cover && (
+            <figure className="work-detail-cover">
+              <img src={work.cover} alt={`${work.title} 표지`} />
+            </figure>
+          )}
+          <div className="work-detail-meta">
+            <dl>
+              <div>
+                <dt>MEDIUM</dt>
+                <dd>{work.medium}</dd>
+              </div>
+              {work.recommender && (
+                <div>
+                  <dt>RECOMMENDER</dt>
+                  <dd>{work.recommender}</dd>
+                </div>
+              )}
+            </dl>
+            <div className="work-tags">
+              {(work.tags ?? []).map(tag => <span key={tag}>{tag}</span>)}
+            </div>
+            {work.link && (
+              <a className="work-archive-link" href={work.link} target="_blank" rel="noreferrer">
+                알라딘 링크 열기 <ChevronRight aria-hidden="true" />
+              </a>
+            )}
+            <div className="work-status-control" aria-label="작품 독서 상태">
+              <span>READING STATUS</span>
+              <div>
+                {statusOptions.map(option => (
+                  <button
+                    className={workStatus === option.value ? 'is-active' : ''}
+                    disabled={!user || workStatusSaving}
+                    key={option.value}
+                    onClick={() => onWorkStatusChange(option.value)}
+                    type="button"
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              {!user && <em>로그인하면 독서 상태를 저장할 수 있습니다.</em>}
+            </div>
+          </div>
+        </div>
+
+        <section className="work-comment-section">
+          <div className="work-comment-head">
+            <span>COMMENT SIGNALS</span>
+            <strong>{comments.length} COMMENTS</strong>
+          </div>
+          <div className="work-comment-list">
+            {comments.length > 0 ? comments.map(comment => (
+              <article className="work-comment" key={comment.id}>
+                <div>
+                  <strong>{comment.author_name || '익명 탐사자'}</strong>
+                  <time>{new Date(comment.created_at).toLocaleDateString('ko-KR')}</time>
+                </div>
+                <p>{comment.body}</p>
+              </article>
+            )) : (
+              <p className="work-comment-empty">아직 댓글 신호가 없습니다. 첫 반응을 남겨보세요.</p>
+            )}
+          </div>
+          <form className="work-comment-form" onSubmit={onCommentSubmit}>
+            <textarea
+              disabled={!user || commentStatus === 'saving'}
+              onChange={event => onCommentTextChange(event.target.value)}
+              placeholder={user ? '이 작품에 대한 짧은 감상이나 질문을 남겨주세요.' : '댓글을 남기려면 먼저 로그인해주세요.'}
+              rows={3}
+              value={commentText}
+            />
+            <button disabled={!user || !commentText.trim() || commentStatus === 'saving'} type="submit">
+              <Send aria-hidden="true" />
+              댓글 저장
+            </button>
+          </form>
+          {commentMessage && <p className={`work-comment-message is-${commentStatus}`}>{commentMessage}</p>}
+        </section>
+      </article>
+    </div>
+  );
+
+  if (typeof document === 'undefined') return panel;
+  return createPortal(panel, document.body);
+}
+
 export default function WorksArchive() {
+  const { user } = useAuth();
   const { categorySlug = 'novels' } = useParams();
   const [works, setWorks] = useState(fallbackWorks);
   const [searchQuery, setSearchQuery] = useState('');
   const [status, setStatus] = useState('loading');
+  const [selectedWork, setSelectedWork] = useState(null);
+  const [workComments, setWorkComments] = useState([]);
+  const [commentText, setCommentText] = useState('');
+  const [commentStatus, setCommentStatus] = useState('idle');
+  const [commentMessage, setCommentMessage] = useState('');
+  const [workStatuses, setWorkStatuses] = useState({});
+  const [workStatusSaving, setWorkStatusSaving] = useState(false);
   const activeCategory = workCategories.find(category => category.slug === categorySlug) ?? workCategories[0];
 
   useEffect(() => {
@@ -79,6 +213,54 @@ export default function WorksArchive() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!user || !supabase) return undefined;
+    let isMounted = true;
+    const localKey = `sf-work-statuses:${user.id}`;
+
+    supabase
+      .from('work_statuses')
+      .select('*')
+      .eq('user_id', user.id)
+      .then(({ data, error }) => {
+        if (!isMounted || error) return;
+        const nextStatuses = Object.fromEntries((data ?? []).map(item => [item.work_code, item.status]));
+        setWorkStatuses(nextStatuses);
+        localStorage.setItem(localKey, JSON.stringify(nextStatuses));
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!selectedWork || !supabase) return undefined;
+    let isMounted = true;
+
+    supabase
+      .from('work_comments')
+      .select('*')
+      .eq('work_code', selectedWork.code)
+      .order('created_at', { ascending: true })
+      .then(({ data, error }) => {
+        if (!isMounted) return;
+        if (error) {
+          setWorkComments([]);
+          setCommentStatus('error');
+          setCommentMessage('댓글 테이블 연결이 필요합니다. Supabase SQL 스키마를 다시 실행해주세요.');
+          return;
+        }
+        setWorkComments(data ?? []);
+        setCommentStatus('idle');
+        setCommentMessage('');
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedWork]);
+
   const categoryWorks = useMemo(() => works.filter(work => (
     getWorkCategorySlug(`${work.medium ?? ''} ${work.category ?? ''}`) === activeCategory.slug
   )), [activeCategory.slug, works]);
@@ -88,6 +270,107 @@ export default function WorksArchive() {
     if (!query) return categoryWorks;
     return categoryWorks.filter(work => getWorkSearchText(work).includes(query));
   }, [categoryWorks, searchQuery]);
+
+  const openWorkDetail = work => {
+    setSelectedWork(work);
+    setWorkComments([]);
+    setCommentText('');
+    setCommentStatus('idle');
+    setCommentMessage('');
+  };
+
+  const updateWorkStatus = async nextStatus => {
+    if (!selectedWork) return;
+    if (!user) {
+      setCommentStatus('error');
+      setCommentMessage('독서 상태를 저장하려면 먼저 로그인해주세요.');
+      return;
+    }
+
+    const localKey = `sf-work-statuses:${user.id}`;
+    const nextStatuses = { ...workStatuses, [selectedWork.code]: nextStatus };
+    setWorkStatuses(nextStatuses);
+    localStorage.setItem(localKey, JSON.stringify(nextStatuses));
+    setWorkStatusSaving(true);
+
+    if (!supabase) {
+      setWorkStatusSaving(false);
+      return;
+    }
+
+    const { error } = await supabase
+      .from('work_statuses')
+      .upsert({
+        user_id: user.id,
+        work_code: selectedWork.code,
+        work_title: selectedWork.title,
+        status: nextStatus,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,work_code' });
+
+    setWorkStatusSaving(false);
+    if (error) {
+      setCommentStatus('error');
+      setCommentMessage('독서 상태 저장 중 오류가 발생했습니다.');
+      return;
+    }
+
+    setCommentStatus('success');
+    setCommentMessage('독서 상태가 저장되었습니다.');
+  };
+
+  const submitWorkComment = async event => {
+    event.preventDefault();
+    if (!selectedWork || !supabase) return;
+    if (!user) {
+      setCommentStatus('error');
+      setCommentMessage('댓글을 남기려면 먼저 로그인해주세요.');
+      return;
+    }
+
+    const body = commentText.trim();
+    if (!body) return;
+
+    setCommentStatus('saving');
+    setCommentMessage('');
+
+    const authorName = user.user_metadata?.nickname || user.email?.split('@')[0] || '탐사자';
+    const { data, error } = await supabase
+      .from('work_comments')
+      .insert({
+        work_code: selectedWork.code,
+        work_title: selectedWork.title,
+        user_id: user.id,
+        author_name: authorName,
+        body,
+      })
+      .select('*')
+      .single();
+
+    if (error) {
+      setCommentStatus('error');
+      setCommentMessage(error.message);
+      return;
+    }
+
+    await recordUserActivity(user, {
+      actionType: 'comment',
+      points: 10,
+      genre: selectedWork.medium,
+      metadata: {
+        title: `${selectedWork.title} 댓글`,
+        work_code: selectedWork.code,
+        work_title: selectedWork.title,
+        tags: selectedWork.tags ?? [],
+        node: 'works-archive',
+      },
+    });
+
+    setWorkComments(current => [...current, data]);
+    setCommentText('');
+    setCommentStatus('success');
+    setCommentMessage('+10 MP. 댓글 신호가 저장되었습니다.');
+  };
 
   return (
     <PageTransition className="works-full-page">
@@ -132,9 +415,20 @@ export default function WorksArchive() {
       </div>
 
       <section className="works-full-grid" aria-label={`${activeCategory.title} 전체 목록`}>
-        {visibleWorks.length > 0 ? visibleWorks.map(work => {
-          const CardContent = (
-            <>
+        {visibleWorks.length > 0 ? visibleWorks.map(work => (
+          <article
+            className="works-full-card"
+            key={work.code}
+            onClick={() => openWorkDetail(work)}
+            onKeyDown={event => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                openWorkDetail(work);
+              }
+            }}
+            role="button"
+            tabIndex={0}
+          >
               <div className="works-full-card-top">
                 <span>{work.code}</span>
                 <em>{work.medium}</em>
@@ -153,22 +447,20 @@ export default function WorksArchive() {
                 {(Array.isArray(work.tags) ? work.tags : []).map(tag => <span key={tag}>{tag}</span>)}
               </div>
               <div className="works-full-link">
-                <span>{work.link ? 'OPEN ARCHIVE LINK' : 'ARCHIVE SIGNAL'}</span>
-                {work.link && <ExternalLink aria-hidden="true" />}
+                <span>DETAIL / COMMENTS</span>
+                {work.link && (
+                  <a
+                    href={work.link}
+                    onClick={event => event.stopPropagation()}
+                    rel="noreferrer"
+                    target="_blank"
+                  >
+                    ARCHIVE LINK <ExternalLink aria-hidden="true" />
+                  </a>
+                )}
               </div>
-            </>
-          );
-
-          return work.link ? (
-            <a className="works-full-card" href={work.link} key={work.code} rel="noreferrer" target="_blank">
-              {CardContent}
-            </a>
-          ) : (
-            <article className="works-full-card" key={work.code}>
-              {CardContent}
-            </article>
-          );
-        }) : (
+          </article>
+        )) : (
           <div className="works-full-empty">
             <strong>{status === 'loading' ? 'LOADING SIGNALS' : 'NO SIGNALS'}</strong>
             <span>
@@ -179,6 +471,24 @@ export default function WorksArchive() {
           </div>
         )}
       </section>
+
+      <WorkDetailPanel
+        commentMessage={commentMessage}
+        commentStatus={commentStatus}
+        comments={workComments}
+        commentText={commentText}
+        onClose={() => {
+          setSelectedWork(null);
+          setWorkComments([]);
+        }}
+        onCommentSubmit={submitWorkComment}
+        onCommentTextChange={setCommentText}
+        onWorkStatusChange={updateWorkStatus}
+        user={user}
+        work={selectedWork}
+        workStatus={selectedWork ? workStatuses[selectedWork.code] : ''}
+        workStatusSaving={workStatusSaving}
+      />
     </PageTransition>
   );
 }
