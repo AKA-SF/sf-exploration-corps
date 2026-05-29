@@ -1,25 +1,33 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
 import { BookOpen, TerminalSquare } from 'lucide-react';
 import './App.css';
 
-// Components & Pages
-import Home from './pages/Home';
-import ExplorationLog from './pages/ExplorationLog';
-import MediaArchive from './pages/MediaArchive';
-import WorksArchive from './pages/WorksArchive';
-import Questions from './pages/Questions';
-import LogEntry from './pages/LogEntry';
-import LogResult from './pages/LogResult';
-import Profile from './pages/Profile';
-import Login from './pages/Login';
-import Badges from './pages/Badges';
-import Network from './pages/Network';
-import NetworkDetail from './pages/NetworkDetail';
 import Navbar from './components/Navbar';
 import InteractiveBackground from './components/InteractiveBackground';
 import { AuthProvider } from './context/AuthContext';
+
+const Home = lazy(() => import('./pages/Home'));
+const ExplorationLog = lazy(() => import('./pages/ExplorationLog'));
+const MediaArchive = lazy(() => import('./pages/MediaArchive'));
+const WorksArchive = lazy(() => import('./pages/WorksArchive'));
+const Questions = lazy(() => import('./pages/Questions'));
+const LogEntry = lazy(() => import('./pages/LogEntry'));
+const LogResult = lazy(() => import('./pages/LogResult'));
+const Profile = lazy(() => import('./pages/Profile'));
+const Login = lazy(() => import('./pages/Login'));
+const Badges = lazy(() => import('./pages/Badges'));
+const Network = lazy(() => import('./pages/Network'));
+const NetworkDetail = lazy(() => import('./pages/NetworkDetail'));
+
+function RouteLoader() {
+  return (
+    <div className="route-loader" role="status" aria-live="polite">
+      <span className="mono">ARCHIVE SIGNAL LOADING</span>
+      <i aria-hidden="true" />
+    </div>
+  );
+}
 
 function App() {
   const location = useLocation();
@@ -55,8 +63,8 @@ function App() {
           </button>
         )}
         <div className="page-container">
-          <AnimatePresence mode="wait">
-            <Routes location={location} key={location.pathname}>
+          <Suspense fallback={<RouteLoader />}>
+            <Routes location={location}>
               <Route path="/" element={<Home />} />
               <Route path="/works/:categorySlug" element={<WorksArchive />} />
               <Route path="/media/:categorySlug" element={<MediaArchive />} />
@@ -71,7 +79,7 @@ function App() {
               <Route path="/profile" element={<Profile />} />
               <Route path="/login" element={<Login />} />
             </Routes>
-          </AnimatePresence>
+          </Suspense>
         </div>
         <Navbar />
       </div>

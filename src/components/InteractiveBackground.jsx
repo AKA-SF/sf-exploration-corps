@@ -1,5 +1,4 @@
 import { useLogs } from '../context/LogContext';
-import { motion } from 'framer-motion';
 import { useLocation } from 'react-router-dom';
 import { useMemo } from 'react';
 
@@ -46,12 +45,11 @@ const InteractiveBackground = () => {
               <line x1="0" y1="50" x2="100" y2="50" className="geo-shape" strokeDasharray="1 4" />
 
               {/* Radar Sweep */}
-              <motion.path
+              <path
+                className="geo-spin"
                 d="M50,50 L50,0 A50,50 0 0,1 100,50 Z"
                 fill="url(#sweepGradient)"
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 8 / speed, ease: "linear" }}
-                style={{ transformOrigin: "50% 50%" }}
+                style={{ '--duration': `${8 / speed}s`, transformOrigin: '50% 50%' }}
               />
               
               {/* Defs for Sweep */}
@@ -65,50 +63,43 @@ const InteractiveBackground = () => {
           ) : (
             <>
               {/* Original V2 Background Elements for Log, Profile, Archive */}
-              <motion.circle 
+              <circle
                 cx="50" cy="50" r="40" 
-                className="geo-shape geo-circle" 
+                className="geo-shape geo-circle geo-spin"
                 fill="none"
                 stroke="var(--primary-cyan-dim)"
                 strokeWidth="0.5"
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 60 / speed, ease: "linear" }}
-                style={{ transformOrigin: "50% 50%" }}
+                style={{ '--duration': `${60 / speed}s`, transformOrigin: '50% 50%' }}
               />
-              <motion.polygon 
+              <polygon
                 points="50,10 84.6,70 15.4,70" 
-                className="geo-shape geo-triangle" 
+                className="geo-shape geo-triangle geo-spin-reverse"
                 fill="none"
                 stroke="var(--primary-cyan-dim)"
                 strokeWidth="0.5"
-                animate={{ rotate: -360 }}
-                transition={{ repeat: Infinity, duration: 40 / speed, ease: "linear" }}
-                style={{ transformOrigin: "50% 50%" }}
+                style={{ '--duration': `${40 / speed}s`, transformOrigin: '50% 50%' }}
               />
             </>
           )}
 
           {/* Particles */}
           {particles.map((p) => (
-            <motion.circle 
+            <circle
               key={p.id}
               cx={p.x} 
               cy={p.y} 
               r={p.r} 
+              className="geo-pulse"
               fill="var(--primary-cyan)"
-              initial={{ opacity: 0.1 }}
-              animate={{ opacity: [0.1, 0.8, 0.1] }}
-              transition={{ repeat: Infinity, duration: 3 + p.delay, ease: "easeInOut" }}
+              style={{ '--duration': `${3 + p.delay}s` }}
             />
           ))}
 
           {/* Reactive typing pulses */}
           {currentSystemState.isTyping && (
             <>
-               <motion.circle cx="30" cy="30" r="1" fill="var(--primary-cyan)"
-                 animate={{ scale: [1, 2, 1], opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 0.5 }} />
-               <motion.circle cx="70" cy="80" r="1.5" fill="var(--accent-amber)"
-                 animate={{ scale: [1, 3, 1], opacity: [0.2, 0.8, 0.2] }} transition={{ repeat: Infinity, duration: 0.8 }} />
+               <circle className="geo-typing-pulse" cx="30" cy="30" r="1" fill="var(--primary-cyan)" style={{ '--duration': '0.5s' }} />
+               <circle className="geo-typing-pulse" cx="70" cy="80" r="1.5" fill="var(--accent-amber)" style={{ '--duration': '0.8s' }} />
             </>
           )}
         </svg>
