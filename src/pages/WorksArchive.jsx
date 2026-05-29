@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { ArrowLeft, BookOpen, ChevronRight, ExternalLink, Search, Send, Sparkles } from 'lucide-react';
+import { ArrowLeft, BookOpen, ChevronRight, Database, ExternalLink, Search, Send, Sparkles } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
@@ -174,6 +174,80 @@ function WorkDetailPanel({
   return createPortal(panel, document.body);
 }
 
+function WorkArchiveFormPanel({
+  form,
+  message,
+  onChange,
+  onClose,
+  onSubmit,
+  status,
+}) {
+  const panel = (
+    <div className="work-detail-modal" role="dialog" aria-modal="true" aria-label="작품 아카이브 입력">
+      <article className="work-submit-panel">
+        <header className="work-detail-head">
+          <div>
+            <span>NEW ARCHIVE SIGNAL</span>
+            <h3>작품 아카이브</h3>
+            <p>입력한 작품 신호는 노션 작품 아카이브 DB에 바로 저장됩니다.</p>
+          </div>
+          <button onClick={onClose} type="button" aria-label="작품 아카이브 입력 닫기">×</button>
+        </header>
+
+        <form className="work-submit-form" onSubmit={onSubmit}>
+          <label>
+            <span>제목</span>
+            <input name="title" onChange={onChange} placeholder="작품 제목" required value={form.title} />
+          </label>
+          <label>
+            <span>카테고리</span>
+            <select name="category" onChange={onChange} value={form.category}>
+              <option value="소설">소설</option>
+              <option value="영화">영화</option>
+              <option value="게임">게임</option>
+              <option value="애니메이션">애니메이션</option>
+            </select>
+          </label>
+          <label>
+            <span>저자</span>
+            <input name="author" onChange={onChange} placeholder="저자 / 감독 / 제작자" value={form.author} />
+          </label>
+          <label>
+            <span>출판사</span>
+            <input name="publisher" onChange={onChange} placeholder="출판사 / 배급사 / 스튜디오" value={form.publisher} />
+          </label>
+          <label className="is-wide">
+            <span>알라딘 링크</span>
+            <input name="link" onChange={onChange} placeholder="https://www.aladin.co.kr/..." value={form.link} />
+          </label>
+          <label>
+            <span>태그</span>
+            <input name="tags" onChange={onChange} placeholder="쉼표로 구분: 하드SF, 디스토피아" value={form.tags} />
+          </label>
+          <label>
+            <span>추천자</span>
+            <input name="recommender" onChange={onChange} placeholder="추천자 이름" value={form.recommender} />
+          </label>
+          <div className="work-submit-actions">
+            <p className={`work-comment-message is-${status}`}>
+              {status === 'idle' && '현재는 소설 입력을 기준으로 작동합니다. 다른 카테고리는 선택만 가능합니다.'}
+              {status === 'submitting' && '노션에 작품 신호를 저장 중입니다.'}
+              {status !== 'idle' && status !== 'submitting' && message}
+            </p>
+            <button disabled={status === 'submitting'} type="submit">
+              <Database aria-hidden="true" />
+              {status === 'submitting' ? '저장 중' : '노션에 저장'}
+            </button>
+          </div>
+        </form>
+      </article>
+    </div>
+  );
+
+  if (typeof document === 'undefined') return panel;
+  return createPortal(panel, document.body);
+}
+
 export default function WorksArchive() {
   const { user } = useAuth();
   const { categorySlug = 'novels' } = useParams();
@@ -187,6 +261,18 @@ export default function WorksArchive() {
   const [commentMessage, setCommentMessage] = useState('');
   const [workStatuses, setWorkStatuses] = useState({});
   const [workStatusSaving, setWorkStatusSaving] = useState(false);
+  const [isWorkSubmitOpen, setIsWorkSubmitOpen] = useState(false);
+  const [workSubmitStatus, setWorkSubmitStatus] = useState('idle');
+  const [workSubmitMessage, setWorkSubmitMessage] = useState('');
+  const [workSubmitForm, setWorkSubmitForm] = useState({
+    title: '',
+    author: '',
+    publisher: '',
+    category: '소설',
+    link: '',
+    tags: '',
+    recommender: '',
+  });
   const activeCategory = workCategories.find(category => category.slug === categorySlug) ?? workCategories[0];
 
   useEffect(() => {
@@ -277,6 +363,64 @@ export default function WorksArchive() {
     setCommentText('');
     setCommentStatus('idle');
     setCommentMessage('');
+  };
+
+  const openWorkSubmit = () => {
+    setWorkSubmitStatus('idle');
+    setWorkSubmitMessage('');
+    setIsWorkSubmitOpen(true);
+  };
+
+  const updateWorkSubmitForm = event => {
+    const { name, value } = event.target;
+    setWorkSubmitForm(form => ({ ...form, [name]: value }));
+  };
+
+  const submitWorkArchive = async event => {
+    event.preventDefault();
+    if (!workSubmitForm.title.trim()) {
+      setWorkSubmitStatus('error');
+      setWorkSubmitMessage('작품 제목을 입력해주세요.');
+      return;
+    }
+
+    setWorkSubmitStatus('submitting');
+    setWorkSubmitMessage('');
+
+    try {
+      const response = await fetch('/api/works', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(workSubmitForm),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(data?.notion?.message || data?.error || '작품 저장에 실패했습니다.');
+      }
+
+      const refreshResponse = await fetch('/api/works?refresh=1');
+      const refreshed = await refreshResponse.json().catch(() => ({}));
+      if (Array.isArray(refreshed.works) && refreshed.works.length > 0) {
+        setWorks(refreshed.works);
+      } else if (data.work) {
+        setWorks(current => [data.work, ...current]);
+      }
+
+      setWorkSubmitForm({
+        title: '',
+        author: '',
+        publisher: '',
+        category: '소설',
+        link: '',
+        tags: '',
+        recommender: '',
+      });
+      setWorkSubmitStatus('success');
+      setWorkSubmitMessage('작품 신호가 노션 아카이브에 저장되었습니다.');
+    } catch (error) {
+      setWorkSubmitStatus('error');
+      setWorkSubmitMessage(error.message);
+    }
   };
 
   const updateWorkStatus = async nextStatus => {
@@ -387,6 +531,10 @@ export default function WorksArchive() {
         <div className="works-full-status">
           <Sparkles aria-hidden="true" />
           <strong>{visibleWorks.length} SIGNALS</strong>
+          <button onClick={openWorkSubmit} type="button">
+            <Database aria-hidden="true" />
+            작품 아카이브
+          </button>
         </div>
       </header>
 
@@ -471,6 +619,17 @@ export default function WorksArchive() {
           </div>
         )}
       </section>
+
+      {isWorkSubmitOpen && (
+        <WorkArchiveFormPanel
+          form={workSubmitForm}
+          message={workSubmitMessage}
+          onChange={updateWorkSubmitForm}
+          onClose={() => setIsWorkSubmitOpen(false)}
+          onSubmit={submitWorkArchive}
+          status={workSubmitStatus}
+        />
+      )}
 
       <WorkDetailPanel
         commentMessage={commentMessage}
