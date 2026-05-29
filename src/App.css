@@ -102,10 +102,10 @@
 .reading-mode .exploration-log-page,
 .reading-mode .media-archive-page,
 .reading-mode .questions-page {
-  --cyan: #2f6f78;
-  --line: rgba(35, 73, 82, 0.2);
-  background: #f3efe6 !important;
-  color: #172126;
+  --cyan: var(--mode-reading-cyan);
+  --line: var(--mode-reading-line);
+  background: var(--mode-reading-bg) !important;
+  color: var(--mode-reading-text);
 }
 
 .reading-mode .archive-home section,

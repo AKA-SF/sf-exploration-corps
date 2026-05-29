@@ -26,12 +26,12 @@
   color: #f4fbff;
   overflow: visible;
   isolation: isolate;
-  --cyan: #19f7f1;
-  --cyan-soft: rgba(25, 247, 241, 0.58);
-  --cyan-dim: rgba(25, 247, 241, 0.18);
-  --line: rgba(25, 247, 241, 0.28);
-  --muted: #8fb0bc;
-  --ink: #06141a;
+  --cyan: var(--mode-console-cyan);
+  --cyan-soft: var(--mode-console-cyan-soft);
+  --cyan-dim: var(--mode-console-cyan-dim);
+  --line: var(--mode-console-line);
+  --muted: var(--mode-console-muted);
+  --ink: var(--mode-console-ink);
 }
 
 .archive-home::before,

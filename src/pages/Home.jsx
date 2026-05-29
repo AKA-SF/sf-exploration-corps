@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
 import {
   Box,
   ChevronRight,
@@ -14,12 +13,16 @@ import {
   Send,
   Sparkles,
 } from 'lucide-react';
-import CoordinateUniverse from '../components/CoordinateUniverse';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
 import { getWorkCategorySlug, workCategories } from '../data/workArchive';
 import { recordUserActivity } from '../lib/activityLogger';
 import { supabase } from '../lib/supabaseClient';
+import CommunitySection from './home/CommunitySection';
+import ConceptDictionarySection from './home/ConceptDictionarySection';
+import CoordinatesSection from './home/CoordinatesSection';
+import MediaArchiveSection from './home/MediaArchiveSection';
+import WorksArchiveSection from './home/WorksArchiveSection';
 import './Home.css';
 
 const navItems = [
@@ -1916,535 +1919,74 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="works-archive-section" id="works-archive">
-        <div className="section-shell">
-          <div className="section-heading">
-            <span>ARCHIVE NODE 01</span>
-            <h2>작품 아카이브</h2>
-            <p>
-              SF 탐사단의 작품 아카이브는 작품을 단순 목록으로 보관하지 않고,
-              세계관, 매체, 핵심 질문, 감각적 밀도에 따라 탐사 가능한 신호로 분류합니다.
-            </p>
-          </div>
+      <WorksArchiveSection
+        displayedWorks={displayedWorks}
+        onOpenWorkDetail={openWorkDetail}
+        onOpenWorkSubmit={openWorkSubmit}
+        selectedWork={selectedWork}
+        workCategories={workCategories}
+        workCategoryCounts={workCategoryCounts}
+        worksCount={works.length}
+      />
 
-          <div className="archive-category-grid" aria-label="작품 매체 분류">
-            {workCategories.map(category => (
-              <Link
-                className="category-tile"
-                key={category.label}
-                to={`/works/${category.slug}`}
-              >
-                <span>{category.label}</span>
-                <strong>{category.title}</strong>
-                <em>{String(workCategoryCounts[category.slug] ?? 0).padStart(3, '0')} SIGNALS</em>
-              </Link>
-            ))}
-          </div>
+      <MediaArchiveSection
+        activeMediaArchivePath={activeMediaArchivePath}
+        activeMediaCategory={activeMediaCategory}
+        mediaCategories={mediaCategories}
+        onMediaCategoryChange={setActiveMediaCategory}
+        onRecordMediaSignal={item => recordMissionSignal(`media:${item.code}`, {
+          actionType: 'media_visit',
+          points: 3,
+          genre: item.category || activeMediaCategory,
+          metadata: {
+            title: item.title,
+            media_code: item.code,
+            node: 'media-archive',
+          },
+        })}
+        previewMedia={previewMedia}
+      />
 
-          <div className="works-layout">
-            <div className="works-brief">
-              <span>CLASSIFICATION METHOD</span>
-              <h3>작품을 좌표로 읽기</h3>
-              <p>
-                각 작품은 장르보다 먼저 질문으로 기록됩니다. 이 작품이 어떤 인간 이후의 조건을
-                상상하는지, 어떤 기술과 감각을 호출하는지, 그리고 지금 우리의 세계와 어디에서
-                접속되는지를 추적합니다.
-              </p>
-              <dl>
-                <div>
-                  <dt>AXIS 01</dt>
-                  <dd>세계관과 사회 구조</dd>
-                </div>
-                <div>
-                  <dt>AXIS 02</dt>
-                  <dd>기술, 신체, 의식의 변화</dd>
-                </div>
-                <div>
-                  <dt>AXIS 03</dt>
-                  <dd>토론 가능한 핵심 질문</dd>
-                </div>
-              </dl>
-              <button className="work-submit-open" onClick={openWorkSubmit} type="button">
-                <Database aria-hidden="true" />
-                작품 아카이브
-              </button>
-            </div>
+      <CoordinatesSection
+        activeGenre={activeGenre}
+        hasCoordinateFocus={hasCoordinateFocus}
+        mapDescription={mapDescription}
+        mapPositions={mapPositions}
+        minimapViewport={minimapViewport}
+        onConceptSelect={selectConcept}
+        onLogOpen={openCoordinateLogModal}
+        onNodeSelect={handleGenreNodeClick}
+        onReset={resetCoordinateMap}
+        onViewChange={setMapView}
+        relatedCoordinateIds={relatedCoordinateIds}
+        selectedCoordinate={selectedCoordinate}
+        selectedCoordinateConcepts={selectedCoordinateConcepts}
+        selectedCoordinateId={selectedCoordinateId}
+        selectedCoordinateQuestions={selectedCoordinateQuestions}
+        selectedCoordinateWorks={selectedCoordinateWorks}
+        visibleConnections={visibleConnections}
+      />
 
-            <div className="archive-view-status">
-              <span>RANDOM SIGNALS</span>
-              <strong>{displayedWorks.length} / {works.length} WORKS</strong>
+      <ConceptDictionarySection
+        conceptFeatureRef={conceptFeatureRef}
+        conceptReadingMode={conceptReadingMode}
+        conceptsCount={concepts.length}
+        getConceptSource={getConceptSource}
+        onConceptSelect={selectConcept}
+        onReadingModeToggle={() => setConceptReadingMode(value => !value)}
+        onShowAllToggle={() => setShowAllConcepts(value => !value)}
+        selectedConcept={selectedConcept}
+        showAllConcepts={showAllConcepts}
+        visibleConcepts={visibleConcepts}
+      />
 
-              <div className="featured-work-grid" aria-label="대표 작품 신호">
-                {displayedWorks.map(work => {
-                  return (
-                    <article
-                      className={`work-card ${selectedWork?.code === work.code ? 'is-expanded' : ''} ${work.cover ? 'has-cover' : ''}`}
-                      key={work.code}
-                      onClick={() => openWorkDetail(work)}
-                      onKeyDown={event => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          openWorkDetail(work);
-                        }
-                      }}
-                      role="button"
-                      tabIndex={0}
-                    >
-                      <div className="work-card-top">
-                        <span>{work.code}</span>
-                        <em>{work.medium}</em>
-                      </div>
-                      {work.cover && (
-                        <figure className="work-cover">
-                          <img src={work.cover} alt={`${work.title} 표지`} loading="lazy" />
-                        </figure>
-                      )}
-                      <h3>{work.title}</h3>
-                      <p>{work.subtitle}</p>
-                      {work.recommender && <span className="work-recommender">추천자 {work.recommender}</span>}
-                      <div className="work-tags">
-                        {work.tags.map(tag => <span key={tag}>{tag}</span>)}
-                      </div>
-                      <div className="work-card-footer">
-                        <span>DETAIL / COMMENTS</span>
-                        <button
-                          className="work-detail-open"
-                          onClick={event => {
-                            event.stopPropagation();
-                            openWorkDetail(work);
-                          }}
-                          type="button"
-                        >
-                          상세 보기
-                        </button>
-                        <ChevronRight aria-hidden="true" />
-                      </div>
-                    </article>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="media-section" id="media-archive">
-        <div className="section-shell">
-          <div className="section-heading">
-            <span>ARCHIVE NODE 03</span>
-            <h2>미디어 아카이브</h2>
-            <p>
-              SF 작가 인터뷰, 관련 미디어, 고전 SF 영화를 모아두는 영상과 읽을거리 저장소입니다.
-            </p>
-          </div>
-
-          <div className="media-tabs" aria-label="미디어 분류">
-            {mediaCategories.map(category => (
-              <button
-                className={activeMediaCategory === category ? 'is-active' : ''}
-                key={category}
-                onClick={() => setActiveMediaCategory(category)}
-                type="button"
-              >
-                {category}
-              </button>
-            ))}
-            <Link className="media-full-link" to={activeMediaArchivePath}>
-              전체 보기 <ChevronRight aria-hidden="true" />
-            </Link>
-          </div>
-
-          <div className="media-grid">
-            {previewMedia.length > 0 ? previewMedia.map(item => (
-              <a
-                className="media-card"
-                href={item.link}
-                key={item.code}
-                onClick={() => recordMissionSignal(`media:${item.code}`, {
-                  actionType: 'media_visit',
-                  points: 3,
-                  genre: item.category || activeMediaCategory,
-                  metadata: {
-                    title: item.title,
-                    media_code: item.code,
-                    node: 'media-archive',
-                  },
-                })}
-                rel="noreferrer"
-                target="_blank"
-              >
-                <div className="media-thumb">
-                  {item.thumbnail ? <img src={item.thumbnail} alt={`${item.title} 썸네일`} loading="lazy" /> : <Play aria-hidden="true" />}
-                </div>
-                <div className="media-card-body">
-                  <span>{item.code} / {item.medium}</span>
-                  <h3>{item.title}</h3>
-                  <p>{item.description || item.publisher || item.category}</p>
-                  <div className="media-meta">
-                    {item.publisher && <em>{item.publisher}</em>}
-                    {(item.date || item.year) && <em>{item.date || item.year}</em>}
-                  </div>
-                  <div className="media-tags">
-                    {item.tags.map(tag => <span key={tag}>{tag}</span>)}
-                  </div>
-                </div>
-              </a>
-            )) : (
-              <div className="media-empty">
-                <strong>NO SIGNALS</strong>
-                <span>{activeMediaCategory} 데이터가 아직 없습니다.</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section className="coordinates-section" id="coordinates">
-        <div className="section-shell">
-          <div className="section-heading">
-            <span>EXPLORATION NODE MAP</span>
-            <h2>탐사 좌표</h2>
-            <p>
-              SF 장르와 개념을 노드 기반 지도로 배치한 탐사 좌표입니다.
-              각 노드는 작품 아카이브의 신호가 모이는 방향이며, 서로 다른 상상력의 경로를 연결합니다.
-            </p>
-          </div>
-
-          <div className="coordinate-map-layout">
-            <CoordinateUniverse
-              activeGenre={activeGenre}
-              className={hasCoordinateFocus ? 'is-focused' : ''}
-              connections={visibleConnections}
-              hasFocus={hasCoordinateFocus}
-              nodes={mapPositions}
-              onNodeSelect={handleGenreNodeClick}
-              onReset={resetCoordinateMap}
-              onViewChange={setMapView}
-              relatedIds={relatedCoordinateIds}
-              selectedId={selectedCoordinateId}
-            />
-
-            <aside className="coordinate-brief">
-              <span>MAP PROTOCOL</span>
-              <h3>{selectedCoordinate.label}</h3>
-              <p>{mapDescription}</p>
-              <dl>
-                <div>
-                  <dt>SELECTED NODE</dt>
-                  <dd>{selectedCoordinate.en}</dd>
-                </div>
-                <div>
-                  <dt>RELATED WORKS</dt>
-                  <dd>{selectedCoordinateWorks.length} 작품 신호</dd>
-                </div>
-                <div>
-                  <dt>MODE</dt>
-                  <dd>{activeGenre ? 'Subgenre Mapping' : 'Archive Mapping'}</dd>
-                </div>
-              </dl>
-              <button
-                className="coordinate-log-trigger"
-                disabled={!selectedCoordinateId}
-                onClick={openCoordinateLogModal}
-                type="button"
-              >
-                <Send size={16} />
-                탐사 로그 작성
-              </button>
-              <div className="coordinate-panel-section">
-                <span>RELATED WORKS</span>
-                {selectedCoordinateWorks.length > 0 ? (
-                  <div className="coordinate-work-list">
-                    {selectedCoordinateWorks.map(work => {
-                      const WorkLink = work.link ? 'a' : 'article';
-                      return (
-                        <WorkLink
-                          className="coordinate-work-item"
-                          href={work.link || undefined}
-                          key={work.code}
-                          rel={work.link ? 'noreferrer' : undefined}
-                          target={work.link ? '_blank' : undefined}
-                        >
-                          <strong>{work.title}</strong>
-                          <em>{work.medium}</em>
-                        </WorkLink>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="coordinate-empty-note">아직 이 좌표와 자동 연결된 작품이 없습니다.</p>
-                )}
-              </div>
-              <div className="coordinate-panel-section">
-                <span>CORE QUESTIONS</span>
-                <ul className="coordinate-question-list">
-                  {selectedCoordinateQuestions.map(question => <li key={question}>{question}</li>)}
-                </ul>
-              </div>
-              <div className="coordinate-panel-section">
-                <span>RELATED CONCEPTS</span>
-                <div className="coordinate-concept-list">
-                  {(selectedCoordinateConcepts.length > 0 ? selectedCoordinateConcepts : selectedCoordinate.concepts?.map(term => ({ code: term, term })) ?? []).map(concept => (
-                    <button
-                      key={concept.code || concept.term}
-                      onClick={() => concept.code && selectConcept(concept.code)}
-                      type="button"
-                    >
-                      {concept.term}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <div className="coordinate-minimap" aria-label="탐사 좌표 미니맵">
-                <div className="coordinate-minimap-top">
-                  <span>MINI MAP</span>
-                  <strong>+</strong>
-                </div>
-                <div className="coordinate-mini-space">
-                  {mapPositions.map(node => (
-                    <i
-                      key={node.id}
-                      className={`mini-node tone-${node.tone}`}
-                      style={{ left: `${node.x}%`, top: `${node.y}%` }}
-                    />
-                  ))}
-                  <span
-                    className="mini-viewport"
-                    style={{
-                      left: `${minimapViewport.x}%`,
-                      top: `${minimapViewport.y}%`,
-                      width: `${minimapViewport.width}%`,
-                      height: `${minimapViewport.height}%`,
-                    }}
-                  />
-                  <b />
-                </div>
-              </div>
-            </aside>
-          </div>
-        </div>
-      </section>
-
-      <section className="concept-section" id="concept-dictionary">
-        <div className="section-shell">
-          <div className="section-heading">
-            <span>ARCHIVE NODE 02</span>
-            <h2>SF 개념 사전</h2>
-            <p>
-              SF 작품을 읽을 때 반복해서 나타나는 장르, 세계관, 기술, 사회적 질문을
-              작은 탐사 용어로 정리합니다.
-            </p>
-          </div>
-
-          <div className="concept-layout">
-            <aside className="concept-index">
-              <span>DICTIONARY INDEX</span>
-              <button
-                aria-expanded={showAllConcepts}
-                className="concept-count-button"
-                onClick={() => setShowAllConcepts(value => !value)}
-                type="button"
-              >
-                {concepts.length} TERMS
-              </button>
-              <p>작품 아카이브와 탐사 좌표 사이를 연결하는 개념 신호 목록입니다.</p>
-            </aside>
-
-            {selectedConcept ? (
-              <div className="concept-browser">
-                <article className={`concept-feature-card ${conceptReadingMode ? 'is-reading-local' : ''}`} ref={conceptFeatureRef}>
-                  <div className="concept-card-top">
-                    <span>{selectedConcept.code}</span>
-                    <em>{selectedConcept.category}</em>
-                  </div>
-                  <button
-                    className="local-reading-toggle"
-                    onClick={() => setConceptReadingMode(value => !value)}
-                    type="button"
-                  >
-                    {conceptReadingMode ? 'Console View' : 'Reading View'}
-                  </button>
-                  <h3>{selectedConcept.term}</h3>
-                  <strong>{selectedConcept.english}</strong>
-                  <p>{selectedConcept.summary}</p>
-                  {selectedConcept.relatedWorks?.length > 0 && (
-                    <dl className="concept-meta-list">
-                      <div>
-                        <dt>관련 작품</dt>
-                        <dd>{selectedConcept.relatedWorks.join(', ')}</dd>
-                      </div>
-                    </dl>
-                  )}
-                  {selectedConcept.source && (
-                    <dl className="concept-meta-list">
-                      <div>
-                        <dt>출처</dt>
-                        <dd>
-                          {getConceptSource(selectedConcept.source, selectedConcept).href ? (
-                            <a
-                              className="concept-source-link"
-                              href={getConceptSource(selectedConcept.source, selectedConcept).href}
-                              rel="noreferrer"
-                              target="_blank"
-                            >
-                              {getConceptSource(selectedConcept.source, selectedConcept).label}
-                            </a>
-                          ) : (
-                            getConceptSource(selectedConcept.source, selectedConcept).label
-                          )}
-                        </dd>
-                      </div>
-                    </dl>
-                  )}
-                  {selectedConcept.keywords?.length > 0 && (
-                    <div className="concept-tags">
-                      {selectedConcept.keywords.map(keyword => <span key={keyword}>{keyword}</span>)}
-                    </div>
-                  )}
-                </article>
-
-                <div className="concept-grid">
-                  {visibleConcepts.map(entry => (
-                    <button
-                      className={`concept-card ${entry.code === selectedConcept.code ? 'is-active' : ''}`}
-                      key={entry.code}
-                      onClick={() => selectConcept(entry.code)}
-                      type="button"
-                    >
-                      <span>{entry.code}</span>
-                      <strong>{entry.term}</strong>
-                      {entry.english && <small>{entry.english}</small>}
-                      <em>{entry.category}</em>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : (
-              <div className="concept-empty">
-                <strong>NO TERMS</strong>
-                <span>노션 SF 개념 사전에 아직 등록된 개념어가 없습니다.</span>
-              </div>
-            )}
-          </div>
-        </div>
-      </section>
-
-      <section className="question-section" id="question-vault">
-        <div className="section-shell">
-          <div className="section-heading">
-            <span>ARCHIVE NODE 04</span>
-            <h2>커뮤니티 게시판</h2>
-            <p>
-              SF 작품을 읽고 남은 질문, 추천, 제안, 함께 나누고 싶은 이야기를
-              비밀번호 입력 후 바로 남길 수 있습니다.
-            </p>
-          </div>
-
-          <div className="question-layout">
-            <aside className="question-brief">
-              <MessageSquare aria-hidden="true" />
-              <span>QUESTION VAULT</span>
-              <h3>새 글은 다음 탐사의 좌표가 됩니다</h3>
-              <p>
-                작품명, 핵심 질문, 떠오른 장면, 추천하고 싶은 자료를 함께 적어두면
-                더 좋은 커뮤니티 신호가 됩니다.
-              </p>
-              <dl>
-                <div>
-                  <dt>TYPE</dt>
-                  <dd>질문 / 추천 / 제안 / 수업 주제</dd>
-                </div>
-                <div>
-                  <dt>MODE</dt>
-                  <dd>비밀번호 입력 후 바로 저장</dd>
-                </div>
-              </dl>
-            </aside>
-
-            <form className="question-form" onSubmit={submitQuestion}>
-              <label>
-                <span>글 제목</span>
-                <input
-                  name="title"
-                  onChange={updateQuestionForm}
-                  placeholder="예: 인간과 인공지능의 경계는 어디서 무너질까?"
-                  type="text"
-                  value={questionForm.title}
-                />
-              </label>
-
-              <label>
-                <span>글 내용</span>
-                <textarea
-                  name="content"
-                  onChange={updateQuestionForm}
-                  placeholder="작품명, 장면, 떠오른 생각을 자유롭게 적어주세요."
-                  rows="7"
-                  value={questionForm.content}
-                />
-              </label>
-
-              <div className="question-form-row">
-                <label>
-                  <span>이름</span>
-                  <input
-                    name="name"
-                    onChange={updateQuestionForm}
-                    placeholder="익명 가능"
-                    type="text"
-                    value={questionForm.name}
-                  />
-                </label>
-                <label>
-                  <span>연락처</span>
-                  <input
-                    name="contact"
-                    onChange={updateQuestionForm}
-                    placeholder="이메일 또는 인스타그램"
-                    type="text"
-                    value={questionForm.contact}
-                  />
-                </label>
-              </div>
-
-              <label>
-                <span>분류</span>
-                <select name="category" onChange={updateQuestionForm} value={questionForm.category}>
-                  <option>커뮤니티</option>
-                  <option>토론 질문</option>
-                  <option>작품 추천</option>
-                  <option>강의/워크숍 주제</option>
-                  <option>아카이브 제안</option>
-                </select>
-              </label>
-
-              <label>
-                <span>게시판 비밀번호</span>
-                <input
-                  name="password"
-                  onChange={updateQuestionForm}
-                  placeholder="비밀번호를 입력하세요"
-                  type="password"
-                  value={questionForm.password}
-                />
-              </label>
-
-              <div className="question-form-actions">
-                <p className={`question-status is-${questionStatus}`}>
-                  {questionStatus === 'success' && questionMessage}
-                  {questionStatus === 'error' && questionMessage}
-                  {questionStatus === 'submitting' && '새 글을 저장 중입니다.'}
-                  {questionStatus === 'idle' && '비밀번호를 입력한 뒤 새글 저장을 눌러주세요.'}
-                </p>
-                <button type="submit" disabled={questionStatus === 'submitting'}>
-                  <Send aria-hidden="true" />
-                  {questionStatus === 'submitting' ? '저장 중' : '새글 저장'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </section>
+      <CommunitySection
+        onQuestionFormChange={updateQuestionForm}
+        onQuestionSubmit={submitQuestion}
+        questionForm={questionForm}
+        questionMessage={questionMessage}
+        questionStatus={questionStatus}
+      />
 
       <section className="contact-section" id="contact">
         <div className="section-shell contact-shell">
