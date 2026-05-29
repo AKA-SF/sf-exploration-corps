@@ -24,6 +24,12 @@ import CoordinatesSection from './home/CoordinatesSection';
 import MediaArchiveSection from './home/MediaArchiveSection';
 import WorksArchiveSection from './home/WorksArchiveSection';
 import './Home.css';
+import './home/WorksArchiveSection.css';
+import './home/MediaArchiveSection.css';
+import './home/CoordinatesSection.css';
+import './home/ConceptDictionarySection.css';
+import './home/CommunitySection.css';
+import './home/HomeResponsive.css';
 
 const navItems = [
   { label: '작품 아카이브', href: '#works-archive' },

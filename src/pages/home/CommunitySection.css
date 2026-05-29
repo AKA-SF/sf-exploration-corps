@@ -1,0 +1,179 @@
+.question-section {
+  position: relative;
+  z-index: 2;
+  padding: 92px 22px 110px;
+  border-top: 1px solid rgba(25, 247, 241, 0.2);
+  background:
+    radial-gradient(circle at 18% 20%, rgba(25, 247, 241, 0.1), transparent 26%),
+    radial-gradient(circle at 78% 62%, rgba(124, 199, 255, 0.08), transparent 28%),
+    linear-gradient(180deg, rgba(1, 4, 7, 0.98), rgba(1, 8, 12, 0.96));
+}
+
+.question-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 0.42fr) minmax(0, 1fr);
+  gap: 24px;
+}
+
+.question-brief,
+.question-form {
+  border: 1px solid rgba(25, 247, 241, 0.24);
+  background:
+    linear-gradient(135deg, rgba(25, 247, 241, 0.08), transparent 46%),
+    rgba(0, 12, 18, 0.68);
+}
+
+.question-brief {
+  padding: 28px;
+}
+
+.question-brief svg {
+  width: 36px;
+  height: 36px;
+  margin-bottom: 22px;
+  color: var(--cyan);
+}
+
+.question-brief span,
+.question-brief dt,
+.question-form label span,
+.question-status {
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.4px;
+}
+
+.question-brief h3 {
+  margin: 18px 0 16px;
+  color: #fff;
+  font-size: 28px;
+  font-weight: 1000;
+  line-height: 1.18;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.question-brief p {
+  margin: 0 0 24px;
+  color: #bfd0d6;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.75;
+}
+
+.question-brief dl {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+}
+
+.question-brief dl div {
+  padding-top: 14px;
+  border-top: 1px solid rgba(25, 247, 241, 0.16);
+}
+
+.question-brief dd {
+  margin: 5px 0 0;
+  color: #e5f4f7;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.question-form {
+  display: grid;
+  gap: 18px;
+  padding: 28px;
+}
+
+.question-form label {
+  display: grid;
+  gap: 8px;
+}
+
+.question-form input,
+.question-form textarea,
+.question-form select {
+  width: 100%;
+  border: 1px solid rgba(25, 247, 241, 0.28);
+  border-radius: 0;
+  padding: 14px 15px;
+  color: #effcff;
+  background: rgba(0, 8, 12, 0.72);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 750;
+  outline: 0;
+}
+
+.question-form textarea {
+  resize: vertical;
+  min-height: 168px;
+  line-height: 1.65;
+}
+
+.question-form input::placeholder,
+.question-form textarea::placeholder {
+  color: rgba(184, 203, 210, 0.5);
+}
+
+.question-form input:focus,
+.question-form textarea:focus,
+.question-form select:focus {
+  border-color: rgba(25, 247, 241, 0.72);
+  box-shadow: 0 0 0 1px rgba(25, 247, 241, 0.18);
+}
+
+.question-form-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.question-form-actions {
+  display: grid;
+  gap: 12px;
+  padding-top: 12px;
+}
+
+.question-status {
+  margin: 0;
+  color: #8fb0bc;
+}
+
+.question-status.is-success {
+  color: var(--cyan);
+}
+
+.question-status.is-error {
+  color: #f0b85a;
+}
+
+.question-form button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 56px;
+  border: 0;
+  padding: 0 22px;
+  color: #00161a;
+  background: var(--cyan);
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 1000;
+  white-space: nowrap;
+  box-shadow: 0 0 28px rgba(25, 247, 241, 0.2);
+}
+
+.question-form button:disabled {
+  cursor: wait;
+  opacity: 0.62;
+}
+
+.question-form button svg {
+  width: 17px;
+  height: 17px;
+}
