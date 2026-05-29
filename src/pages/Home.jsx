@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { motion } from 'framer-motion';
 import {
   Box,
@@ -10,7 +9,6 @@ import {
   MessageSquare,
   Play,
   Satellite,
-  Send,
   Sparkles,
 } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
@@ -20,8 +18,11 @@ import { recordUserActivity } from '../lib/activityLogger';
 import { supabase } from '../lib/supabaseClient';
 import CommunitySection from './home/CommunitySection';
 import ConceptDictionarySection from './home/ConceptDictionarySection';
+import CoordinateLogModal from './home/CoordinateLogModal';
 import CoordinatesSection from './home/CoordinatesSection';
 import MediaArchiveSection from './home/MediaArchiveSection';
+import WorkArchiveFormPanel from './home/WorkArchiveFormPanel';
+import WorkDetailPanel from './home/WorkDetailPanel';
 import WorksArchiveSection from './home/WorksArchiveSection';
 import './Home.css';
 import './home/WorksArchiveSection.css';
@@ -876,202 +877,6 @@ function SidePanel({ metrics, recentSignals, timestamp, activeGenre, archiveMode
       </section>
     </aside>
   );
-}
-
-function WorkDetailPanel({
-  commentMessage,
-  commentStatus,
-  commentText,
-  comments,
-  onClose,
-  onCommentSubmit,
-  onCommentTextChange,
-  onWorkStatusChange,
-  user,
-  work,
-  workStatus,
-  workStatusSaving,
-}) {
-  if (!work) return null;
-
-  const statusOptions = [
-    { value: 'want', label: '읽고 싶어요' },
-    { value: 'reading', label: '읽는 중' },
-    { value: 'done', label: '읽었어요' },
-  ];
-
-  const panel = (
-    <div className="work-detail-modal" role="dialog" aria-modal="true" aria-label={`${work.title} 댓글`}>
-      <article className={`work-detail-panel ${work.cover ? 'has-cover' : ''}`}>
-        <header className="work-detail-head">
-          <div>
-            <span>{work.code}</span>
-            <h3>{work.title}</h3>
-            <p>{work.subtitle}</p>
-          </div>
-          <button onClick={onClose} type="button" aria-label="작품 상세 닫기">×</button>
-        </header>
-
-        <div className="work-detail-body">
-          {work.cover && (
-            <figure className="work-detail-cover">
-              <img src={work.cover} alt={`${work.title} 표지`} />
-            </figure>
-          )}
-          <div className="work-detail-meta">
-            <dl>
-              <div>
-                <dt>MEDIUM</dt>
-                <dd>{work.medium}</dd>
-              </div>
-              {work.recommender && (
-                <div>
-                  <dt>RECOMMENDER</dt>
-                  <dd>{work.recommender}</dd>
-                </div>
-              )}
-            </dl>
-            <div className="work-tags">
-              {(work.tags ?? []).map(tag => <span key={tag}>{tag}</span>)}
-            </div>
-            {work.link && (
-              <a className="work-archive-link" href={work.link} target="_blank" rel="noreferrer">
-                알라딘 링크 열기 <ChevronRight aria-hidden="true" />
-              </a>
-            )}
-            <div className="work-status-control" aria-label="작품 독서 상태">
-              <span>READING STATUS</span>
-              <div>
-                {statusOptions.map(option => (
-                  <button
-                    className={workStatus === option.value ? 'is-active' : ''}
-                    disabled={!user || workStatusSaving}
-                    key={option.value}
-                    onClick={() => onWorkStatusChange(option.value)}
-                    type="button"
-                  >
-                    {option.label}
-                  </button>
-                ))}
-              </div>
-              {!user && <em>로그인하면 독서 상태를 저장할 수 있습니다.</em>}
-            </div>
-          </div>
-        </div>
-
-        <section className="work-comment-section">
-          <div className="work-comment-head">
-            <span>COMMENT SIGNALS</span>
-            <strong>{comments.length} COMMENTS</strong>
-          </div>
-          <div className="work-comment-list">
-            {comments.length > 0 ? comments.map(comment => (
-              <article className="work-comment" key={comment.id}>
-                <div>
-                  <strong>{comment.author_name || '익명 탐사자'}</strong>
-                  <time>{new Date(comment.created_at).toLocaleDateString('ko-KR')}</time>
-                </div>
-                <p>{comment.body}</p>
-              </article>
-            )) : (
-              <p className="work-comment-empty">아직 댓글 신호가 없습니다. 첫 반응을 남겨보세요.</p>
-            )}
-          </div>
-          <form className="work-comment-form" onSubmit={onCommentSubmit}>
-            <textarea
-              disabled={!user || commentStatus === 'saving'}
-              onChange={event => onCommentTextChange(event.target.value)}
-              placeholder={user ? '이 작품에 대한 짧은 감상이나 질문을 남겨주세요.' : '댓글을 남기려면 먼저 로그인해주세요.'}
-              rows={3}
-              value={commentText}
-            />
-            <button disabled={!user || !commentText.trim() || commentStatus === 'saving'} type="submit">
-              <Send aria-hidden="true" />
-              댓글 저장
-            </button>
-          </form>
-          {commentMessage && <p className={`work-comment-message is-${commentStatus}`}>{commentMessage}</p>}
-        </section>
-      </article>
-    </div>
-  );
-
-  if (typeof document === 'undefined') return panel;
-  return createPortal(panel, document.body);
-}
-
-function WorkArchiveFormPanel({
-  form,
-  message,
-  onChange,
-  onClose,
-  onSubmit,
-  status,
-}) {
-  const panel = (
-    <div className="work-detail-modal" role="dialog" aria-modal="true" aria-label="작품 아카이브 입력">
-      <article className="work-submit-panel">
-        <header className="work-detail-head">
-          <div>
-            <span>NEW ARCHIVE SIGNAL</span>
-            <h3>작품 아카이브</h3>
-            <p>입력한 작품 신호는 노션 작품 아카이브 DB에 바로 저장됩니다.</p>
-          </div>
-          <button onClick={onClose} type="button" aria-label="작품 아카이브 입력 닫기">×</button>
-        </header>
-
-        <form className="work-submit-form" onSubmit={onSubmit}>
-          <label>
-            <span>제목</span>
-            <input name="title" onChange={onChange} placeholder="작품 제목" required value={form.title} />
-          </label>
-          <label>
-            <span>카테고리</span>
-            <select name="category" onChange={onChange} value={form.category}>
-              <option value="소설">소설</option>
-              <option value="영화">영화</option>
-              <option value="게임">게임</option>
-              <option value="애니메이션">애니메이션</option>
-            </select>
-          </label>
-          <label>
-            <span>저자</span>
-            <input name="author" onChange={onChange} placeholder="저자 / 감독 / 제작자" value={form.author} />
-          </label>
-          <label>
-            <span>출판사</span>
-            <input name="publisher" onChange={onChange} placeholder="출판사 / 배급사 / 스튜디오" value={form.publisher} />
-          </label>
-          <label className="is-wide">
-            <span>알라딘 링크</span>
-            <input name="link" onChange={onChange} placeholder="https://www.aladin.co.kr/..." value={form.link} />
-          </label>
-          <label>
-            <span>태그</span>
-            <input name="tags" onChange={onChange} placeholder="쉼표로 구분: 하드SF, 디스토피아" value={form.tags} />
-          </label>
-          <label>
-            <span>추천자</span>
-            <input name="recommender" onChange={onChange} placeholder="추천자 이름" value={form.recommender} />
-          </label>
-          <div className="work-submit-actions">
-            <p className={`work-comment-message is-${status}`}>
-              {status === 'idle' && '현재는 소설 입력을 기준으로 작동합니다. 다른 카테고리는 선택만 가능합니다.'}
-              {status === 'submitting' && '노션에 작품 신호를 저장 중입니다.'}
-              {status !== 'idle' && status !== 'submitting' && message}
-            </p>
-            <button disabled={status === 'submitting'} type="submit">
-              <Database aria-hidden="true" />
-              {status === 'submitting' ? '저장 중' : '노션에 저장'}
-            </button>
-          </div>
-        </form>
-      </article>
-    </div>
-  );
-
-  if (typeof document === 'undefined') return panel;
-  return createPortal(panel, document.body);
 }
 
 export default function Home() {
@@ -2028,45 +1833,15 @@ export default function Home() {
       </section>
 
       {isLogModalOpen && (
-        <div className="coordinate-log-modal" role="dialog" aria-modal="true" aria-label="탐사 로그 작성">
-          <form className="coordinate-log-form" onSubmit={submitCoordinateLog}>
-            <div className="coordinate-log-form-head">
-              <span>MISSION LOG INPUT</span>
-              <button
-                aria-label="탐사 로그 작성 닫기"
-                onClick={() => setIsLogModalOpen(false)}
-                type="button"
-              >
-                ×
-              </button>
-            </div>
-            <h3>{selectedCoordinate.label} 탐사 로그</h3>
-            <p>
-              선택한 좌표에 연결할 인스타 서평 주소를 입력하면 탐사 로그 노션 DB에 저장됩니다.
-            </p>
-            <label>
-              <span>인스타 서평 주소</span>
-              <input
-                autoFocus
-                onChange={event => setCoordinateLogUrl(event.target.value)}
-                placeholder="https://www.instagram.com/p/..."
-                type="url"
-                value={coordinateLogUrl}
-              />
-            </label>
-            <div className="coordinate-log-actions">
-              <p className={`coordinate-log-message is-${coordinateLogStatus}`}>
-                {coordinateLogStatus === 'idle' && '저장 후 탐사 로그 페이지에서 함께 보입니다.'}
-                {coordinateLogStatus === 'submitting' && '노션으로 신호를 전송 중입니다.'}
-                {coordinateLogStatus !== 'idle' && coordinateLogStatus !== 'submitting' && coordinateLogMessage}
-              </p>
-              <button type="submit" disabled={coordinateLogStatus === 'submitting'}>
-                <Send size={16} />
-                {coordinateLogStatus === 'submitting' ? '저장 중' : '노션에 저장'}
-              </button>
-            </div>
-          </form>
-        </div>
+        <CoordinateLogModal
+          coordinateLogMessage={coordinateLogMessage}
+          coordinateLogStatus={coordinateLogStatus}
+          coordinateLogUrl={coordinateLogUrl}
+          onClose={() => setIsLogModalOpen(false)}
+          onSubmit={submitCoordinateLog}
+          onUrlChange={setCoordinateLogUrl}
+          selectedCoordinate={selectedCoordinate}
+        />
       )}
 
       {isWorkSubmitOpen && (
