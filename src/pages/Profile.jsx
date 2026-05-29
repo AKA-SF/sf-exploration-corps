@@ -172,7 +172,7 @@ export default function Profile() {
   return (
     <PageTransition className="profile-container">
       <header className="page-header profile-page-header">
-        <h2 className="mono title-glitch"><UserRound size={20} /> 내 탐사 프로필 <span className="text-muted text-xs">/ CREW DOSSIER</span></h2>
+        <h2 className="mono title-glitch profile-page-title"><UserRound size={20} /> <span>내 탐사 프로필</span> <span className="text-muted text-xs">/ CREW DOSSIER</span></h2>
         <button className="profile-signout" onClick={signOut} type="button"><LogOut size={15} /> 로그아웃</button>
       </header>
 
