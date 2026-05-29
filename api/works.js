@@ -37,10 +37,12 @@ function getAladinItemId(link) {
     const url = new URL(link);
     return url.searchParams.get('ItemId')
       ?? url.searchParams.get('itemId')
+      ?? url.searchParams.get('itemid')
+      ?? url.searchParams.get('ItemID')
       ?? url.pathname.match(/\/(\d+)(?:\D*)$/)?.[1]
       ?? '';
   } catch {
-    return link.match(/ItemId=(\d+)/i)?.[1] ?? link.match(/\/(\d+)(?:\D*)$/)?.[1] ?? '';
+    return link.match(/itemid=(\d+)/i)?.[1] ?? link.match(/ItemId=(\d+)/i)?.[1] ?? link.match(/\/(\d+)(?:\D*)$/)?.[1] ?? '';
   }
 }
 
@@ -48,10 +50,108 @@ function normalizeCoverUrl(cover) {
   return cover ? cover.replace('coversum', 'cover200') : '';
 }
 
+function getPrimaryAuthor(subtitle = '') {
+  return subtitle
+    .split(' / ')[0]
+    ?.split(',')
+    ?.map(part => part.trim())
+    ?.filter(Boolean)?.[0] ?? '';
+}
+
+async function resolveAladinLink(link) {
+  if (!link) return '';
+  try {
+    const url = new URL(link);
+    if (!/aladin\.(kr|co\.kr)$/i.test(url.hostname.replace(/^www\./, ''))) return link;
+
+    const upstream = await fetch(link, {
+      method: 'GET',
+      redirect: 'follow',
+      headers: {
+        'User-Agent': 'Mozilla/5.0 SF Exploration Archive Cover Resolver',
+      },
+    });
+
+    return upstream.url || link;
+  } catch {
+    return link;
+  }
+}
+
+async function readAladinJson(endpoint, params) {
+  const upstream = await fetch(`${endpoint}?${params.toString()}`, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 SF Exploration Archive',
+    },
+  });
+  if (!upstream.ok) return null;
+  const text = await upstream.text();
+  return JSON.parse(text.trim().replace(/;$/, ''));
+}
+
+function scoreAladinMatch(item, work) {
+  const title = work.title?.replace(/\s/g, '').toLowerCase() ?? '';
+  const itemTitle = item.title?.replace(/\s/g, '').toLowerCase() ?? '';
+  const author = getPrimaryAuthor(work.subtitle).toLowerCase();
+  const itemAuthor = item.author?.toLowerCase() ?? '';
+  const publisher = work.subtitle?.split(' / ')?.[1]?.toLowerCase() ?? '';
+  const itemPublisher = item.publisher?.toLowerCase() ?? '';
+
+  let score = 0;
+  if (itemTitle === title) score += 80;
+  else if (itemTitle.includes(title) || title.includes(itemTitle)) score += 45;
+  if (author && (itemAuthor.includes(author) || author.includes(itemAuthor.split(',')[0]?.trim() ?? ''))) score += 30;
+  if (publisher && itemPublisher.includes(publisher)) score += 12;
+  return score;
+}
+
+async function searchAladinCover(work, apiKey, query, queryType = 'Title') {
+  if (!query) return '';
+
+  const searchParams = new URLSearchParams({
+    ttbkey: apiKey,
+    Query: query,
+    QueryType: queryType,
+    MaxResults: '10',
+    start: '1',
+    SearchTarget: 'Book',
+    Cover: 'Big',
+    output: 'js',
+    Version: '20131101',
+  });
+
+  try {
+    const data = await readAladinJson(ALADIN_SEARCH_ENDPOINT, searchParams);
+    const items = data?.item ?? [];
+    const matched = [...items]
+      .sort((a, b) => scoreAladinMatch(b, work) - scoreAladinMatch(a, work))[0];
+    return normalizeCoverUrl(matched?.cover);
+  } catch {
+    return '';
+  }
+}
+
+async function mapWithConcurrency(items, limit, mapper) {
+  const results = new Array(items.length);
+  let cursor = 0;
+
+  async function worker() {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await mapper(items[index], index);
+    }
+  }
+
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+}
+
 async function fetchAladinCover(work, apiKey) {
   const { link, title, subtitle } = work;
-  const itemId = getAladinItemId(link);
   if (!apiKey) return '';
+  const resolvedLink = await resolveAladinLink(link);
+  const itemId = getAladinItemId(link) || getAladinItemId(resolvedLink);
 
   if (itemId) {
     const params = new URLSearchParams({
@@ -64,10 +164,7 @@ async function fetchAladinCover(work, apiKey) {
     });
 
     try {
-      const upstream = await fetch(`${ALADIN_LOOKUP_ENDPOINT}?${params.toString()}`);
-      if (!upstream.ok) throw new Error('Aladin lookup failed');
-      const text = await upstream.text();
-      const data = JSON.parse(text.trim().replace(/;$/, ''));
+      const data = await readAladinJson(ALADIN_LOOKUP_ENDPOINT, params);
       const cover = normalizeCoverUrl(data.item?.[0]?.cover);
       if (cover) return cover;
     } catch {
@@ -77,31 +174,10 @@ async function fetchAladinCover(work, apiKey) {
 
   if (!title || !apiKey) return '';
 
-  const searchParams = new URLSearchParams({
-    ttbkey: apiKey,
-    Query: title,
-    QueryType: 'Title',
-    MaxResults: '5',
-    start: '1',
-    SearchTarget: 'Book',
-    Cover: 'Big',
-    output: 'js',
-    Version: '20131101',
-  });
-
-  try {
-    const upstream = await fetch(`${ALADIN_SEARCH_ENDPOINT}?${searchParams.toString()}`);
-    if (!upstream.ok) return '';
-    const text = await upstream.text();
-    const data = JSON.parse(text.trim().replace(/;$/, ''));
-    const [author] = subtitle.split(' / ');
-    const matched = data.item?.find(item => (
-      !author || item.author?.includes(author) || author.includes(item.author)
-    )) ?? data.item?.[0];
-    return normalizeCoverUrl(matched?.cover);
-  } catch {
-    return '';
-  }
+  const author = getPrimaryAuthor(subtitle);
+  return await searchAladinCover(work, apiKey, title, 'Title')
+    || await searchAladinCover(work, apiKey, [title, author].filter(Boolean).join(' '), 'Keyword')
+    || await searchAladinCover(work, apiKey, title, 'Keyword');
 }
 
 function mapPageToWork(page, index) {
@@ -199,10 +275,10 @@ export default async function handler(request, response) {
       ...work,
       code: work.code.startsWith('SFA-') ? `SFA-${String(index + 1).padStart(3, '0')}` : work.code,
     }));
-  const works = await Promise.all(worksWithoutCovers.map(async work => ({
+  const works = await mapWithConcurrency(worksWithoutCovers, 4, async work => ({
     ...work,
     cover: await fetchAladinCover(work, aladinApiKey),
-  })));
+  }));
 
   return response.status(200).json({ works });
 }
