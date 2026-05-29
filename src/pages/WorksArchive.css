@@ -113,6 +113,12 @@
   cursor: pointer;
 }
 
+.works-full-status button,
+.works-full-status button span,
+.works-full-status button svg {
+  color: #00161a !important;
+}
+
 .works-full-status button svg {
   width: 14px;
   height: 14px;
@@ -368,6 +374,16 @@
 .reading-mode .works-full-tabs a:focus-visible,
 .reading-mode .works-full-tabs a.is-active {
   background: #2f6f78 !important;
+  color: #fffdf6 !important;
+}
+
+.reading-mode .works-full-status button {
+  border-color: rgba(47, 111, 120, 0.42) !important;
+  background: #2f6f78 !important;
+}
+
+.reading-mode .works-full-status button,
+.reading-mode .works-full-status button svg {
   color: #fffdf6 !important;
 }
 
