@@ -1,5 +1,5 @@
-const NOTION_VERSION = '2022-06-28';
-const NOTION_PAGE_SIZE = 100;
+import { getNotionConfig, notionRequest, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
+
 const DEFAULT_LOG_DATABASE_ID = '36998dbef69d80dfa4afc27813f25b11';
 
 function plainText(value) {
@@ -21,13 +21,6 @@ function multiSelect(value) {
 
 function pick(properties, names) {
   return names.map(name => properties[name]).find(Boolean);
-}
-
-function normalizeNotionId(value) {
-  const source = value?.trim() ?? '';
-  const compactId = source.match(/(?:^|[^0-9a-f])([0-9a-f]{32})(?:[^0-9a-f]|$)/i)?.[1];
-  const dashedId = source.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0];
-  return (compactId ?? dashedId ?? '').replace(/-/g, '');
 }
 
 function normalizeName(value) {
@@ -123,17 +116,13 @@ export default async function handler(request, response) {
     return response.status(405).json({ error: 'Method not allowed' });
   }
 
-  const token = process.env.NOTION_TOKEN;
-  const databaseId = normalizeNotionId(process.env.NOTION_LOG_DATABASE_ID || DEFAULT_LOG_DATABASE_ID);
+  const { token, databaseId, missing } = getNotionConfig('NOTION_LOG_DATABASE_ID', DEFAULT_LOG_DATABASE_ID);
 
-  if (!token || !databaseId) {
+  if (missing.length > 0) {
     return response.status(503).json({
       logs: [],
       error: 'Notion log environment variables are not configured',
-      missing: [
-        !token ? 'NOTION_TOKEN' : null,
-        !databaseId ? 'NOTION_LOG_DATABASE_ID' : null,
-      ].filter(Boolean),
+      missing,
     });
   }
 
@@ -155,26 +144,16 @@ export default async function handler(request, response) {
       return response.status(400).json({ error: '인스타그램 주소를 입력해주세요.' });
     }
 
-    const headers = {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'Notion-Version': NOTION_VERSION,
-    };
-
-    const databaseResponse = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, { headers });
-    if (!databaseResponse.ok) {
-      const notionError = await databaseResponse.json().catch(async () => ({ message: await databaseResponse.text() }));
-      return response.status(databaseResponse.status).json({
-        error: 'Notion log database request failed',
-        status: databaseResponse.status,
-        notion: {
-          code: notionError?.code,
-          message: notionError?.message,
-        },
+    let database;
+    try {
+      database = await notionRequest(`/databases/${databaseId}`, { token });
+    } catch (error) {
+      return sendNotionError(response, {
+        error,
+        fallbackMessage: 'Notion log database request failed',
       });
     }
 
-    const database = await databaseResponse.json();
     const schema = database.properties ?? {};
     const properties = {};
 
@@ -199,28 +178,23 @@ export default async function handler(request, response) {
     const tagsProperty = findPropertyName(schema, ['태그', 'Tags', '키워드', 'Keywords'], 'multi_select');
     if (tagsProperty) properties[tagsProperty] = createMultiSelect(['Coordinate Map', nodeLabel, nodeEnglish, nodeId]);
 
-    const createResponse = await fetch('https://api.notion.com/v1/pages', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        parent: { database_id: databaseId },
-        properties,
-      }),
-    });
-
-    if (!createResponse.ok) {
-      const notionError = await createResponse.json().catch(async () => ({ message: await createResponse.text() }));
-      return response.status(createResponse.status).json({
-        error: 'Notion log create request failed',
-        status: createResponse.status,
-        notion: {
-          code: notionError?.code,
-          message: notionError?.message,
+    let createdPage;
+    try {
+      createdPage = await notionRequest('/pages', {
+        token,
+        method: 'POST',
+        body: {
+          parent: { database_id: databaseId },
+          properties,
         },
+      });
+    } catch (error) {
+      return sendNotionError(response, {
+        error,
+        fallbackMessage: 'Notion log create request failed',
       });
     }
 
-    const createdPage = await createResponse.json();
     return response.status(201).json({
       ok: true,
       id: createdPage.id,
@@ -234,46 +208,16 @@ export default async function handler(request, response) {
     });
   }
 
-  const results = [];
-  let startCursor;
-
-  do {
-    const notionResponse = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Notion-Version': NOTION_VERSION,
-      },
-      body: JSON.stringify({
-        page_size: NOTION_PAGE_SIZE,
-        ...(startCursor ? { start_cursor: startCursor } : {}),
-      }),
+  let results;
+  try {
+    results = await queryNotionDatabaseAll(token, databaseId);
+  } catch (error) {
+    return sendNotionError(response, {
+      error,
+      fallbackMessage: 'Notion log request failed',
+      payload: { logs: [] },
     });
-
-    if (!notionResponse.ok) {
-      let notionError;
-      try {
-        notionError = await notionResponse.json();
-      } catch {
-        notionError = { message: await notionResponse.text() };
-      }
-
-      return response.status(notionResponse.status).json({
-        logs: [],
-        error: 'Notion log request failed',
-        status: notionResponse.status,
-        notion: {
-          code: notionError?.code,
-          message: notionError?.message,
-        },
-      });
-    }
-
-    const data = await notionResponse.json();
-    results.push(...data.results);
-    startCursor = data.has_more ? data.next_cursor : null;
-  } while (startCursor);
+  }
 
   const logs = results
     .map(mapPageToLog)

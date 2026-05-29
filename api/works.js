@@ -1,5 +1,10 @@
-const NOTION_VERSION = '2022-06-28';
-const NOTION_PAGE_SIZE = 100;
+import {
+  getNotionConfig,
+  notionRequest,
+  queryNotionDatabaseAll,
+  sendNotionError,
+} from './_notion.js';
+
 const ALADIN_LOOKUP_ENDPOINT = 'http://www.aladin.co.kr/ttb/api/ItemLookUp.aspx';
 const ALADIN_SEARCH_ENDPOINT = 'http://www.aladin.co.kr/ttb/api/ItemSearch.aspx';
 const WORKS_CACHE_TTL_MS = 10 * 60 * 1000;
@@ -36,13 +41,6 @@ function pick(properties, names) {
 
 function pickName(properties, names) {
   return names.find(name => properties[name]);
-}
-
-function normalizeNotionId(value) {
-  const source = value?.trim() ?? '';
-  const compactId = source.match(/(?:^|[^0-9a-f])([0-9a-f]{32})(?:[^0-9a-f]|$)/i)?.[1];
-  const dashedId = source.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0];
-  return (compactId ?? dashedId ?? '').replace(/-/g, '');
 }
 
 function getAladinItemId(link) {
@@ -287,27 +285,7 @@ function assignNotionProperty(properties, databaseProperties, names, value, fall
 }
 
 async function getNotionDatabase(token, databaseId) {
-  const databaseResponse = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Notion-Version': NOTION_VERSION,
-    },
-  });
-
-  if (!databaseResponse.ok) {
-    let notionError;
-    try {
-      notionError = await databaseResponse.json();
-    } catch {
-      notionError = { message: await databaseResponse.text() };
-    }
-    const error = new Error(notionError?.message || 'Notion database request failed');
-    error.status = databaseResponse.status;
-    error.notion = notionError;
-    throw error;
-  }
-
-  return databaseResponse.json();
+  return notionRequest(`/databases/${databaseId}`, { token });
 }
 
 async function createNotionWork(token, databaseId, body) {
@@ -330,33 +308,14 @@ async function createNotionWork(token, databaseId, body) {
   assignNotionProperty(properties, databaseProperties, ['태그', 'Tags', '키워드', 'Keywords'], tags, 'multi_select');
   assignNotionProperty(properties, databaseProperties, ['추천자', 'Recommender', '추천'], recommender, 'rich_text');
 
-  const notionResponse = await fetch('https://api.notion.com/v1/pages', {
+  return notionRequest('/pages', {
+    token,
     method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-      'Notion-Version': NOTION_VERSION,
-    },
-    body: JSON.stringify({
+    body: {
       parent: { database_id: databaseId },
       properties,
-    }),
+    },
   });
-
-  if (!notionResponse.ok) {
-    let notionError;
-    try {
-      notionError = await notionResponse.json();
-    } catch {
-      notionError = { message: await notionResponse.text() };
-    }
-    const error = new Error(notionError?.message || 'Notion page create failed');
-    error.status = notionResponse.status;
-    error.notion = notionError;
-    throw error;
-  }
-
-  return notionResponse.json();
 }
 
 export default async function handler(request, response) {
@@ -367,20 +326,16 @@ export default async function handler(request, response) {
     return response.status(405).json({ error: 'Method not allowed' });
   }
 
-  const token = process.env.NOTION_TOKEN;
-  const databaseId = normalizeNotionId(process.env.NOTION_WORKS_DATABASE_ID);
+  const { token, databaseId, missing } = getNotionConfig('NOTION_WORKS_DATABASE_ID');
   const aladinApiKey = process.env.ALADIN_TTB_KEY || process.env.VITE_ALADIN_TTB_KEY;
   const requestUrl = new URL(request.url ?? '/api/works', `https://${request.headers.host ?? 'localhost'}`);
   const shouldRefresh = requestUrl.searchParams.get('refresh') === '1';
 
-  if (!token || !databaseId) {
+  if (missing.length > 0) {
     return response.status(503).json({
       works: [],
       error: 'Notion environment variables are not configured',
-      missing: [
-        !token ? 'NOTION_TOKEN' : null,
-        !databaseId ? 'NOTION_WORKS_DATABASE_ID' : null,
-      ].filter(Boolean),
+      missing,
     });
   }
 
@@ -409,12 +364,9 @@ export default async function handler(request, response) {
         },
       });
     } catch (error) {
-      return response.status(error.status || 500).json({
-        error: 'Notion work create failed',
-        notion: {
-          code: error.notion?.code,
-          message: error.notion?.message || error.message,
-        },
+      return sendNotionError(response, {
+        error,
+        fallbackMessage: 'Notion work create failed',
       });
     }
   }
@@ -424,46 +376,16 @@ export default async function handler(request, response) {
     return response.status(200).json({ works: apiCache.works });
   }
 
-  const results = [];
-  let startCursor;
-
-  do {
-    const notionResponse = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Notion-Version': NOTION_VERSION,
-      },
-      body: JSON.stringify({
-        page_size: NOTION_PAGE_SIZE,
-        ...(startCursor ? { start_cursor: startCursor } : {}),
-      }),
+  let results;
+  try {
+    results = await queryNotionDatabaseAll(token, databaseId);
+  } catch (error) {
+    return sendNotionError(response, {
+      error,
+      fallbackMessage: 'Notion request failed',
+      payload: { works: [] },
     });
-
-    if (!notionResponse.ok) {
-      let notionError;
-      try {
-        notionError = await notionResponse.json();
-      } catch {
-        notionError = { message: await notionResponse.text() };
-      }
-
-      return response.status(notionResponse.status).json({
-        works: [],
-        error: 'Notion request failed',
-        status: notionResponse.status,
-        notion: {
-          code: notionError?.code,
-          message: notionError?.message,
-        },
-      });
-    }
-
-    const data = await notionResponse.json();
-    results.push(...data.results);
-    startCursor = data.has_more ? data.next_cursor : null;
-  } while (startCursor);
+  }
 
   const worksWithoutCovers = results
     .map(mapPageToWork)

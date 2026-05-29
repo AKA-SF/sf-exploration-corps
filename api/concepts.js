@@ -1,5 +1,4 @@
-const NOTION_VERSION = '2022-06-28';
-const NOTION_PAGE_SIZE = 100;
+import { getNotionConfig, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
 
 function plainText(value) {
   if (!value) return '';
@@ -33,13 +32,6 @@ function pick(properties, names) {
   return names.map(name => properties[name]).find(Boolean);
 }
 
-function normalizeNotionId(value) {
-  const source = value?.trim() ?? '';
-  const compactId = source.match(/(?:^|[^0-9a-f])([0-9a-f]{32})(?:[^0-9a-f]|$)/i)?.[1];
-  const dashedId = source.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0];
-  return (compactId ?? dashedId ?? '').replace(/-/g, '');
-}
-
 function mapPageToConcept(page, index) {
   const properties = page.properties ?? {};
   const term = plainText(pick(properties, ['용어', '개념명', '제목', 'Title', 'Name', '이름']));
@@ -71,55 +63,26 @@ export default async function handler(request, response) {
     return response.status(405).json({ error: 'Method not allowed' });
   }
 
-  const token = process.env.NOTION_TOKEN;
-  const databaseId = normalizeNotionId(process.env.NOTION_CONCEPTS_DATABASE_ID || '');
+  const { token, databaseId, missing } = getNotionConfig('NOTION_CONCEPTS_DATABASE_ID');
 
-  if (!token || !databaseId) {
+  if (missing.length > 0) {
     return response.status(503).json({
       concepts: [],
       error: 'Notion concept environment variables are not configured',
-      missing: [
-        !token ? 'NOTION_TOKEN' : null,
-        !databaseId ? 'NOTION_CONCEPTS_DATABASE_ID' : null,
-      ].filter(Boolean),
+      missing,
     });
   }
 
-  const results = [];
-  let startCursor;
-
-  do {
-    const notionResponse = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-        'Notion-Version': NOTION_VERSION,
-      },
-      body: JSON.stringify({
-        page_size: NOTION_PAGE_SIZE,
-        ...(startCursor ? { start_cursor: startCursor } : {}),
-      }),
+  let results;
+  try {
+    results = await queryNotionDatabaseAll(token, databaseId);
+  } catch (error) {
+    return sendNotionError(response, {
+      error,
+      fallbackMessage: 'Notion concept request failed',
+      payload: { concepts: [] },
     });
-
-    if (!notionResponse.ok) {
-      const notionError = await notionResponse.json().catch(async () => ({ message: await notionResponse.text() }));
-
-      return response.status(notionResponse.status).json({
-        concepts: [],
-        error: 'Notion concept request failed',
-        status: notionResponse.status,
-        notion: {
-          code: notionError?.code,
-          message: notionError?.message,
-        },
-      });
-    }
-
-    const data = await notionResponse.json();
-    results.push(...data.results);
-    startCursor = data.has_more ? data.next_cursor : null;
-  } while (startCursor);
+  }
 
   const concepts = results
     .map(mapPageToConcept)

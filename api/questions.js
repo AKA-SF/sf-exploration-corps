@@ -1,6 +1,6 @@
-const NOTION_VERSION = '2022-06-28';
+import { getNotionConfig, notionRequest, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
+
 const DEFAULT_QUESTIONS_DATABASE_ID = '36a98dbef69d803abd53c09b6ff7f2e3';
-const NOTION_PAGE_SIZE = 100;
 const DEFAULT_BOARD_PASSWORD = 'sf';
 
 function plainText(value) {
@@ -14,13 +14,6 @@ function plainText(value) {
   if (value.type === 'email') return value.email ?? '';
   if (value.type === 'url') return value.url ?? '';
   return '';
-}
-
-function normalizeNotionId(value) {
-  const source = value?.trim() ?? '';
-  const compactId = source.match(/(?:^|[^0-9a-f])([0-9a-f]{32})(?:[^0-9a-f]|$)/i)?.[1];
-  const dashedId = source.match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/i)?.[0];
-  return (compactId ?? dashedId ?? '').replace(/-/g, '');
 }
 
 function findProperty(schema, preferredNames, type) {
@@ -129,63 +122,44 @@ export default async function handler(request, response) {
     return response.status(405).json({ error: 'Method not allowed' });
   }
 
-  const token = process.env.NOTION_TOKEN;
-  const databaseId = normalizeNotionId(process.env.NOTION_QUESTIONS_DATABASE_ID || DEFAULT_QUESTIONS_DATABASE_ID);
+  const { token, databaseId, missing } = getNotionConfig('NOTION_QUESTIONS_DATABASE_ID', DEFAULT_QUESTIONS_DATABASE_ID);
 
-  if (!token || !databaseId) {
+  if (missing.length > 0) {
     return response.status(503).json({
       error: 'Question database is not configured',
-      missing: [
-        !token ? 'NOTION_TOKEN' : null,
-        !databaseId ? 'NOTION_QUESTIONS_DATABASE_ID' : null,
-      ].filter(Boolean),
+      missing,
     });
   }
 
-  const headers = {
-    Authorization: `Bearer ${token}`,
-    'Content-Type': 'application/json',
-    'Notion-Version': NOTION_VERSION,
-  };
-
-  const databaseResponse = await fetch(`https://api.notion.com/v1/databases/${databaseId}`, { headers });
-
-  if (!databaseResponse.ok) {
-    const notionError = await databaseResponse.json().catch(() => ({}));
-    return response.status(databaseResponse.status).json({
-      error: 'Question database request failed',
-      notion: {
-        code: notionError?.code,
-        message: notionError?.message,
-      },
+  let database;
+  try {
+    database = await notionRequest(`/databases/${databaseId}`, { token });
+  } catch (error) {
+    return sendNotionError(response, {
+      error,
+      fallbackMessage: 'Question database request failed',
     });
   }
 
-  const database = await databaseResponse.json();
   const schema = database.properties ?? {};
 
   if (request.method === 'GET') {
     const questionId = String(request.query?.id ?? '').trim();
 
     if (questionId) {
-      const pageResponse = await fetch(`https://api.notion.com/v1/pages/${questionId}`, { headers });
-
-      if (!pageResponse.ok) {
-        const notionError = await pageResponse.json().catch(() => ({}));
-        return response.status(pageResponse.status).json({
-          question: null,
-          comments: [],
-          error: 'Question detail request failed',
-          notion: {
-            code: notionError?.code,
-            message: notionError?.message,
-          },
+      let page;
+      try {
+        page = await notionRequest(`/pages/${questionId}`, { token });
+      } catch (error) {
+        return sendNotionError(response, {
+          error,
+          fallbackMessage: 'Question detail request failed',
+          payload: { question: null, comments: [] },
         });
       }
 
-      const page = await pageResponse.json();
-      const blocksResponse = await fetch(`https://api.notion.com/v1/blocks/${questionId}/children?page_size=100`, { headers });
-      const blocks = blocksResponse.ok ? await blocksResponse.json() : { results: [] };
+      const blocks = await notionRequest(`/blocks/${questionId}/children?page_size=100`, { token })
+        .catch(() => ({ results: [] }));
       const comments = (blocks.results ?? [])
         .map(parseCommentBlock)
         .filter(Boolean);
@@ -196,35 +170,16 @@ export default async function handler(request, response) {
       });
     }
 
-    const results = [];
-    let startCursor;
-
-    do {
-      const notionResponse = await fetch(`https://api.notion.com/v1/databases/${databaseId}/query`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          page_size: NOTION_PAGE_SIZE,
-          ...(startCursor ? { start_cursor: startCursor } : {}),
-        }),
+    let results;
+    try {
+      results = await queryNotionDatabaseAll(token, databaseId);
+    } catch (error) {
+      return sendNotionError(response, {
+        error,
+        fallbackMessage: 'Question list request failed',
+        payload: { questions: [] },
       });
-
-      if (!notionResponse.ok) {
-        const notionError = await notionResponse.json().catch(() => ({}));
-        return response.status(notionResponse.status).json({
-          questions: [],
-          error: 'Question list request failed',
-          notion: {
-            code: notionError?.code,
-            message: notionError?.message,
-          },
-        });
-      }
-
-      const data = await notionResponse.json();
-      results.push(...data.results);
-      startCursor = data.has_more ? data.next_cursor : null;
-    } while (startCursor);
+    }
 
     const questions = results
       .map(mapPageToQuestion)
@@ -261,30 +216,26 @@ export default async function handler(request, response) {
       date: new Date().toISOString().slice(0, 10),
     };
 
-    const commentResponse = await fetch(`https://api.notion.com/v1/blocks/${questionId}/children`, {
-      method: 'PATCH',
-      headers,
-      body: JSON.stringify({
-        children: [
-          {
-            object: 'block',
-            type: 'paragraph',
-            paragraph: {
-              rich_text: richText(`SFA_COMMENT:${JSON.stringify(comment)}`),
+    try {
+      await notionRequest(`/blocks/${questionId}/children`, {
+        token,
+        method: 'PATCH',
+        body: {
+          children: [
+            {
+              object: 'block',
+              type: 'paragraph',
+              paragraph: {
+                rich_text: richText(`SFA_COMMENT:${JSON.stringify(comment)}`),
+              },
             },
-          },
-        ],
-      }),
-    });
-
-    if (!commentResponse.ok) {
-      const notionError = await commentResponse.json().catch(() => ({}));
-      return response.status(commentResponse.status).json({
-        error: 'Comment submission failed',
-        notion: {
-          code: notionError?.code,
-          message: notionError?.message,
+          ],
         },
+      });
+    } catch (error) {
+      return sendNotionError(response, {
+        error,
+        fallbackMessage: 'Comment submission failed',
       });
     }
 
@@ -316,23 +267,19 @@ export default async function handler(request, response) {
     return response.status(400).json({ error: 'Question database needs a title property' });
   }
 
-  const createResponse = await fetch('https://api.notion.com/v1/pages', {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({
-      parent: { database_id: databaseId },
-      properties,
-    }),
-  });
-
-  if (!createResponse.ok) {
-    const notionError = await createResponse.json().catch(() => ({}));
-    return response.status(createResponse.status).json({
-      error: 'Question submission failed',
-      notion: {
-        code: notionError?.code,
-        message: notionError?.message,
+  try {
+    await notionRequest('/pages', {
+      token,
+      method: 'POST',
+      body: {
+        parent: { database_id: databaseId },
+        properties,
       },
+    });
+  } catch (error) {
+    return sendNotionError(response, {
+      error,
+      fallbackMessage: 'Question submission failed',
     });
   }
 
