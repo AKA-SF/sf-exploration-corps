@@ -362,6 +362,67 @@
   background: rgba(0, 16, 23, 0.6);
 }
 
+.hero-signal-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  width: min(500px, 100%);
+  margin: -8px 0 24px;
+  border: 1px solid rgba(25, 247, 241, 0.24);
+  padding: 13px 15px 13px 18px;
+  background:
+    linear-gradient(90deg, rgba(25, 247, 241, 0.12), rgba(255, 176, 0, 0.045) 48%, transparent),
+    rgba(0, 12, 18, 0.66);
+  box-shadow: inset 0 0 24px rgba(25, 247, 241, 0.045);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+}
+
+.hero-signal-banner div {
+  min-width: 0;
+}
+
+.hero-signal-banner span,
+.hero-signal-banner a {
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+}
+
+.hero-signal-banner strong {
+  display: block;
+  margin: 5px 0 3px;
+  color: #f4fdff;
+  font-size: 15px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.hero-signal-banner p {
+  margin: 0;
+  color: #a9c4ca;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.hero-signal-banner a {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 5px;
+  border-left: 1px solid rgba(25, 247, 241, 0.18);
+  padding-left: 14px;
+  text-decoration: none;
+}
+
+.hero-signal-banner svg {
+  width: 14px;
+  height: 14px;
+}
+
 .mission-card {
   display: flex;
   justify-content: space-between;
@@ -3660,6 +3721,20 @@
     width: 100%;
   }
 
+  .hero-signal-banner {
+    flex-direction: column;
+    align-items: flex-start;
+    margin: 0 0 22px;
+  }
+
+  .hero-signal-banner a {
+    width: 100%;
+    justify-content: space-between;
+    border-top: 1px solid rgba(25, 247, 241, 0.18);
+    border-left: 0;
+    padding: 10px 0 0;
+  }
+
   .radar-shell {
     min-height: auto;
     width: 100%;
@@ -3867,7 +3942,7 @@
   }
 
   .hero-actions {
-    margin: 24px 0 0;
+    margin: 24px 0 18px;
   }
 
   .hero-actions a {
@@ -3875,6 +3950,7 @@
     min-height: 54px;
   }
 
+  .hero-signal-banner,
   .mission-card,
   .timestamp,
   .mini-map {

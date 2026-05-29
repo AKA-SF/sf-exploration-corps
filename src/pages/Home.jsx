@@ -1631,6 +1631,16 @@ export default function Home() {
                 아카이브 열기 <ChevronRight aria-hidden="true" />
               </a>
             </div>
+            <aside className="hero-signal-banner" aria-label="추천 신호 배너">
+              <div>
+                <span className="mono">SPONSORED SIGNAL / BOOK PICK</span>
+                <strong>이번 주 탐사 추천 좌표</strong>
+                <p>고전 SF와 최신 한국 SF를 연결하는 큐레이션 슬롯</p>
+              </div>
+              <a href="#works-archive">
+                신호 확인 <ChevronRight aria-hidden="true" />
+              </a>
+            </aside>
             <div className="mission-card">
               <div>
                 <strong>MISSION BRIEF</strong>
