@@ -17,6 +17,7 @@ import {
 import CoordinateUniverse from '../components/CoordinateUniverse';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
+import { getWorkCategorySlug, workCategories } from '../data/workArchive';
 import { recordUserActivity } from '../lib/activityLogger';
 import { supabase } from '../lib/supabaseClient';
 import './Home.css';
@@ -78,13 +79,6 @@ const blips = [
   { x: 70, y: 49, size: 5, delay: 0.9 },
   { x: 60, y: 24, size: 4, delay: 1.2 },
   { x: 32, y: 70, size: 5, delay: 1.5 },
-];
-
-const workCategories = [
-  { label: 'NOVEL', title: '소설', count: '042 SIGNALS' },
-  { label: 'CINEMA', title: '영화', count: '027 SIGNALS' },
-  { label: 'GAME', title: '게임', count: '018 SIGNALS' },
-  { label: 'ANIMATION', title: '애니메이션', count: '011 SIGNALS' },
 ];
 
 const tasteProfiles = {
@@ -1005,7 +999,7 @@ export default function Home() {
   const [mapView, setMapView] = useState({ yaw: -0.24, pitch: 0.18, zoom: 1 });
   const [tasteQuestionSet, setTasteQuestionSet] = useState(() => getRandomTasteQuestions());
   const [tasteAnswers, setTasteAnswers] = useState({});
-  const [archiveMode, setArchiveMode] = useState('random');
+  const archiveMode = 'random';
   const [randomWorkCodes, setRandomWorkCodes] = useState(() => getRandomWorks(fallbackWorks, 6).map(work => work.code));
   const [mediaItems, setMediaItems] = useState([]);
   const [activeMediaCategory, setActiveMediaCategory] = useState(mediaCategories[0]);
@@ -1536,9 +1530,13 @@ export default function Home() {
     setCommentMessage('+10 MP. 댓글 신호가 저장되었습니다.');
   };
 
-  const displayedWorks = archiveMode === 'all'
-    ? works
-    : works.filter(work => randomWorkCodes.includes(work.code)).slice(0, 6);
+  const displayedWorks = works.filter(work => randomWorkCodes.includes(work.code)).slice(0, 6);
+  const workCategoryCounts = useMemo(() => Object.fromEntries(
+    workCategories.map(category => [
+      category.slug,
+      works.filter(work => getWorkCategorySlug(`${work.medium ?? ''} ${work.category ?? ''}`) === category.slug).length,
+    ]),
+  ), [works]);
   const isTasteComplete = Object.keys(tasteAnswers).length === tasteQuestionSet.length;
   const tasteProfile = isTasteComplete ? getTasteProfile(tasteAnswers, tasteQuestionSet) : null;
   const tasteRecommendations = getTasteRecommendations(works, tasteProfile);
@@ -1786,16 +1784,15 @@ export default function Home() {
 
           <div className="archive-category-grid" aria-label="작품 매체 분류">
             {workCategories.map(category => (
-              <button
-                className={`category-tile ${category.label === 'NOVEL' && archiveMode === 'all' ? 'is-active' : ''}`}
+              <Link
+                className="category-tile"
                 key={category.label}
-                onClick={() => category.label === 'NOVEL' && setArchiveMode(mode => (mode === 'all' ? 'random' : 'all'))}
-                type="button"
+                to={`/works/${category.slug}`}
               >
                 <span>{category.label}</span>
                 <strong>{category.title}</strong>
-                <em>{category.label === 'NOVEL' ? `${works.length} SIGNALS` : category.count}</em>
-              </button>
+                <em>{String(workCategoryCounts[category.slug] ?? 0).padStart(3, '0')} SIGNALS</em>
+              </Link>
             ))}
           </div>
 
@@ -1825,7 +1822,7 @@ export default function Home() {
             </div>
 
             <div className="archive-view-status">
-              <span>{archiveMode === 'all' ? 'FULL NOVEL ARCHIVE' : 'RANDOM SIGNALS'}</span>
+              <span>RANDOM SIGNALS</span>
               <strong>{displayedWorks.length} / {works.length} WORKS</strong>
 
               <div className="featured-work-grid" aria-label="대표 작품 신호">

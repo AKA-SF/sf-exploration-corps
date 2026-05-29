@@ -1018,13 +1018,15 @@
 }
 
 .category-tile {
+  display: block;
   min-height: 118px;
   padding: 20px 18px;
   border-right: 1px solid rgba(25, 247, 241, 0.18);
   color: inherit;
   background: transparent;
-  cursor: default;
+  cursor: pointer;
   text-align: left;
+  text-decoration: none;
   transition: background 160ms ease, border-color 160ms ease;
 }
 
@@ -1052,12 +1054,8 @@
   font-weight: 900;
 }
 
-.category-tile:first-child {
-  cursor: pointer;
-}
-
-.category-tile:first-child:hover,
-.category-tile:first-child:focus-visible,
+.category-tile:hover,
+.category-tile:focus-visible,
 .category-tile.is-active {
   border-color: rgba(25, 247, 241, 0.55);
   background: rgba(25, 247, 241, 0.08);

@@ -8,6 +8,7 @@ import './App.css';
 import Home from './pages/Home';
 import ExplorationLog from './pages/ExplorationLog';
 import MediaArchive from './pages/MediaArchive';
+import WorksArchive from './pages/WorksArchive';
 import Questions from './pages/Questions';
 import LogEntry from './pages/LogEntry';
 import LogResult from './pages/LogResult';
@@ -24,6 +25,7 @@ function App() {
   const location = useLocation();
   const [siteMode, setSiteMode] = useState(() => localStorage.getItem('sf-site-mode') || 'console');
   const isDesktopSurface = location.pathname === '/'
+    || location.pathname.startsWith('/works')
     || location.pathname.startsWith('/media')
     || location.pathname === '/exploration-log'
     || location.pathname.startsWith('/questions');
@@ -56,6 +58,7 @@ function App() {
           <AnimatePresence mode="wait">
             <Routes location={location} key={location.pathname}>
               <Route path="/" element={<Home />} />
+              <Route path="/works/:categorySlug" element={<WorksArchive />} />
               <Route path="/media/:categorySlug" element={<MediaArchive />} />
               <Route path="/exploration-log" element={<ExplorationLog />} />
               <Route path="/questions" element={<Questions />} />
