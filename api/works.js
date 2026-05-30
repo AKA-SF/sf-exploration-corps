@@ -12,8 +12,12 @@ const COVER_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const EMPTY_COVER_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 
 const apiCache = globalThis.__sfWorksApiCache ??= {
-  works: null,
-  worksExpiresAt: 0,
+  worksWithoutCovers: null,
+  worksWithoutCoversExpiresAt: 0,
+  worksWithCovers: null,
+  worksWithCoversExpiresAt: 0,
+  pendingWorksWithoutCovers: null,
+  pendingWorksWithCovers: null,
   coverCache: new Map(),
   pendingCovers: new Map(),
 };
@@ -318,6 +322,73 @@ async function createNotionWork(token, databaseId, body) {
   });
 }
 
+function clearWorksCache() {
+  apiCache.worksWithoutCovers = null;
+  apiCache.worksWithoutCoversExpiresAt = 0;
+  apiCache.worksWithCovers = null;
+  apiCache.worksWithCoversExpiresAt = 0;
+  apiCache.pendingWorksWithoutCovers = null;
+  apiCache.pendingWorksWithCovers = null;
+}
+
+async function getWorksWithoutCovers(token, databaseId, shouldRefresh = false) {
+  if (!shouldRefresh && apiCache.worksWithoutCovers && apiCache.worksWithoutCoversExpiresAt > Date.now()) {
+    return { works: apiCache.worksWithoutCovers, cache: 'HIT' };
+  }
+
+  if (!shouldRefresh && apiCache.pendingWorksWithoutCovers) {
+    return { works: await apiCache.pendingWorksWithoutCovers, cache: 'PENDING' };
+  }
+
+  const promise = queryNotionDatabaseAll(token, databaseId)
+    .then(results => results
+      .map(mapPageToWork)
+      .filter(work => work.title)
+      .map((work, index) => ({
+        ...work,
+        code: work.code.startsWith('SFA-') ? `SFA-${String(index + 1).padStart(3, '0')}` : work.code,
+        cover: '',
+      })))
+    .then(works => {
+      apiCache.worksWithoutCovers = works;
+      apiCache.worksWithoutCoversExpiresAt = Date.now() + WORKS_CACHE_TTL_MS;
+      return works;
+    })
+    .finally(() => {
+      apiCache.pendingWorksWithoutCovers = null;
+    });
+
+  apiCache.pendingWorksWithoutCovers = promise;
+  return { works: await promise, cache: 'MISS' };
+}
+
+async function getWorksWithCovers(token, databaseId, aladinApiKey, shouldRefresh = false) {
+  if (!shouldRefresh && apiCache.worksWithCovers && apiCache.worksWithCoversExpiresAt > Date.now()) {
+    return { works: apiCache.worksWithCovers, cache: 'HIT' };
+  }
+
+  if (!shouldRefresh && apiCache.pendingWorksWithCovers) {
+    return { works: await apiCache.pendingWorksWithCovers, cache: 'PENDING' };
+  }
+
+  const promise = getWorksWithoutCovers(token, databaseId, shouldRefresh)
+    .then(({ works }) => mapWithConcurrency(works, 4, async work => ({
+      ...work,
+      cover: await getCachedAladinCover(work, aladinApiKey),
+    })))
+    .then(works => {
+      apiCache.worksWithCovers = works;
+      apiCache.worksWithCoversExpiresAt = Date.now() + WORKS_CACHE_TTL_MS;
+      return works;
+    })
+    .finally(() => {
+      apiCache.pendingWorksWithCovers = null;
+    });
+
+  apiCache.pendingWorksWithCovers = promise;
+  return { works: await promise, cache: 'MISS' };
+}
+
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=3600');
 
@@ -330,6 +401,7 @@ export default async function handler(request, response) {
   const aladinApiKey = process.env.ALADIN_TTB_KEY || process.env.VITE_ALADIN_TTB_KEY;
   const requestUrl = new URL(request.url ?? '/api/works', `https://${request.headers.host ?? 'localhost'}`);
   const shouldRefresh = requestUrl.searchParams.get('refresh') === '1';
+  const shouldIncludeCovers = requestUrl.searchParams.get('covers') !== '0';
 
   if (missing.length > 0) {
     return response.status(503).json({
@@ -347,8 +419,7 @@ export default async function handler(request, response) {
 
     try {
       const page = await createNotionWork(token, databaseId, body);
-      apiCache.works = null;
-      apiCache.worksExpiresAt = 0;
+      clearWorksCache();
       return response.status(201).json({
         ok: true,
         pageId: page.id,
@@ -371,14 +442,13 @@ export default async function handler(request, response) {
     }
   }
 
-  if (!shouldRefresh && apiCache.works && apiCache.worksExpiresAt > Date.now()) {
-    response.setHeader('X-SF-Archive-Cache', 'HIT');
-    return response.status(200).json({ works: apiCache.works });
-  }
-
-  let results;
   try {
-    results = await queryNotionDatabaseAll(token, databaseId);
+    const { works, cache } = shouldIncludeCovers
+      ? await getWorksWithCovers(token, databaseId, aladinApiKey, shouldRefresh)
+      : await getWorksWithoutCovers(token, databaseId, shouldRefresh);
+    response.setHeader('X-SF-Archive-Cache', cache);
+    response.setHeader('X-SF-Archive-Covers', shouldIncludeCovers ? '1' : '0');
+    return response.status(200).json({ works });
   } catch (error) {
     return sendNotionError(response, {
       error,
@@ -386,22 +456,4 @@ export default async function handler(request, response) {
       payload: { works: [] },
     });
   }
-
-  const worksWithoutCovers = results
-    .map(mapPageToWork)
-    .filter(work => work.title)
-    .map((work, index) => ({
-      ...work,
-      code: work.code.startsWith('SFA-') ? `SFA-${String(index + 1).padStart(3, '0')}` : work.code,
-    }));
-  const works = await mapWithConcurrency(worksWithoutCovers, 4, async work => ({
-    ...work,
-    cover: await getCachedAladinCover(work, aladinApiKey),
-  }));
-
-  apiCache.works = works;
-  apiCache.worksExpiresAt = Date.now() + WORKS_CACHE_TTL_MS;
-  response.setHeader('X-SF-Archive-Cache', 'MISS');
-
-  return response.status(200).json({ works });
 }

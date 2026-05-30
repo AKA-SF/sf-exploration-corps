@@ -335,6 +335,14 @@ function getRandomWorks(items, count) {
     .slice(0, count);
 }
 
+function mergeWorksByCode(currentWorks, incomingWorks) {
+  const currentByCode = new Map(currentWorks.map(work => [work.code, work]));
+  return incomingWorks.map(work => ({
+    ...(currentByCode.get(work.code) ?? {}),
+    ...work,
+  }));
+}
+
 function formatTimestamp(date) {
   return new Intl.DateTimeFormat('ko-KR', {
     year: 'numeric',
@@ -897,6 +905,16 @@ export default function Home() {
   const [showAllConcepts, setShowAllConcepts] = useState(false);
   const [conceptReadingMode, setConceptReadingMode] = useState(false);
   const conceptFeatureRef = useRef(null);
+  const worksArchiveRef = useRef(null);
+  const mediaArchiveRef = useRef(null);
+  const conceptSectionRef = useRef(null);
+  const communitySectionRef = useRef(null);
+  const [lazySections, setLazySections] = useState({
+    worksCovers: false,
+    media: false,
+    concepts: false,
+    community: false,
+  });
   const [questionForm, setQuestionForm] = useState({
     title: '',
     content: '',
@@ -963,6 +981,42 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    const sectionTargets = [
+      ['worksCovers', worksArchiveRef],
+      ['media', mediaArchiveRef],
+      ['concepts', conceptSectionRef],
+      ['community', communitySectionRef],
+    ];
+
+    if (!('IntersectionObserver' in window)) {
+      const fallbackId = window.setTimeout(() => setLazySections({
+        worksCovers: true,
+        media: true,
+        concepts: true,
+        community: true,
+      }), 0);
+      return () => window.clearTimeout(fallbackId);
+    }
+
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (!entry.isIntersecting) return;
+        const key = entry.target.dataset.lazySection;
+        setLazySections(current => current[key] ? current : { ...current, [key]: true });
+        observer.unobserve(entry.target);
+      });
+    }, { rootMargin: '420px 0px' });
+
+    sectionTargets.forEach(([key, ref]) => {
+      if (!ref.current) return;
+      ref.current.dataset.lazySection = key;
+      observer.observe(ref.current);
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
     if (!user) return;
 
     const localKey = `sf-work-statuses:${user.id}`;
@@ -1017,7 +1071,7 @@ export default function Home() {
   useEffect(() => {
     let isMounted = true;
 
-    fetch('/api/works')
+    fetch('/api/works?covers=0')
       .then(response => {
         if (!response.ok) throw new Error('Notion archive unavailable');
         return response.json();
@@ -1042,6 +1096,31 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
+    if (!lazySections.worksCovers) return undefined;
+    let isMounted = true;
+
+    fetch('/api/works')
+      .then(response => {
+        if (!response.ok) throw new Error('Notion archive covers unavailable');
+        return response.json();
+      })
+      .then(data => {
+        if (isMounted && Array.isArray(data.works) && data.works.length > 0) {
+          setWorks(current => mergeWorksByCode(current, data.works));
+          setDashboard(state => ({ ...state, status: { ...state.status, works: true } }));
+        }
+      })
+      .catch(() => {
+        // 표지 보강 실패는 작품 목록 동기화 실패와 분리해서 다룹니다.
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [lazySections.worksCovers]);
+
+  useEffect(() => {
+    if (!lazySections.media) return undefined;
     let isMounted = true;
 
     fetch('/api/media', { cache: 'no-store' })
@@ -1065,9 +1144,10 @@ export default function Home() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [lazySections.media]);
 
   useEffect(() => {
+    if (!lazySections.concepts) return undefined;
     let isMounted = true;
 
     fetch('/api/concepts', { cache: 'no-store' })
@@ -1097,37 +1177,42 @@ export default function Home() {
     return () => {
       isMounted = false;
     };
-  }, []);
+  }, [lazySections.concepts]);
 
   useEffect(() => {
     let isMounted = true;
+    const scheduleIdle = window.requestIdleCallback ?? (callback => window.setTimeout(callback, 1400));
+    const cancelIdle = window.cancelIdleCallback ?? window.clearTimeout;
 
-    Promise.allSettled([
-      fetch('/api/exploration-log', { cache: 'no-store' }).then(response => {
-        if (!response.ok) throw new Error('Exploration log unavailable');
-        return response.json();
-      }),
-      fetch('/api/questions', { cache: 'no-store' }).then(response => {
-        if (!response.ok) throw new Error('Questions unavailable');
-        return response.json();
-      }),
-    ]).then(([logsResult, questionsResult]) => {
-      if (!isMounted) return;
+    const idleId = scheduleIdle(() => {
+      Promise.allSettled([
+        fetch('/api/exploration-log', { cache: 'no-store' }).then(response => {
+          if (!response.ok) throw new Error('Exploration log unavailable');
+          return response.json();
+        }),
+        fetch('/api/questions', { cache: 'no-store' }).then(response => {
+          if (!response.ok) throw new Error('Questions unavailable');
+          return response.json();
+        }),
+      ]).then(([logsResult, questionsResult]) => {
+        if (!isMounted) return;
 
-      setDashboard(state => ({
-        ...state,
-        logs: logsResult.status === 'fulfilled' && Array.isArray(logsResult.value.logs) ? logsResult.value.logs : [],
-        questions: questionsResult.status === 'fulfilled' && Array.isArray(questionsResult.value.questions) ? questionsResult.value.questions : [],
-        status: {
-          ...state.status,
-          logs: logsResult.status === 'fulfilled',
-          questions: questionsResult.status === 'fulfilled',
-        },
-      }));
+        setDashboard(state => ({
+          ...state,
+          logs: logsResult.status === 'fulfilled' && Array.isArray(logsResult.value.logs) ? logsResult.value.logs : [],
+          questions: questionsResult.status === 'fulfilled' && Array.isArray(questionsResult.value.questions) ? questionsResult.value.questions : [],
+          status: {
+            ...state.status,
+            logs: logsResult.status === 'fulfilled',
+            questions: questionsResult.status === 'fulfilled',
+          },
+        }));
+      });
     });
 
     return () => {
       isMounted = false;
+      cancelIdle(idleId);
     };
   }, []);
 
@@ -1730,33 +1815,37 @@ export default function Home() {
         </div>
       </section>
 
-      <WorksArchiveSection
-        displayedWorks={displayedWorks}
-        onOpenWorkDetail={openWorkDetail}
-        onOpenWorkSubmit={openWorkSubmit}
-        selectedWork={selectedWork}
-        workCategories={workCategories}
-        workCategoryCounts={workCategoryCounts}
-        worksCount={works.length}
-      />
+      <div ref={worksArchiveRef}>
+        <WorksArchiveSection
+          displayedWorks={displayedWorks}
+          onOpenWorkDetail={openWorkDetail}
+          onOpenWorkSubmit={openWorkSubmit}
+          selectedWork={selectedWork}
+          workCategories={workCategories}
+          workCategoryCounts={workCategoryCounts}
+          worksCount={works.length}
+        />
+      </div>
 
-      <MediaArchiveSection
-        activeMediaArchivePath={activeMediaArchivePath}
-        activeMediaCategory={activeMediaCategory}
-        mediaCategories={mediaCategories}
-        onMediaCategoryChange={setActiveMediaCategory}
-        onRecordMediaSignal={item => recordMissionSignal(`media:${item.code}`, {
-          actionType: 'media_visit',
-          points: 3,
-          genre: item.category || activeMediaCategory,
-          metadata: {
-            title: item.title,
-            media_code: item.code,
-            node: 'media-archive',
-          },
-        })}
-        previewMedia={previewMedia}
-      />
+      <div ref={mediaArchiveRef}>
+        <MediaArchiveSection
+          activeMediaArchivePath={activeMediaArchivePath}
+          activeMediaCategory={activeMediaCategory}
+          mediaCategories={mediaCategories}
+          onMediaCategoryChange={setActiveMediaCategory}
+          onRecordMediaSignal={item => recordMissionSignal(`media:${item.code}`, {
+            actionType: 'media_visit',
+            points: 3,
+            genre: item.category || activeMediaCategory,
+            metadata: {
+              title: item.title,
+              media_code: item.code,
+              node: 'media-archive',
+            },
+          })}
+          previewMedia={previewMedia}
+        />
+      </div>
 
       <CoordinatesSection
         activeGenre={activeGenre}
@@ -1778,26 +1867,30 @@ export default function Home() {
         visibleConnections={visibleConnections}
       />
 
-      <ConceptDictionarySection
-        conceptFeatureRef={conceptFeatureRef}
-        conceptReadingMode={conceptReadingMode}
-        conceptsCount={concepts.length}
-        getConceptSource={getConceptSource}
-        onConceptSelect={selectConcept}
-        onReadingModeToggle={() => setConceptReadingMode(value => !value)}
-        onShowAllToggle={() => setShowAllConcepts(value => !value)}
-        selectedConcept={selectedConcept}
-        showAllConcepts={showAllConcepts}
-        visibleConcepts={visibleConcepts}
-      />
+      <div ref={conceptSectionRef}>
+        <ConceptDictionarySection
+          conceptFeatureRef={conceptFeatureRef}
+          conceptReadingMode={conceptReadingMode}
+          conceptsCount={concepts.length}
+          getConceptSource={getConceptSource}
+          onConceptSelect={selectConcept}
+          onReadingModeToggle={() => setConceptReadingMode(value => !value)}
+          onShowAllToggle={() => setShowAllConcepts(value => !value)}
+          selectedConcept={selectedConcept}
+          showAllConcepts={showAllConcepts}
+          visibleConcepts={visibleConcepts}
+        />
+      </div>
 
-      <CommunitySection
-        onQuestionFormChange={updateQuestionForm}
-        onQuestionSubmit={submitQuestion}
-        questionForm={questionForm}
-        questionMessage={questionMessage}
-        questionStatus={questionStatus}
-      />
+      <div ref={communitySectionRef}>
+        <CommunitySection
+          onQuestionFormChange={updateQuestionForm}
+          onQuestionSubmit={submitQuestion}
+          questionForm={questionForm}
+          questionMessage={questionMessage}
+          questionStatus={questionStatus}
+        />
+      </div>
 
       <section className="contact-section" id="contact">
         <div className="section-shell contact-shell">
