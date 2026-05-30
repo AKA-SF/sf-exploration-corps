@@ -1254,6 +1254,20 @@
   line-height: 1.7;
 }
 
+/* Reading mode uses the same tokens as the global app layer, but keeps home
+   overrides scoped here so page-specific UI can win without broad !important rules. */
+.reading-mode .archive-home {
+  color: var(--mode-reading-text);
+}
+
+.reading-mode .archive-home :where(h1, h2, h3, h4, p, span, strong, em, small, dt, dd, label, input, textarea, select, button, a) {
+  text-shadow: none;
+}
+
+.reading-mode .archive-home :where(a, button) {
+  color: var(--mode-reading-link);
+}
+
 @keyframes radarSweep {
   to {
     transform: rotate(360deg);

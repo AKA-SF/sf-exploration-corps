@@ -175,23 +175,23 @@
 }
 
 .reading-mode .system-status {
-  border-color: rgba(46, 72, 77, 0.22) !important;
+  border-color: rgba(46, 72, 77, 0.22);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(232, 222, 202, 0.45)),
-    var(--mode-reading-panel-soft) !important;
+    var(--mode-reading-panel-soft);
 }
 
 .reading-mode .system-status span {
-  color: var(--mode-reading-cyan) !important;
+  color: var(--mode-reading-cyan);
 }
 
 .reading-mode .system-status strong {
-  color: var(--mode-reading-heading) !important;
+  color: var(--mode-reading-heading);
 }
 
 .reading-mode .system-status i {
-  background: var(--mode-reading-cyan) !important;
-  box-shadow: 0 0 12px rgba(47, 111, 120, 0.3) !important;
+  background: var(--mode-reading-cyan);
+  box-shadow: 0 0 12px rgba(47, 111, 120, 0.3);
 }
 
 .reading-mode .bg-geometry,
@@ -207,7 +207,7 @@
 .reading-mode .questions-page {
   --cyan: var(--mode-reading-cyan);
   --line: var(--mode-reading-line);
-  background: var(--mode-reading-bg) !important;
+  background: var(--mode-reading-bg);
   color: var(--mode-reading-text);
 }
 
@@ -216,7 +216,7 @@
 .reading-mode .media-archive-page,
 .reading-mode .questions-page {
   background:
-    linear-gradient(180deg, rgba(255, 252, 244, 0.96), rgba(239, 233, 219, 0.96)) !important;
+    linear-gradient(180deg, rgba(255, 252, 244, 0.96), rgba(239, 233, 219, 0.96));
 }
 
 .reading-mode .home-topbar,
@@ -230,18 +230,18 @@
 .reading-mode .question-detail,
 .reading-mode .comments-panel,
 .reading-mode .log-card {
-  border-color: rgba(46, 72, 77, 0.22) !important;
-  background: var(--mode-reading-panel-soft) !important;
-  box-shadow: none !important;
+  border-color: rgba(46, 72, 77, 0.22);
+  background: var(--mode-reading-panel-soft);
+  box-shadow: none;
 }
 
 .reading-mode .media-archive-card,
 .reading-mode .media-archive-empty,
 .reading-mode .media-archive-search,
 .reading-mode .media-archive-tabs a {
-  border-color: rgba(46, 72, 77, 0.22) !important;
-  background: var(--mode-reading-panel-soft) !important;
-  box-shadow: none !important;
+  border-color: rgba(46, 72, 77, 0.22);
+  background: var(--mode-reading-panel-soft);
+  box-shadow: none;
 }
 
 .reading-mode .section-heading h2,
@@ -252,7 +252,7 @@
 .reading-mode .media-archive-card h2,
 .reading-mode .questions-header h1,
 .reading-mode .log-card h2 {
-  color: var(--mode-reading-heading) !important;
+  color: var(--mode-reading-heading);
 }
 
 .reading-mode .section-heading p,
@@ -263,7 +263,7 @@
 .reading-mode .media-archive-card p,
 .reading-mode .media-archive-header p,
 .reading-mode .log-card p {
-  color: var(--mode-reading-muted) !important;
+  color: var(--mode-reading-muted);
 }
 
 .reading-mode .concept-feature-card p,
@@ -299,16 +299,16 @@
 .reading-mode .coordinate-brief,
 .reading-mode .coordinate-minimap,
 .reading-mode .coordinate-mini-space {
-  border-color: rgba(46, 72, 77, 0.22) !important;
+  border-color: rgba(46, 72, 77, 0.22);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.64), rgba(232, 222, 202, 0.42)),
-    rgba(255, 252, 244, 0.88) !important;
-  box-shadow: none !important;
+    rgba(255, 252, 244, 0.88);
+  box-shadow: none;
 }
 
 .reading-mode .dock-card,
 .reading-mode .category-tile {
-  background: rgba(255, 252, 244, 0.52) !important;
+  background: rgba(255, 252, 244, 0.52);
 }
 
 .reading-mode .dock-card:hover,
@@ -320,8 +320,8 @@
 .reading-mode .media-card:hover,
 .reading-mode .media-card:focus-visible {
   background:
-    linear-gradient(135deg, rgba(221, 242, 239, 0.84), rgba(255, 252, 244, 0.92)) !important;
-  border-color: rgba(47, 111, 120, 0.44) !important;
+    linear-gradient(135deg, rgba(221, 242, 239, 0.84), rgba(255, 252, 244, 0.92));
+  border-color: rgba(47, 111, 120, 0.44);
 }
 
 .reading-mode .work-cover-frame,
@@ -329,14 +329,14 @@
 .reading-mode .question-form input,
 .reading-mode .question-form textarea,
 .reading-mode .question-form select {
-  border-color: rgba(46, 72, 77, 0.2) !important;
-  background: rgba(255, 255, 255, 0.68) !important;
-  color: var(--mode-reading-text) !important;
+  border-color: rgba(46, 72, 77, 0.2);
+  background: rgba(255, 255, 255, 0.68);
+  color: var(--mode-reading-text);
 }
 
 .reading-mode .question-form input::placeholder,
 .reading-mode .question-form textarea::placeholder {
-  color: rgba(52, 68, 75, 0.58) !important;
+  color: rgba(52, 68, 75, 0.58);
 }
 
 .reading-mode .map-grid-cross,
@@ -420,20 +420,17 @@
   background: #9f7b41 !important;
 }
 
-.reading-mode .archive-home *,
 .reading-mode .exploration-log-page *,
 .reading-mode .media-archive-page *,
 .reading-mode .questions-page * {
   color: var(--mode-reading-text);
-  text-shadow: none !important;
+  text-shadow: none;
 }
 
-.reading-mode .archive-home a,
 .reading-mode .exploration-log-page a,
 .reading-mode .media-archive-page a,
 .reading-mode .media-archive-page input,
 .reading-mode .questions-page a,
-.reading-mode .archive-home button,
 .reading-mode .exploration-log-page button,
 .reading-mode .media-archive-page button,
 .reading-mode .questions-page button {
