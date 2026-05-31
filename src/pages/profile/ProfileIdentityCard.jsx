@@ -2,6 +2,7 @@ import { BadgeCheck } from 'lucide-react';
 import CrewAvatar from '../../components/CrewAvatar';
 
 export default function ProfileIdentityCard({
+  actionSlot,
   nickname,
   rank,
   user,
@@ -15,6 +16,11 @@ export default function ProfileIdentityCard({
         <div className="agent-role mono"><BadgeCheck size={12} /><span>{rank.current.title}</span></div>
         <p className="agent-lock-note mono">INITIAL CALLSIGN</p>
       </div>
+      {actionSlot && (
+        <div className="profile-identity-action">
+          {actionSlot}
+        </div>
+      )}
     </section>
   );
 }

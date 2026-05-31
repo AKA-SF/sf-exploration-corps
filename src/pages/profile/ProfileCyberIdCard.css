@@ -1,75 +1,67 @@
+.profile-identity-action {
+  min-width: 0;
+}
+
 .profile-cyber-id-panel {
+  position: relative;
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  gap: 10px;
+  align-items: center;
+  min-height: 112px;
+  border: 1px solid rgba(0, 255, 255, 0.28);
+  padding: 13px;
+  color: var(--primary-cyan);
+  background:
+    linear-gradient(rgba(0, 255, 255, 0.035) 1px, transparent 1px),
+    radial-gradient(circle at 82% 20%, rgba(0, 255, 255, 0.18), transparent 28%),
+    rgba(0, 8, 12, 0.62);
+  background-size: 100% 6px, auto, auto;
+  box-shadow: inset 0 0 22px rgba(0, 255, 255, 0.08);
   overflow: hidden;
 }
 
 .profile-cyber-id-copy {
-  display: flex;
-  align-items: start;
-  justify-content: space-between;
-  gap: 14px;
-  min-width: 0;
-}
-
-.profile-cyber-id-copy > div {
+  display: grid;
+  gap: 8px;
   min-width: 0;
 }
 
 .profile-cyber-id-copy h3 {
   margin: 4px 0 0;
   color: var(--text-main);
-  font-size: clamp(15px, 3.8vw, 18px);
-  letter-spacing: 0.8px;
-  line-height: 1.2;
-  white-space: nowrap;
+  font-size: 17px;
+  font-weight: 1000;
+  letter-spacing: 0;
+  line-height: 1.15;
+  word-break: keep-all;
 }
 
 .profile-cyber-id-copy p {
-  flex: 0 1 190px;
-  margin: 2px 0 0;
+  margin: 0;
   color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1.45;
-  text-align: right;
-}
-
-.profile-cyber-id-body {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 124px;
-  gap: 10px;
-  align-items: stretch;
-  min-width: 0;
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.4;
+  word-break: keep-all;
 }
 
 .profile-cyber-id-preview {
   position: relative;
-  display: grid;
-  align-content: center;
-  min-height: 116px;
-  border: 1px solid rgba(0, 255, 255, 0.3);
-  padding: 14px 76px 14px 15px;
-  color: var(--primary-cyan);
-  background:
-    radial-gradient(circle at 78% 24%, rgba(0, 255, 255, 0.24), transparent 28%),
-    linear-gradient(135deg, rgba(0, 255, 255, 0.08), rgba(0, 0, 0, 0.2)),
-    rgba(0, 8, 12, 0.68);
-  box-shadow: inset 0 0 22px rgba(0, 255, 255, 0.08);
-  overflow: hidden;
+  align-self: stretch;
+  min-width: 0;
+  border-left: 1px solid rgba(0, 255, 255, 0.18);
 }
 
 .profile-cyber-id-preview i {
   position: absolute;
-  top: 50%;
-  right: 18px;
-  width: 48px;
-  height: 48px;
+  top: 8px;
+  right: 0;
+  width: 34px;
+  height: 34px;
   border: 1px solid currentColor;
   border-radius: 50%;
   opacity: 0.5;
-  transform: translateY(-50%);
 }
 
 .profile-cyber-id-preview i::before,
@@ -82,42 +74,33 @@
 
 .profile-cyber-id-preview i::before {
   top: 50%;
-  left: 7px;
-  width: 32px;
+  left: 5px;
+  width: 22px;
   height: 1px;
 }
 
 .profile-cyber-id-preview i::after {
-  top: 7px;
+  top: 5px;
   left: 50%;
   width: 1px;
-  height: 32px;
+  height: 22px;
 }
 
 .profile-cyber-id-preview small {
-  margin-bottom: 10px;
+  position: absolute;
+  right: 0;
+  bottom: 2px;
+  writing-mode: vertical-rl;
   color: var(--text-muted);
-  font-size: 9px;
+  font-size: 8px;
   font-weight: 900;
-  letter-spacing: 1.6px;
-}
-
-.profile-cyber-id-preview strong {
-  font-size: 12px;
-  letter-spacing: 1.6px;
-}
-
-.profile-cyber-id-preview span {
-  margin-top: 5px;
-  color: var(--text-main);
-  font-size: clamp(13px, 3.6vw, 16px);
-  font-weight: 900;
-  line-height: 1.3;
-  word-break: keep-all;
+  letter-spacing: 1.4px;
 }
 
 .profile-cyber-id-actions {
+  grid-column: 1 / -1;
   display: grid;
+  grid-template-columns: 1fr 0.72fr;
   gap: 8px;
   min-width: 0;
 }
@@ -126,15 +109,15 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  min-height: 38px;
+  gap: 6px;
+  min-width: 0;
+  min-height: 34px;
   border: 1px solid rgba(0, 255, 255, 0.26);
-  padding: 0 10px;
+  padding: 0 9px;
   color: var(--primary-cyan);
-  background: rgba(0, 0, 0, 0.34);
-  font-size: 11px;
+  background: rgba(0, 0, 0, 0.32);
+  font-size: 10px;
   font-weight: 900;
-  text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
 }
@@ -145,22 +128,21 @@
   background: var(--primary-cyan);
 }
 
-.reading-mode .profile-cyber-id-preview {
+.reading-mode .profile-cyber-id-panel {
   border-color: rgba(47, 111, 120, 0.28);
   color: var(--mode-reading-cyan);
   background:
-    radial-gradient(circle at 78% 24%, rgba(47, 111, 120, 0.16), transparent 28%),
-    linear-gradient(135deg, rgba(47, 111, 120, 0.08), rgba(255, 255, 255, 0.2)),
-    rgba(255, 252, 244, 0.76);
+    linear-gradient(rgba(47, 111, 120, 0.04) 1px, transparent 1px),
+    radial-gradient(circle at 82% 20%, rgba(47, 111, 120, 0.14), transparent 28%),
+    rgba(255, 252, 244, 0.72);
 }
 
-.reading-mode .profile-cyber-id-copy h3,
-.reading-mode .profile-cyber-id-preview small,
-.reading-mode .profile-cyber-id-preview span {
+.reading-mode .profile-cyber-id-copy h3 {
   color: var(--mode-reading-heading);
 }
 
-.reading-mode .profile-cyber-id-copy p {
+.reading-mode .profile-cyber-id-copy p,
+.reading-mode .profile-cyber-id-preview small {
   color: var(--mode-reading-muted);
 }
 
@@ -171,27 +153,13 @@
 }
 
 @media (max-width: 760px) {
-  .profile-cyber-id-body {
-    grid-template-columns: 1fr;
-  }
-
-  .profile-cyber-id-actions {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .profile-cyber-id-panel {
+    min-height: 104px;
   }
 }
 
 @media (max-width: 520px) {
-  .profile-cyber-id-copy {
-    display: grid;
-  }
-
-  .profile-cyber-id-copy p {
-    flex: none;
-    text-align: left;
-  }
-
-  .profile-cyber-id-preview {
-    min-height: 108px;
-    padding-right: 68px;
+  .profile-cyber-id-actions {
+    grid-template-columns: 1fr 1fr;
   }
 }

@@ -78,18 +78,19 @@ export default function Profile() {
           </header>
 
           <ProfileIdentityCard
+            actionSlot={(
+              <ProfileCyberIdCard
+                nickname={nickname}
+                points={points}
+                rank={rank}
+                stats={stats}
+                tasteProfile={latestTasteProfile}
+                unlockedBadges={unlockedBadges}
+                user={user}
+              />
+            )}
             nickname={nickname}
             rank={rank}
-            user={user}
-          />
-
-          <ProfileCyberIdCard
-            nickname={nickname}
-            points={points}
-            rank={rank}
-            stats={stats}
-            tasteProfile={latestTasteProfile}
-            unlockedBadges={unlockedBadges}
             user={user}
           />
 
