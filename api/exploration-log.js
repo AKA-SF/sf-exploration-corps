@@ -1,70 +1,15 @@
 import { getNotionConfig, notionRequest, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
 import { multiSelect, pick, plainText } from './_notionProperties.js';
+import {
+  findPropertyName,
+  multiSelectProperty,
+  readJsonBody,
+  richTextProperty,
+  selectProperty,
+  titleProperty,
+} from './_notionWrite.js';
 
 const DEFAULT_LOG_DATABASE_ID = '36998dbef69d80dfa4afc27813f25b11';
-
-function normalizeName(value) {
-  return value.replace(/\s/g, '').toLowerCase();
-}
-
-function findPropertyName(properties, candidates, type) {
-  const normalizedCandidates = candidates.map(normalizeName);
-  const entries = Object.entries(properties);
-  const exactMatch = entries.find(([name, property]) => (
-    (!type || property.type === type) && normalizedCandidates.includes(normalizeName(name))
-  ));
-  if (exactMatch) return exactMatch[0];
-
-  const looseMatch = entries.find(([name, property]) => (
-    (!type || property.type === type) && normalizedCandidates.some(candidate => normalizeName(name).includes(candidate))
-  ));
-  if (looseMatch) return looseMatch[0];
-
-  return entries.find(([, property]) => property.type === type)?.[0] ?? '';
-}
-
-function readRequestBody(request) {
-  if (request.body && typeof request.body === 'object') return Promise.resolve(request.body);
-  if (typeof request.body === 'string') return Promise.resolve(JSON.parse(request.body || '{}'));
-
-  return new Promise((resolve, reject) => {
-    let raw = '';
-    request.on('data', chunk => {
-      raw += chunk;
-    });
-    request.on('end', () => {
-      try {
-        resolve(JSON.parse(raw || '{}'));
-      } catch (error) {
-        reject(error);
-      }
-    });
-    request.on('error', reject);
-  });
-}
-
-function richText(value) {
-  return {
-    rich_text: [{ text: { content: String(value ?? '').slice(0, 1900) } }],
-  };
-}
-
-function titleText(value) {
-  return {
-    title: [{ text: { content: String(value ?? '').slice(0, 1900) } }],
-  };
-}
-
-function createSelect(value) {
-  return { select: { name: String(value ?? '').slice(0, 100) } };
-}
-
-function createMultiSelect(values) {
-  return {
-    multi_select: [...new Set(values.filter(Boolean).map(value => String(value).slice(0, 100)))]
-      .map(name => ({ name })),
-  };
-}
 
 function mapPageToLog(page, index) {
   const properties = page.properties ?? {};
@@ -109,7 +54,7 @@ export default async function handler(request, response) {
   if (request.method === 'POST') {
     let payload;
     try {
-      payload = await readRequestBody(request);
+      payload = await readJsonBody(request);
     } catch {
       return response.status(400).json({ error: 'Invalid JSON body' });
     }
@@ -137,26 +82,26 @@ export default async function handler(request, response) {
     const schema = database.properties ?? {};
     const properties = {};
 
-    const titleProperty = findPropertyName(schema, ['작품명', '제목', 'Title', 'Name', '이름'], 'title');
-    if (titleProperty) properties[titleProperty] = titleText(title);
+    const titlePropertyName = findPropertyName(schema, ['작품명', '제목', 'Title', 'Name', '이름'], 'title', { loose: true });
+    if (titlePropertyName) properties[titlePropertyName] = titleProperty(title);
 
-    const instagramProperty = findPropertyName(schema, ['인스타URL', '인스타 URL', 'Instagram URL', 'URL', '링크', 'Link'], 'url');
+    const instagramProperty = findPropertyName(schema, ['인스타URL', '인스타 URL', 'Instagram URL', 'URL', '링크', 'Link'], 'url', { loose: true });
     if (instagramProperty) properties[instagramProperty] = { url: instagramUrl };
 
-    const reviewProperty = findPropertyName(schema, ['리뷰문구', '리뷰 문구', 'Review', '본문', '설명', 'Description'], 'rich_text');
-    if (reviewProperty) properties[reviewProperty] = richText(`${nodeLabel || 'SF 탐사 좌표'}에서 수집한 인스타 서평 신호입니다.`);
+    const reviewProperty = findPropertyName(schema, ['리뷰문구', '리뷰 문구', 'Review', '본문', '설명', 'Description'], 'rich_text', { loose: true });
+    if (reviewProperty) properties[reviewProperty] = richTextProperty(`${nodeLabel || 'SF 탐사 좌표'}에서 수집한 인스타 서평 신호입니다.`);
 
-    const categoryProperty = findPropertyName(schema, ['분류', 'Category', 'Type'], 'select');
-    if (categoryProperty) properties[categoryProperty] = createSelect('탐사 좌표');
+    const categoryProperty = findPropertyName(schema, ['분류', 'Category', 'Type'], 'select', { loose: true });
+    if (categoryProperty) properties[categoryProperty] = selectProperty('탐사 좌표');
 
-    const statusProperty = findPropertyName(schema, ['상태', 'Status'], 'select');
-    if (statusProperty) properties[statusProperty] = createSelect('공개');
+    const statusProperty = findPropertyName(schema, ['상태', 'Status'], 'select', { loose: true });
+    if (statusProperty) properties[statusProperty] = selectProperty('공개');
 
-    const dateProperty = findPropertyName(schema, ['날짜', 'Date', '작성일'], 'date');
+    const dateProperty = findPropertyName(schema, ['날짜', 'Date', '작성일'], 'date', { loose: true });
     if (dateProperty) properties[dateProperty] = { date: { start: new Date().toISOString().slice(0, 10) } };
 
-    const tagsProperty = findPropertyName(schema, ['태그', 'Tags', '키워드', 'Keywords'], 'multi_select');
-    if (tagsProperty) properties[tagsProperty] = createMultiSelect(['Coordinate Map', nodeLabel, nodeEnglish, nodeId]);
+    const tagsProperty = findPropertyName(schema, ['태그', 'Tags', '키워드', 'Keywords'], 'multi_select', { loose: true });
+    if (tagsProperty) properties[tagsProperty] = multiSelectProperty(['Coordinate Map', nodeLabel, nodeEnglish, nodeId]);
 
     let createdPage;
     try {

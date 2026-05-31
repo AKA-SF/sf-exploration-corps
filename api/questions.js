@@ -1,15 +1,13 @@
 import { getNotionConfig, notionRequest, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
 import { pick, plainText } from './_notionProperties.js';
+import { findPropertyEntry, readJsonBody, richTextPayload } from './_notionWrite.js';
 
 const DEFAULT_QUESTIONS_DATABASE_ID = '36a98dbef69d803abd53c09b6ff7f2e3';
 const DEFAULT_BOARD_PASSWORD = 'sf';
 
 function findProperty(schema, preferredNames, type) {
-  const entries = Object.entries(schema ?? {});
-  const preferred = entries.find(([name, property]) => (
-    property.type === type && preferredNames.includes(name)
-  ));
-  return preferred ?? entries.find(([, property]) => property.type === type);
+  return findPropertyEntry(schema, preferredNames, type)
+    ?? Object.entries(schema ?? {}).find(([, property]) => property.type === type);
 }
 
 function mapPageToQuestion(page, index) {
@@ -47,10 +45,6 @@ function parseCommentBlock(block) {
   }
 }
 
-function richText(value) {
-  return [{ type: 'text', text: { content: value } }];
-}
-
 function getStatusName(property, preferredName) {
   const options = property?.status?.options ?? [];
   return options.find(option => option.name === preferredName)?.name
@@ -74,8 +68,8 @@ function normalizePassword(value) {
 function buildProperty(property, value) {
   if (!value) return null;
   const { type } = property;
-  if (type === 'title') return { title: richText(value) };
-  if (type === 'rich_text') return { rich_text: richText(value) };
+  if (type === 'title') return { title: richTextPayload(value) };
+  if (type === 'rich_text') return { rich_text: richTextPayload(value) };
   if (type === 'select') {
     const selectName = getSelectName(property, value);
     return selectName ? { select: { name: selectName } } : null;
@@ -172,7 +166,12 @@ export default async function handler(request, response) {
     return response.status(200).json({ questions });
   }
 
-  const body = typeof request.body === 'string' ? JSON.parse(request.body || '{}') : request.body;
+  let body;
+  try {
+    body = await readJsonBody(request);
+  } catch {
+    return response.status(400).json({ error: 'Invalid JSON body' });
+  }
   const mode = String(body?.mode ?? 'post').trim();
   const password = String(body?.password ?? '').trim();
   const boardPassword = process.env.COMMUNITY_BOARD_PASSWORD || DEFAULT_BOARD_PASSWORD;
@@ -210,7 +209,7 @@ export default async function handler(request, response) {
               object: 'block',
               type: 'paragraph',
               paragraph: {
-                rich_text: richText(`SFA_COMMENT:${JSON.stringify(comment)}`),
+                rich_text: richTextPayload(`SFA_COMMENT:${JSON.stringify(comment)}`),
               },
             },
           ],

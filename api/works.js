@@ -5,6 +5,7 @@ import {
   sendNotionError,
 } from './_notion.js';
 import { multiSelect, pick, pickName, plainText } from './_notionProperties.js';
+import { readJsonBody, richTextPayload, splitList } from './_notionWrite.js';
 
 const ALADIN_LOOKUP_ENDPOINT = 'http://www.aladin.co.kr/ttb/api/ItemLookUp.aspx';
 const ALADIN_SEARCH_ENDPOINT = 'http://www.aladin.co.kr/ttb/api/ItemSearch.aspx';
@@ -232,22 +233,14 @@ function mapPageToWork(page, index) {
   };
 }
 
-function richTextValue(text) {
-  return text ? [{ type: 'text', text: { content: String(text).slice(0, 2000) } }] : [];
-}
-
 function splitTags(value) {
-  if (Array.isArray(value)) return value.map(tag => String(tag).trim()).filter(Boolean);
-  return String(value ?? '')
-    .split(',')
-    .map(tag => tag.trim())
-    .filter(Boolean);
+  return splitList(value);
 }
 
 function notionPropertyValue(schema, value, fallbackType = 'rich_text') {
   const type = schema?.type ?? fallbackType;
-  if (type === 'title') return { title: richTextValue(value) };
-  if (type === 'rich_text') return { rich_text: richTextValue(value) };
+  if (type === 'title') return { title: richTextPayload(value, 2000) };
+  if (type === 'rich_text') return { rich_text: richTextPayload(value, 2000) };
   if (type === 'url') return { url: value || null };
   if (type === 'select') return { select: value ? { name: String(value) } : null };
   if (type === 'multi_select') return { multi_select: splitTags(value).map(name => ({ name })) };
@@ -255,7 +248,7 @@ function notionPropertyValue(schema, value, fallbackType = 'rich_text') {
     const number = Number(value);
     return { number: Number.isFinite(number) ? number : null };
   }
-  return { rich_text: richTextValue(value) };
+  return { rich_text: richTextPayload(value, 2000) };
 }
 
 function assignNotionProperty(properties, databaseProperties, names, value, fallbackType) {
@@ -388,7 +381,13 @@ export default async function handler(request, response) {
   }
 
   if (request.method === 'POST') {
-    const body = typeof request.body === 'string' ? JSON.parse(request.body || '{}') : (request.body ?? {});
+    let body;
+    try {
+      body = await readJsonBody(request);
+    } catch {
+      return response.status(400).json({ error: 'Invalid JSON body' });
+    }
+
     if (!String(body.title ?? '').trim()) {
       return response.status(400).json({ error: '작품 제목을 입력해주세요.' });
     }
