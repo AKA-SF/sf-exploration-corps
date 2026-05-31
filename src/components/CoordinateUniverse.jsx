@@ -36,13 +36,94 @@ function rotatePoint(point, yaw, pitch) {
 }
 
 function project(point, width, height, zoom) {
-  const cameraDistance = 1250;
+  const cameraDistance = 1380;
   const depth = cameraDistance / (cameraDistance + point.z);
   return {
     x: width / 2 + point.x * depth * zoom,
     y: height / 2 + point.y * depth * zoom,
     depth,
   };
+}
+
+function getSeed(id) {
+  return id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+}
+
+function drawAtlasBackground(context, width, height, time, starSeeds, dustSeeds) {
+  const background = context.createRadialGradient(width * 0.48, height * 0.47, 60, width * 0.48, height * 0.47, width * 0.76);
+  background.addColorStop(0, 'rgba(25, 247, 241, 0.1)');
+  background.addColorStop(0.42, 'rgba(2, 18, 28, 0.82)');
+  background.addColorStop(1, 'rgba(0, 3, 8, 1)');
+  context.fillStyle = background;
+  context.fillRect(0, 0, width, height);
+
+  context.save();
+  context.translate(width * 0.5, height * 0.5);
+  context.rotate(-0.18 + time * 0.000004);
+  context.globalCompositeOperation = 'lighter';
+
+  dustSeeds.forEach((dust, index) => {
+    const radius = Math.sqrt(dust.progress) * Math.min(width, height) * 0.54 * dust.scale;
+    const angle = dust.angle + time * (0.000006 + (index % 5) * 0.000001);
+    const x = Math.cos(angle) * radius;
+    const y = Math.sin(angle) * radius * 0.42;
+    context.globalAlpha = dust.alpha;
+    context.fillStyle = dust.tint;
+    context.beginPath();
+    context.arc(x, y, dust.size, 0, Math.PI * 2);
+    context.fill();
+  });
+
+  const atlasGlow = context.createRadialGradient(0, 0, 30, 0, 0, Math.min(width, height) * 0.58);
+  atlasGlow.addColorStop(0, 'rgba(255, 255, 255, 0.08)');
+  atlasGlow.addColorStop(0.26, 'rgba(25, 247, 241, 0.065)');
+  atlasGlow.addColorStop(0.72, 'rgba(124, 199, 255, 0.025)');
+  atlasGlow.addColorStop(1, 'rgba(25, 247, 241, 0)');
+  context.fillStyle = atlasGlow;
+  context.beginPath();
+  context.ellipse(0, 0, width * 0.48, height * 0.2, 0, 0, Math.PI * 2);
+  context.fill();
+  context.restore();
+
+  starSeeds.forEach(star => {
+    const twinkle = Math.sin(time * 0.001 + star.x * 12.7 + star.y * 9.2) * 0.08;
+    context.globalAlpha = star.a + twinkle;
+    context.fillStyle = star.tint;
+    context.beginPath();
+    context.arc(star.x * width, star.y * height, star.r, 0, Math.PI * 2);
+    context.fill();
+  });
+  context.globalAlpha = 1;
+}
+
+function drawSignalCluster(context, planet, time) {
+  const [light] = toneColors[planet.node.tone] ?? toneColors.cyan;
+  const seed = getSeed(planet.node.id);
+  const count = Math.min(18, 7 + (planet.node.signals ?? 8));
+  const clusterRadius = planet.radius * (planet.selected ? 5.4 : 4.1);
+
+  context.save();
+  context.globalCompositeOperation = 'lighter';
+  for (let index = 0; index < count; index += 1) {
+    const angle = seed * 0.19 + index * 2.399 + time * (0.00003 + (index % 4) * 0.000004);
+    const distance = clusterRadius * (0.34 + ((seed + index * 17) % 100) / 140);
+    const x = planet.x + Math.cos(angle) * distance;
+    const y = planet.y + Math.sin(angle) * distance * 0.46;
+    const alpha = planet.muted ? 0.08 : 0.2 + (index % 5) * 0.045;
+    context.globalAlpha = alpha * planet.alpha;
+    context.fillStyle = index % 4 === 0 ? light : '#dffcff';
+    context.beginPath();
+    context.arc(x, y, index % 6 === 0 ? 1.35 : 0.72, 0, Math.PI * 2);
+    context.fill();
+  }
+
+  context.globalAlpha = planet.muted ? 0.05 : 0.18;
+  context.strokeStyle = light;
+  context.lineWidth = 0.7;
+  context.beginPath();
+  context.ellipse(planet.x, planet.y, clusterRadius * 0.88, clusterRadius * 0.32, -0.16, 0, Math.PI * 2);
+  context.stroke();
+  context.restore();
 }
 
 function drawPlanet(context, planet) {
@@ -63,25 +144,25 @@ function drawPlanet(context, planet) {
   context.save();
   context.globalAlpha = planet.alpha;
   context.shadowColor = light;
-  context.shadowBlur = planet.selected ? 32 : 18;
+  context.shadowBlur = planet.selected ? 30 : 14;
   context.fillStyle = gradient;
   context.beginPath();
   context.arc(planet.x, planet.y, planet.radius, 0, Math.PI * 2);
   context.fill();
 
   context.shadowBlur = 0;
-  context.strokeStyle = planet.selected ? 'rgba(240, 184, 90, 0.95)' : 'rgba(25, 247, 241, 0.36)';
-  context.lineWidth = planet.selected ? 2 : 1;
+  context.strokeStyle = planet.selected ? 'rgba(240, 184, 90, 0.9)' : 'rgba(25, 247, 241, 0.28)';
+  context.lineWidth = planet.selected ? 1.6 : 0.8;
   context.beginPath();
-  context.ellipse(planet.x, planet.y, planet.radius * 1.85, planet.radius * 0.42, -0.22, 0, Math.PI * 2);
+  context.ellipse(planet.x, planet.y, planet.radius * 2.25, planet.radius * 0.44, -0.2, 0, Math.PI * 2);
   context.stroke();
 
   context.fillStyle = planet.selected ? '#ffffff' : 'rgba(232, 251, 255, 0.9)';
-  context.font = `${planet.selected ? 700 : 600} ${planet.selected ? 15 : 12}px system-ui, sans-serif`;
-  context.fillText(planet.node.label, planet.x + planet.radius + 12, planet.y - 2);
-  context.fillStyle = 'rgba(136, 219, 225, 0.82)';
+  context.font = `${planet.selected ? 800 : 700} ${planet.selected ? 13 : 10}px system-ui, sans-serif`;
+  context.fillText(planet.node.label, planet.x + planet.radius + 10, planet.y - 3);
+  context.fillStyle = planet.selected ? 'rgba(240, 184, 90, 0.86)' : 'rgba(136, 219, 225, 0.78)';
   context.font = '9px "Courier New", monospace';
-  context.fillText(planet.node.en, planet.x + planet.radius + 12, planet.y + 13);
+  context.fillText(planet.node.en, planet.x + planet.radius + 10, planet.y + 11);
   context.restore();
 }
 
@@ -135,14 +216,15 @@ export default function CoordinateUniverse({
       y: ((index * 151) % 991) / 991,
       r: 0.4 + (index % 5) * 0.18,
       a: 0.2 + (index % 7) * 0.08,
+      tint: index % 13 === 0 ? '#f0b85a' : index % 5 === 0 ? '#7cc7ff' : '#ffffff',
     }));
-    const dustSeeds = Array.from({ length: 88 }, (_, index) => ({
+    const dustSeeds = Array.from({ length: 160 }, (_, index) => ({
       progress: ((index * 37) % 239) / 239,
       angle: ((index * 83) % 360) * (Math.PI / 180),
-      scale: 0.72 + (index % 9) * 0.035,
+      scale: 0.7 + (index % 13) * 0.03,
       tint: index % 7 === 0 ? '#f0b85a' : '#dffcff',
-      alpha: 0.04 + (index % 6) * 0.018,
-      size: 0.35 + (index % 4) * 0.2,
+      alpha: 0.025 + (index % 6) * 0.012,
+      size: 0.28 + (index % 4) * 0.16,
     }));
 
     const render = time => {
@@ -157,52 +239,12 @@ export default function CoordinateUniverse({
       const width = rect.width;
       const height = rect.height;
       context.clearRect(0, 0, width, height);
-
-      const background = context.createRadialGradient(width * 0.52, height * 0.46, 40, width * 0.52, height * 0.46, width * 0.72);
-      background.addColorStop(0, 'rgba(25, 247, 241, 0.13)');
-      background.addColorStop(0.42, 'rgba(2, 24, 36, 0.8)');
-      background.addColorStop(1, 'rgba(0, 4, 9, 1)');
-      context.fillStyle = background;
-      context.fillRect(0, 0, width, height);
-
-      context.save();
-      context.translate(width * 0.5, height * 0.5);
-      context.rotate(-0.26 + time * 0.000006);
-      context.globalCompositeOperation = 'lighter';
-      const galaxyGlow = context.createRadialGradient(0, 0, 18, 0, 0, Math.min(width, height) * 0.52);
-      galaxyGlow.addColorStop(0, 'rgba(255, 255, 255, 0.16)');
-      galaxyGlow.addColorStop(0.2, 'rgba(25, 247, 241, 0.1)');
-      galaxyGlow.addColorStop(0.52, 'rgba(124, 199, 255, 0.045)');
-      galaxyGlow.addColorStop(1, 'rgba(25, 247, 241, 0)');
-      context.fillStyle = galaxyGlow;
-      context.beginPath();
-      context.ellipse(0, 0, width * 0.42, height * 0.16, 0, 0, Math.PI * 2);
-      context.fill();
-
-      dustSeeds.forEach((dust, index) => {
-        const radius = Math.sqrt(dust.progress) * Math.min(width, height) * 0.46 * dust.scale;
-        const angle = dust.angle + Math.sin(time * 0.00008 + index) * 0.025;
-        const x = Math.cos(angle) * radius;
-        const y = Math.sin(angle) * radius * 0.36;
-        context.globalAlpha = dust.alpha;
-        context.fillStyle = dust.tint;
-        context.beginPath();
-        context.arc(x, y, dust.size, 0, Math.PI * 2);
-        context.fill();
-      });
-      context.restore();
-
-      starSeeds.forEach(star => {
-        context.globalAlpha = star.a;
-        context.fillStyle = '#ffffff';
-        context.beginPath();
-        context.arc(star.x * width, star.y * height, star.r, 0, Math.PI * 2);
-        context.fill();
-      });
-      context.globalAlpha = 1;
+      drawAtlasBackground(context, width, height, time, starSeeds, dustSeeds);
 
       const projectedNodes = nodes.map(node => {
-        const rotated = rotatePoint(nodeToPoint(node, time), view.yaw, view.pitch);
+        const autoYaw = view.yaw + Math.sin(time * 0.00006) * 0.028;
+        const autoPitch = view.pitch + Math.cos(time * 0.00005) * 0.014;
+        const rotated = rotatePoint(nodeToPoint(node, time), autoYaw, autoPitch);
         const projected = project(rotated, width, height, view.zoom);
         const selected = selectedId === node.id;
         const related = relatedIds?.has(node.id);
@@ -215,10 +257,14 @@ export default function CoordinateUniverse({
           x: projected.x,
           y: projected.y,
           z: rotated.z,
-          radius: (selected ? 20 : 12 + node.orbit * 2.2) * projected.depth,
-          alpha: muted ? 0.22 : 0.86 + projected.depth * 0.1,
+          radius: (selected ? 15 : 7 + node.orbit * 1.55) * projected.depth,
+          alpha: muted ? 0.18 : clamp(0.58 + projected.depth * 0.28, 0.5, 0.95),
         };
       });
+
+      projectedNodes
+        .sort((a, b) => a.z - b.z)
+        .forEach(planet => drawSignalCluster(context, planet, time));
 
       const nodeMap = new Map(projectedNodes.map(item => [item.node.id, item]));
       connections.forEach(([from, to]) => {
@@ -227,12 +273,15 @@ export default function CoordinateUniverse({
         if (!start || !end) return;
         const active = selectedId && (from === selectedId || to === selectedId);
         context.save();
-        context.globalAlpha = hasFocus && !active ? 0.12 : active ? 0.85 : 0.34;
-        context.strokeStyle = active ? 'rgba(240, 184, 90, 0.88)' : 'rgba(25, 247, 241, 0.48)';
-        context.lineWidth = active ? 1.8 : 0.9;
+        context.globalAlpha = hasFocus && !active ? 0.08 : active ? 0.74 : 0.24;
+        context.strokeStyle = active ? 'rgba(240, 184, 90, 0.82)' : 'rgba(25, 247, 241, 0.44)';
+        context.lineWidth = active ? 1.25 : 0.55;
+        context.setLineDash(active ? [] : [2, 7]);
         context.beginPath();
+        const midX = (start.x + end.x) / 2 + (end.y - start.y) * 0.03;
+        const midY = (start.y + end.y) / 2 - (end.x - start.x) * 0.03;
         context.moveTo(start.x, start.y);
-        context.lineTo(end.x, end.y);
+        context.quadraticCurveTo(midX, midY, end.x, end.y);
         context.stroke();
         context.restore();
       });
