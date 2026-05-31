@@ -1,4 +1,4 @@
-import { Download, Share2 } from 'lucide-react';
+import { Download } from 'lucide-react';
 import './ProfileCyberIdCard.css';
 
 const CARD_WIDTH = 1200;
@@ -291,7 +291,6 @@ export default function ProfileCyberIdCard({
   unlockedBadges,
   user,
 }) {
-  const hasTasteProfile = Boolean(tasteProfile);
   const filename = `sf-crew-id-${(nickname || 'explorer').replace(/\s+/g, '-').toLowerCase()}.png`;
 
   const createCanvas = () => buildCardCanvas({
@@ -308,59 +307,11 @@ export default function ProfileCyberIdCard({
     downloadCanvas(createCanvas(), filename);
   };
 
-  const handleShare = async () => {
-    const canvas = createCanvas();
-    canvas.toBlob(async blob => {
-      if (!blob) {
-        downloadCanvas(canvas, filename);
-        return;
-      }
-
-      const file = new File([blob], filename, { type: 'image/png' });
-      try {
-        if (navigator.canShare?.({ files: [file] })) {
-          await navigator.share({
-            files: [file],
-            title: 'SF 탐사단 대원증',
-            text: `${nickname || '탐사 대원'}의 SF 탐사단 대원증`,
-          });
-          return;
-        }
-      } catch {
-        // Sharing is optional; download remains the reliable fallback.
-      }
-
-      downloadCanvas(canvas, filename);
-    }, 'image/png');
-  };
-
   return (
-    <div className="profile-cyber-id-panel">
-      <div className="profile-cyber-id-copy">
-        <div>
-          <span className="mono text-muted text-xs">CYBER ID CARD</span>
-          <h3 className="mono">ID 카드 다운</h3>
-        </div>
-        <p>
-          {hasTasteProfile
-            ? `${tasteProfile.title} 기록 포함`
-            : '성향 테스트 후 결과 포함'}
-        </p>
-      </div>
-      <div className="profile-cyber-id-preview" aria-hidden="true">
-        <i />
-        <small className="mono">{tasteProfile?.code ?? 'TYPE-SCAN'}</small>
-      </div>
-      <div className="profile-cyber-id-actions">
-        <button type="button" onClick={handleDownload}>
-          <Download size={15} aria-hidden="true" />
-          PNG
-        </button>
-        <button type="button" onClick={handleShare}>
-          <Share2 size={15} aria-hidden="true" />
-          공유
-        </button>
-      </div>
-    </div>
+    <button className="profile-cyber-id-tab" type="button" onClick={handleDownload}>
+      <span className="mono">CYBER ID</span>
+      <strong>ID카드 다운</strong>
+      <Download size={15} aria-hidden="true" />
+    </button>
   );
 }

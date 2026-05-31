@@ -2,164 +2,72 @@
   min-width: 0;
 }
 
-.profile-cyber-id-panel {
-  position: relative;
+.profile-cyber-id-tab {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 44px;
-  gap: 10px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 10px;
   align-items: center;
-  min-height: 112px;
-  border: 1px solid rgba(0, 255, 255, 0.28);
-  padding: 13px;
+  width: 100%;
+  min-height: 72px;
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  padding: 14px;
   color: var(--primary-cyan);
   background:
     linear-gradient(rgba(0, 255, 255, 0.035) 1px, transparent 1px),
-    radial-gradient(circle at 82% 20%, rgba(0, 255, 255, 0.18), transparent 28%),
     rgba(0, 8, 12, 0.62);
-  background-size: 100% 6px, auto, auto;
+  background-size: 100% 6px, auto;
   box-shadow: inset 0 0 22px rgba(0, 255, 255, 0.08);
-  overflow: hidden;
-}
-
-.profile-cyber-id-copy {
-  display: grid;
-  gap: 8px;
-  min-width: 0;
-}
-
-.profile-cyber-id-copy h3 {
-  margin: 4px 0 0;
-  color: var(--text-main);
-  font-size: 17px;
-  font-weight: 1000;
-  letter-spacing: 0;
-  line-height: 1.15;
-  word-break: keep-all;
-}
-
-.profile-cyber-id-copy p {
-  margin: 0;
-  color: var(--text-muted);
-  font-size: 10px;
-  font-weight: 800;
-  line-height: 1.4;
-  word-break: keep-all;
-}
-
-.profile-cyber-id-preview {
-  position: relative;
-  align-self: stretch;
-  min-width: 0;
-  border-left: 1px solid rgba(0, 255, 255, 0.18);
-}
-
-.profile-cyber-id-preview i {
-  position: absolute;
-  top: 8px;
-  right: 0;
-  width: 34px;
-  height: 34px;
-  border: 1px solid currentColor;
-  border-radius: 50%;
-  opacity: 0.5;
-}
-
-.profile-cyber-id-preview i::before,
-.profile-cyber-id-preview i::after {
-  position: absolute;
-  content: "";
-  background: currentColor;
-  opacity: 0.55;
-}
-
-.profile-cyber-id-preview i::before {
-  top: 50%;
-  left: 5px;
-  width: 22px;
-  height: 1px;
-}
-
-.profile-cyber-id-preview i::after {
-  top: 5px;
-  left: 50%;
-  width: 1px;
-  height: 22px;
-}
-
-.profile-cyber-id-preview small {
-  position: absolute;
-  right: 0;
-  bottom: 2px;
-  writing-mode: vertical-rl;
-  color: var(--text-muted);
-  font-size: 8px;
-  font-weight: 900;
-  letter-spacing: 1.4px;
-}
-
-.profile-cyber-id-actions {
-  grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: 1fr 0.72fr;
-  gap: 8px;
-  min-width: 0;
-}
-
-.profile-cyber-id-actions button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-width: 0;
-  min-height: 34px;
-  border: 1px solid rgba(0, 255, 255, 0.26);
-  padding: 0 9px;
-  color: var(--primary-cyan);
-  background: rgba(0, 0, 0, 0.32);
-  font-size: 10px;
-  font-weight: 900;
-  white-space: nowrap;
   cursor: pointer;
+  text-align: left;
 }
 
-.profile-cyber-id-actions button:first-child {
-  color: #001417;
-  border-color: rgba(0, 255, 255, 0.54);
-  background: var(--primary-cyan);
+.profile-cyber-id-tab span {
+  grid-column: 1 / -1;
+  color: var(--text-muted);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 1.5px;
 }
 
-.reading-mode .profile-cyber-id-panel {
-  border-color: rgba(47, 111, 120, 0.28);
+.profile-cyber-id-tab strong {
+  min-width: 0;
+  color: var(--text-main);
+  font-size: 16px;
+  font-weight: 1000;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.profile-cyber-id-tab svg {
+  color: var(--primary-cyan);
+}
+
+.profile-cyber-id-tab:hover,
+.profile-cyber-id-tab:focus-visible {
+  border-color: rgba(0, 255, 255, 0.58);
+  background:
+    linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px),
+    rgba(0, 18, 22, 0.82);
+}
+
+.reading-mode .profile-cyber-id-tab {
+  border-color: rgba(47, 111, 120, 0.34);
   color: var(--mode-reading-cyan);
   background:
     linear-gradient(rgba(47, 111, 120, 0.04) 1px, transparent 1px),
-    radial-gradient(circle at 82% 20%, rgba(47, 111, 120, 0.14), transparent 28%),
     rgba(255, 252, 244, 0.72);
 }
 
-.reading-mode .profile-cyber-id-copy h3 {
-  color: var(--mode-reading-heading);
-}
-
-.reading-mode .profile-cyber-id-copy p,
-.reading-mode .profile-cyber-id-preview small {
+.reading-mode .profile-cyber-id-tab span {
   color: var(--mode-reading-muted);
 }
 
-.reading-mode .profile-cyber-id-actions button:first-child {
-  border-color: rgba(47, 111, 120, 0.44);
-  color: var(--mode-reading-contrast);
-  background: var(--mode-reading-cyan);
+.reading-mode .profile-cyber-id-tab strong {
+  color: var(--mode-reading-heading);
 }
 
 @media (max-width: 760px) {
-  .profile-cyber-id-panel {
-    min-height: 104px;
-  }
-}
-
-@media (max-width: 520px) {
-  .profile-cyber-id-actions {
-    grid-template-columns: 1fr 1fr;
+  .profile-cyber-id-tab {
+    min-height: 60px;
   }
 }
