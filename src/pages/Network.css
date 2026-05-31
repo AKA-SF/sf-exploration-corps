@@ -18,7 +18,7 @@
 .network-primer {
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
   align-items: center;
   margin: 0 16px 0;
@@ -43,14 +43,35 @@
   font-weight: 400;
 }
 
-.network-primer button {
+.network-device-readout {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(64px, auto));
+  gap: 6px;
+}
+
+.network-device-readout span {
+  display: grid;
+  gap: 3px;
   min-height: 40px;
-  padding: 0 12px;
-  color: var(--bg-color);
-  background: var(--primary-cyan);
-  border: 1px solid var(--primary-cyan);
-  font-size: 8px;
-  box-shadow: 0 0 14px var(--primary-cyan-glow);
+  align-content: center;
+  border: 1px solid rgba(0, 255, 255, 0.18);
+  padding: 6px 8px;
+  background: rgba(0, 255, 255, 0.045);
+}
+
+.network-device-readout b {
+  color: var(--text-muted);
+  font-size: 7px;
+  font-weight: 900;
+  letter-spacing: 0.9px;
+}
+
+.network-device-readout em {
+  color: var(--primary-cyan);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 900;
+  letter-spacing: 0.8px;
 }
 
 .network-viewport {
@@ -559,8 +580,8 @@
     margin: 0 10px;
   }
 
-  .network-primer button {
-    width: 100%;
+  .network-device-readout {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .reaction-grid {

@@ -146,17 +146,30 @@ const Network = () => {
     <PageTransition className="network-container">
       <header className="page-header pointer-area">
         <h2 className="mono title-glitch" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-cyan)' }}>
-          <Radar size={20} className="spin-slow" /> LIVE_SIGNAL_NET
+          <Radar size={20} className="spin-slow" /> RELAY_RECEIVER
         </h2>
-        <p className="mono text-muted text-xs">탐사자 교신망: 같은 작품, 같은 감정, 같은 섹터의 반응 신호를 연결합니다.</p>
+        <p className="mono text-muted text-xs">탐사 장비: 기록, 감정, 섹터가 비슷한 신호를 수신하고 교신망으로 연결합니다.</p>
       </header>
 
       <section className="network-primer panel">
         <div>
-          <span className="mono">NETWORK_FUNCTION</span>
-          <strong>탐사 로그가 신호망으로 송신되고, 유사 감정/섹터/개념을 가진 로그와 연결됩니다.</strong>
+          <span className="mono">RECEIVER_FUNCTION</span>
+          <strong>탐사 기록이 무전 신호처럼 수신되고, 유사 감정/섹터/개념을 가진 로그와 연결됩니다.</strong>
         </div>
-        <button className="mono" onClick={() => navigate('/log')}>NEW_SIGNAL_LOG</button>
+        <div className="network-device-readout mono" aria-label="교신 장비 상태">
+          <span>
+            <b>CHANNEL</b>
+            <em>SF-ARCHIVE</em>
+          </span>
+          <span>
+            <b>NODES</b>
+            <em>{spatialLogs.length}</em>
+          </span>
+          <span>
+            <b>PACKETS</b>
+            <em>{edges.length * 2}</em>
+          </span>
+        </div>
       </section>
 
       <div className="network-viewport">
