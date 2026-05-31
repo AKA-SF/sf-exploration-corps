@@ -1,4 +1,5 @@
 import { getActivityStats, getBadges, getMissionTree, getRank } from '../../data/profileProgress';
+import { tasteProfiles } from '../../data/tasteTest';
 
 export function getFallbackNickname(user) {
   return user?.user_metadata?.nickname || user?.email?.split('@')[0] || '탐사 대원';
@@ -28,6 +29,29 @@ export function getSelectedMissionRoute(userId) {
 
 export function setSelectedMissionRoute(userId, routeId) {
   if (userId) localStorage.setItem(`sf-selected-mission-route:${userId}`, routeId);
+}
+
+function getLatestTasteProfile(activities) {
+  const latestTasteActivity = activities.find(activity => activity.action_type === 'taste_test');
+  if (!latestTasteActivity) return null;
+
+  const metadata = latestTasteActivity.metadata ?? {};
+  const profile = Object.values(tasteProfiles).find(item => (
+    item.code === metadata.taste_code ||
+    item.title === metadata.taste_title ||
+    item.genre === latestTasteActivity.genre
+  ));
+
+  return profile
+    ? { ...profile, completedAt: latestTasteActivity.created_at }
+    : {
+      code: metadata.taste_code ?? 'TYPE-SCAN',
+      title: metadata.taste_title ?? '탐사 성향 확인 완료',
+      genre: latestTasteActivity.genre ?? 'SF 탐사형',
+      vessel: metadata.node ?? 'SF 탐사선',
+      summary: 'SF 탐사 성향 테스트를 완료한 대원입니다.',
+      completedAt: latestTasteActivity.created_at,
+    };
 }
 
 export function buildProfileViewModel({ activities, profile, selectedMissionRoute, workStatuses }) {
@@ -66,6 +90,7 @@ export function buildProfileViewModel({ activities, profile, selectedMissionRout
     badges,
     dailyLoginReceived,
     latestWorkStatus,
+    latestTasteProfile: getLatestTasteProfile(activities),
     missionTree,
     nextMission,
     points,

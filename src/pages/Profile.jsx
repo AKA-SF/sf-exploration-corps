@@ -3,6 +3,7 @@ import { LogOut, UserRound } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
 import ProfileActivityPanel from './profile/ProfileActivityPanel';
+import ProfileCyberIdCard from './profile/ProfileCyberIdCard';
 import ProfileHubPanel from './profile/ProfileHubPanel';
 import ProfileIdentityCard from './profile/ProfileIdentityCard';
 import ProfileMissionTree from './profile/ProfileMissionTree';
@@ -34,6 +35,7 @@ export default function Profile() {
     activitySummary,
     badges,
     dailyLoginReceived,
+    latestTasteProfile,
     latestWorkStatus,
     missionTree,
     nextMission,
@@ -78,6 +80,16 @@ export default function Profile() {
           <ProfileIdentityCard
             nickname={nickname}
             rank={rank}
+            user={user}
+          />
+
+          <ProfileCyberIdCard
+            nickname={nickname}
+            points={points}
+            rank={rank}
+            stats={stats}
+            tasteProfile={latestTasteProfile}
+            unlockedBadges={unlockedBadges}
             user={user}
           />
 
