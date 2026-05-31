@@ -185,7 +185,7 @@
 
 .profile-identity-card {
   display: grid;
-  grid-template-columns: auto 1fr minmax(240px, 0.52fr);
+  grid-template-columns: auto minmax(0, 1fr) minmax(0, 0.52fr);
   align-items: center;
   gap: 18px;
 }
@@ -232,17 +232,22 @@
 
 .profile-nickname-form {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 10px;
   align-items: end;
+  width: 100%;
+  min-width: 0;
 }
 
 .profile-nickname-form label {
   display: grid;
   gap: 6px;
+  min-width: 0;
 }
 
 .profile-nickname-form input {
+  width: 100%;
+  min-width: 0;
   min-height: 38px;
   border: 1px solid rgba(0, 255, 255, 0.2);
   padding: 0 10px;
@@ -924,10 +929,14 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-width: 0;
 }
 
 .agent-id h3 {
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 24px;
+  white-space: nowrap;
 }
 
 .agent-role {
@@ -1464,5 +1473,13 @@
 
   .profile-card.profile-identity-card {
     gap: 14px;
+  }
+
+  .profile-nickname-form {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-nickname-form button {
+    width: 100%;
   }
 }
