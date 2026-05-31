@@ -236,6 +236,7 @@ export default function CoordinateUniverse({
   const dragRef = useRef(null);
   const [view, setView] = useState({ yaw: -0.24, pitch: 0.18, zoom: 1 });
   const [isDragging, setIsDragging] = useState(false);
+  const [isRenderable, setIsRenderable] = useState(true);
 
   useEffect(() => {
     onViewChange?.(view);
@@ -262,6 +263,34 @@ export default function CoordinateUniverse({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
+    const wrapper = canvas.parentElement;
+    if (!wrapper || !('IntersectionObserver' in window)) return undefined;
+
+    let isIntersecting = true;
+    const updateRenderable = () => {
+      setIsRenderable(isIntersecting && !document.hidden);
+    };
+
+    const observer = new IntersectionObserver(([entry]) => {
+      isIntersecting = entry?.isIntersecting ?? true;
+      updateRenderable();
+    }, {
+      rootMargin: '180px 0px',
+      threshold: 0.01,
+    });
+
+    observer.observe(wrapper);
+    document.addEventListener('visibilitychange', updateRenderable);
+
+    return () => {
+      observer.disconnect();
+      document.removeEventListener('visibilitychange', updateRenderable);
+    };
+  }, []);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !isRenderable) return undefined;
     const context = canvas.getContext('2d');
     const starSeeds = Array.from({ length: 120 }, (_, index) => ({
       x: ((index * 73) % 997) / 997,
@@ -340,7 +369,7 @@ export default function CoordinateUniverse({
 
     animationRef.current = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animationRef.current);
-  }, [connections, hasFocus, nodes, relatedIds, selectedId, view]);
+  }, [connections, hasFocus, isRenderable, nodes, relatedIds, selectedId, view]);
 
   const zoom = amount => {
     setView(current => ({ ...current, zoom: clamp(Number((current.zoom + amount).toFixed(2)), 0.65, 1.8) }));

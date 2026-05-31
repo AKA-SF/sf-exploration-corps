@@ -42,7 +42,33 @@ export const ZoomableMap = forwardRef(({
   const suppressClickRef = useRef(false);
   const targetRef = useRef({ x: 0, y: 0, scale: initialScale });
   const cameraRef = useRef({ x: 0, y: 0, scale: initialScale });
+  const onCameraChangeRef = useRef(onCameraChange);
+  const cameraStepRef = useRef(null);
   const [camera, setCamera] = useState({ x: 0, y: 0, scale: initialScale });
+
+  useEffect(() => {
+    onCameraChangeRef.current = onCameraChange;
+  }, [onCameraChange]);
+
+  const isSameCamera = useCallback((a, b) => (
+    Math.abs(a.x - b.x) < 0.001 &&
+    Math.abs(a.y - b.y) < 0.001 &&
+    Math.abs(a.scale - b.scale) < 0.0001
+  ), []);
+
+  const publishCamera = useCallback((next) => {
+    cameraRef.current = next;
+    setCamera(previous => (isSameCamera(previous, next) ? previous : next));
+    onCameraChangeRef.current?.(next);
+  }, [isSameCamera]);
+
+  const scheduleCameraFrame = useCallback(() => {
+    if (frameRef.current) return;
+    frameRef.current = requestAnimationFrame(() => {
+      frameRef.current = null;
+      cameraStepRef.current?.();
+    });
+  }, []);
 
   const boundsFor = useCallback((scale) => {
     const rect = containerRef.current?.getBoundingClientRect();
@@ -67,16 +93,21 @@ export const ZoomableMap = forwardRef(({
   }, [boundsFor, maxScale, minScale]);
 
   const setTarget = useCallback((next) => {
-    targetRef.current = normalize({ ...targetRef.current, ...next });
-  }, [normalize]);
+    const normalized = normalize({ ...targetRef.current, ...next });
+    if (isSameCamera(targetRef.current, normalized)) return;
+    targetRef.current = normalized;
+    scheduleCameraFrame();
+  }, [isSameCamera, normalize, scheduleCameraFrame]);
 
   const setCameraImmediate = useCallback((next) => {
     const normalized = normalize({ ...targetRef.current, ...next });
     targetRef.current = normalized;
-    cameraRef.current = normalized;
-    setCamera(normalized);
-    onCameraChange?.(normalized);
-  }, [normalize, onCameraChange]);
+    if (frameRef.current) {
+      cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+    }
+    publishCamera(normalized);
+  }, [normalize, publishCamera]);
 
   const zoomAt = useCallback((point, nextScale) => {
     const rect = containerRef.current?.getBoundingClientRect();
@@ -168,36 +199,40 @@ export const ZoomableMap = forwardRef(({
   }, [setTarget, stopInertia]);
 
   useEffect(() => {
-    const tick = () => {
+    cameraStepRef.current = () => {
       const current = cameraRef.current;
       const target = targetRef.current;
-      const next = {
+      const eased = {
         x: current.x + (target.x - current.x) * 0.2,
         y: current.y + (target.y - current.y) * 0.2,
         scale: current.scale + (target.scale - current.scale) * 0.18,
       };
+      const isAtRest =
+        Math.abs(eased.x - target.x) < 0.02 &&
+        Math.abs(eased.y - target.y) < 0.02 &&
+        Math.abs(eased.scale - target.scale) < 0.0005;
 
-      if (
-        Math.abs(next.x - target.x) < 0.02 &&
-        Math.abs(next.y - target.y) < 0.02 &&
-        Math.abs(next.scale - target.scale) < 0.0005
-      ) {
-        cameraRef.current = target;
-      } else {
-        cameraRef.current = next;
+      const next = isAtRest
+        ? target
+        : eased;
+
+      if (!isSameCamera(current, next)) {
+        publishCamera(next);
       }
 
-      setCamera(cameraRef.current);
-      onCameraChange?.(cameraRef.current);
-      frameRef.current = requestAnimationFrame(tick);
+      if (!isAtRest) {
+        scheduleCameraFrame();
+      }
     };
 
-    frameRef.current = requestAnimationFrame(tick);
+    scheduleCameraFrame();
     return () => {
       if (frameRef.current) cancelAnimationFrame(frameRef.current);
+      frameRef.current = null;
+      cameraStepRef.current = null;
       stopInertia();
     };
-  }, [onCameraChange, stopInertia]);
+  }, [isSameCamera, publishCamera, scheduleCameraFrame, stopInertia]);
 
   useEffect(() => {
     const element = containerRef.current;

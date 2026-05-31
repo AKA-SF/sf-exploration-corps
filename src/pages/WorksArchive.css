@@ -107,32 +107,32 @@
   min-height: 42px;
   padding: 0 12px;
   border: 1px solid rgba(25, 247, 241, 0.72);
-  color: #021015 !important;
+  color: #021015;
   background: #2ffcff;
   font-family: "Pretendard", "Noto Sans KR", system-ui, sans-serif;
   font-size: 13px;
   font-weight: 900;
   letter-spacing: 0;
-  text-shadow: none !important;
+  text-shadow: none;
   cursor: pointer;
 }
 
 .works-full-status .works-full-submit-button span {
   display: inline-block;
-  color: #021015 !important;
+  color: #021015;
   font-family: "Pretendard", "Noto Sans KR", system-ui, sans-serif;
   font-size: 13px;
   font-weight: 900;
   letter-spacing: 0;
   line-height: 1;
-  text-shadow: none !important;
+  text-shadow: none;
 }
 
 .works-full-status .works-full-submit-button svg {
   width: 14px;
   height: 14px;
-  color: #021015 !important;
-  stroke: #021015 !important;
+  color: #021015;
+  stroke: #021015;
 }
 
 .works-full-tabs {
@@ -355,73 +355,73 @@
 
 .reading-mode .page-container:has(.works-full-page),
 .reading-mode.page-container:has(.works-full-page) {
-  background: #f3efe6 !important;
+  background: #f3efe6;
 }
 
 .reading-mode .works-full-page {
   --cyan: #2f6f78;
   background:
-    linear-gradient(180deg, rgba(255, 252, 244, 0.98), rgba(239, 233, 219, 0.98)) !important;
-  color: #172126 !important;
+    linear-gradient(180deg, rgba(255, 252, 244, 0.98), rgba(239, 233, 219, 0.98));
+  color: #172126;
 }
 
 .reading-mode .works-full-header,
 .reading-mode .works-full-card,
 .reading-mode .works-full-empty,
 .reading-mode .works-full-search {
-  border-color: rgba(46, 72, 77, 0.22) !important;
+  border-color: rgba(46, 72, 77, 0.22);
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.66), rgba(232, 222, 202, 0.34)),
-    rgba(255, 252, 244, 0.9) !important;
-  box-shadow: none !important;
+    rgba(255, 252, 244, 0.9);
+  box-shadow: none;
 }
 
 .reading-mode .works-back-link,
 .reading-mode .works-full-status,
 .reading-mode .works-full-tabs a {
-  border-color: rgba(47, 111, 120, 0.28) !important;
-  background: rgba(255, 252, 244, 0.72) !important;
-  color: #2f6f78 !important;
+  border-color: rgba(47, 111, 120, 0.28);
+  background: rgba(255, 252, 244, 0.72);
+  color: #2f6f78;
 }
 
 .reading-mode .works-full-tabs a:hover,
 .reading-mode .works-full-tabs a:focus-visible,
 .reading-mode .works-full-tabs a.is-active {
-  background: #2f6f78 !important;
-  color: #fffdf6 !important;
+  background: #2f6f78;
+  color: #fffdf6;
 }
 
 .reading-mode .works-full-status .works-full-submit-button {
-  border-color: rgba(47, 111, 120, 0.42) !important;
-  background: #2f6f78 !important;
+  border-color: rgba(47, 111, 120, 0.42);
+  background: #2f6f78;
 }
 
 .reading-mode .works-full-status .works-full-submit-button,
 .reading-mode .works-full-status .works-full-submit-button span,
 .reading-mode .works-full-status .works-full-submit-button svg {
-  color: #fffdf6 !important;
-  stroke: #fffdf6 !important;
+  color: #fffdf6;
+  stroke: #fffdf6;
 }
 
 .reading-mode .works-full-header h1,
 .reading-mode .works-full-card h2 {
-  color: #111827 !important;
+  color: #111827;
 }
 
 .reading-mode .works-full-header p,
 .reading-mode .works-full-card p,
 .reading-mode .works-full-empty {
-  color: #34444b !important;
+  color: #34444b;
 }
 
 .reading-mode .works-full-search input {
-  color: #172126 !important;
+  color: #172126;
 }
 
 .reading-mode .works-full-tags span {
-  border-color: rgba(47, 111, 120, 0.24) !important;
-  background: rgba(255, 255, 255, 0.5) !important;
-  color: #2f6f78 !important;
+  border-color: rgba(47, 111, 120, 0.24);
+  background: rgba(255, 255, 255, 0.5);
+  color: #2f6f78;
 }
 
 @media (max-width: 1180px) {
