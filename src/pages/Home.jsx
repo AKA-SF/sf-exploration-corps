@@ -1,12 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Sparkles } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
-import {
-  getRandomTasteQuestions,
-  getTasteProfile,
-  getTasteRecommendations,
-} from '../data/tasteTest';
 import { getWorkCategorySlug, workCategories } from '../data/workArchive';
 import { recordUserActivity } from '../lib/activityLogger';
 import ArchiveDock from './home/ArchiveDock';
@@ -16,6 +10,7 @@ import ContactSection from './home/ContactSection';
 import CoordinateLogModal from './home/CoordinateLogModal';
 import CoordinatesSection from './home/CoordinatesSection';
 import HeroSection from './home/HeroSection';
+import HomeTopBar from './home/HomeTopBar';
 import MediaArchiveSection from './home/MediaArchiveSection';
 import TasteTestSection from './home/TasteTestSection';
 import WorkArchiveFormPanel from './home/WorkArchiveFormPanel';
@@ -26,8 +21,6 @@ import {
   conceptEntries,
   contactChannels,
   fallbackWorks,
-  mediaCategories,
-  mediaCategorySlugs,
   navItems,
 } from './home/homeContent';
 import {
@@ -35,12 +28,14 @@ import {
   getConceptSource,
   getRandomWorks,
   mergeWorksByCode,
-  normalizeMediaCategory,
-  sortMediaByLatest,
 } from './home/homeUtils';
 import useCommunityComposer from './home/useCommunityComposer';
+import useConceptDictionary from './home/useConceptDictionary';
 import useCoordinateMap from './home/useCoordinateMap';
 import useHomeData from './home/useHomeData';
+import useHomeStatus from './home/useHomeStatus';
+import useMediaArchivePreview from './home/useMediaArchivePreview';
+import useTasteTest from './home/useTasteTest';
 import useWorkArchiveInteractions from './home/useWorkArchiveInteractions';
 import './Home.css';
 import './home/WorksArchiveSection.css';
@@ -52,8 +47,6 @@ import './home/HomeResponsive.css';
 
 export default function Home() {
   const { user } = useAuth();
-  const [tasteQuestionSet, setTasteQuestionSet] = useState(() => getRandomTasteQuestions());
-  const [tasteAnswers, setTasteAnswers] = useState({});
   const archiveMode = 'random';
   const {
     activeConceptCode,
@@ -77,10 +70,6 @@ export default function Home() {
     getRandomWorks,
     mergeWorksByCode,
   });
-  const [activeMediaCategory, setActiveMediaCategory] = useState(mediaCategories[0]);
-  const [showAllConcepts, setShowAllConcepts] = useState(false);
-  const [conceptReadingMode, setConceptReadingMode] = useState(false);
-  const conceptFeatureRef = useRef(null);
   const {
     questionForm,
     questionMessage,
@@ -160,26 +149,62 @@ export default function Home() {
     return () => window.clearInterval(timer);
   }, []);
 
-  const selectConcept = code => {
-    setActiveConceptCode(code);
-    const concept = concepts.find(entry => entry.code === code);
-    recordMissionSignal(`concept:${code}`, {
-      actionType: 'concept_read',
-      points: 5,
-      genre: concept?.category || 'SF 개념 사전',
-      metadata: {
-        title: concept?.term || code,
-        concept_code: code,
-        node: 'concept-dictionary',
-      },
-    });
+  const recordTasteComplete = useCallback((tasteProfileResult) => recordMissionSignal(`taste:${tasteProfileResult.code}`, {
+    actionType: 'taste_test',
+    points: 10,
+    genre: tasteProfileResult.genre,
+    metadata: {
+      title: '나의 SF 성향 테스트 완료',
+      taste_code: tasteProfileResult.code,
+      taste_title: tasteProfileResult.title,
+      node: 'taste-test',
+    },
+  }), [recordMissionSignal]);
+  const recordConceptRead = useCallback((code, concept) => recordMissionSignal(`concept:${code}`, {
+    actionType: 'concept_read',
+    points: 5,
+    genre: concept?.category || 'SF 개념 사전',
+    metadata: {
+      title: concept?.term || code,
+      concept_code: code,
+      node: 'concept-dictionary',
+    },
+  }), [recordMissionSignal]);
 
-    if (showAllConcepts) {
-      requestAnimationFrame(() => {
-        conceptFeatureRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      });
-    }
-  };
+  const {
+    resetTasteTest,
+    tasteAnswers,
+    tasteProfile,
+    tasteQuestionSet,
+    tasteRecommendations,
+    updateTasteAnswer,
+  } = useTasteTest({
+    works,
+    onComplete: recordTasteComplete,
+  });
+  const {
+    activeMediaArchivePath,
+    activeMediaCategory,
+    mediaCategories,
+    previewMedia,
+    setActiveMediaCategory,
+  } = useMediaArchivePreview(mediaItems);
+  const {
+    conceptFeatureRef,
+    conceptReadingMode,
+    selectConcept,
+    selectedConcept,
+    setConceptReadingMode,
+    setShowAllConcepts,
+    showAllConcepts,
+    visibleConcepts,
+  } = useConceptDictionary({
+    activeConceptCode,
+    concepts,
+    randomConceptCodes,
+    setActiveConceptCode,
+    onConceptRead: recordConceptRead,
+  });
 
   const displayedWorks = works.filter(work => randomWorkCodes.includes(work.code)).slice(0, 6);
   const workCategoryCounts = useMemo(() => Object.fromEntries(
@@ -188,80 +213,21 @@ export default function Home() {
       works.filter(work => getWorkCategorySlug(`${work.medium ?? ''} ${work.category ?? ''}`) === category.slug).length,
     ]),
   ), [works]);
-  const isTasteComplete = Object.keys(tasteAnswers).length === tasteQuestionSet.length;
-  const tasteProfile = isTasteComplete ? getTasteProfile(tasteAnswers, tasteQuestionSet) : null;
-  const tasteRecommendations = getTasteRecommendations(works, tasteProfile);
-  const updateTasteAnswer = (questionId, optionIndex) => {
-    setTasteAnswers(answer => ({ ...answer, [questionId]: optionIndex }));
-  };
-  const resetTasteTest = () => {
-    setTasteAnswers({});
-    setTasteQuestionSet(getRandomTasteQuestions());
-  };
-
-  useEffect(() => {
-    if (!isTasteComplete || !tasteProfile) return;
-    recordMissionSignal(`taste:${tasteProfile.code}`, {
-      actionType: 'taste_test',
-      points: 10,
-      genre: tasteProfile.genre,
-      metadata: {
-        title: '나의 SF 성향 테스트 완료',
-        taste_code: tasteProfile.code,
-        taste_title: tasteProfile.title,
-        node: 'taste-test',
-      },
-    });
-  }, [isTasteComplete, recordMissionSignal, tasteProfile]);
-
-  const displayedMedia = sortMediaByLatest(
-    mediaItems.filter(item => normalizeMediaCategory(item.category) === activeMediaCategory),
-  );
-  const previewMedia = displayedMedia.slice(0, 3);
-  const activeMediaArchivePath = `/media/${mediaCategorySlugs[activeMediaCategory] ?? 'media'}`;
-  const orderedConcepts = [
-    ...randomConceptCodes.map(code => concepts.find(concept => concept.code === code)).filter(Boolean),
-    ...concepts.filter(concept => !randomConceptCodes.includes(concept.code)),
-  ];
-  const selectedConcept = orderedConcepts.find(concept => concept.code === activeConceptCode) ?? orderedConcepts[0];
-  const visibleConcepts = showAllConcepts ? orderedConcepts : orderedConcepts.slice(0, 6);
-  const metrics = {
-    works: works.length,
-    media: mediaItems.length,
-    concepts: concepts.length,
-    logs: dashboard.logs.length,
-    questions: dashboard.questions.length,
-    status: dashboard.status,
-  };
-  const recentSignals = [
-    works[0] && { id: 'WORK 001', label: `${works[0].title} / 작품 아카이브`, time: dashboard.status.works ? 'SYNC OK' : 'LOCAL FALLBACK' },
-    mediaItems[0] && { id: 'MEDIA 001', label: `${mediaItems[0].title} / 미디어`, time: 'SYNC OK' },
-    dashboard.logs[0] && { id: 'LOG 001', label: `${dashboard.logs[0].workTitle} / 탐사 로그`, time: 'SYNC OK' },
-    dashboard.questions[0] && { id: 'BOARD 001', label: `${dashboard.questions[0].title} / 커뮤니티`, time: 'SYNC OK' },
-    selectedConcept && { id: 'CONCEPT', label: `${selectedConcept.term} / 개념 사전`, time: dashboard.status.concepts ? 'SYNC OK' : 'LOCAL FALLBACK' },
-  ].filter(Boolean).slice(0, 5);
-  const systemReady = Object.values(dashboard.status).filter(Boolean).length >= 3;
+  const { metrics, recentSignals, systemReady } = useHomeStatus({
+    concepts,
+    dashboard,
+    mediaItems,
+    selectedConcept,
+    works,
+  });
 
   return (
     <PageTransition className="archive-home">
-      <header className="home-topbar">
-        <a className="brand-mark" href="#top" aria-label="SF 탐사단 홈">
-          <Sparkles aria-hidden="true" />
-          <span>SF 탐사단</span>
-          <em>INTERSTELLAR ARCHIVE VESSEL</em>
-        </a>
-        <nav className="top-nav" aria-label="주요 메뉴">
-          {navItems.map(item => (
-            <a key={item.label} href={item.href} onClick={item.href === '#coordinates' ? resetCoordinateMap : undefined}>
-              {item.label}
-            </a>
-          ))}
-        </nav>
-        <div className="system-status">
-          <span>SYSTEM STATUS</span>
-          <strong><i /> {systemReady ? 'ONLINE' : 'PARTIAL'}</strong>
-        </div>
-      </header>
+      <HomeTopBar
+        navItems={navItems}
+        onResetCoordinateMap={resetCoordinateMap}
+        systemReady={systemReady}
+      />
 
       <HeroSection
         activeGenre={activeGenre}
