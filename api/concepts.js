@@ -1,36 +1,5 @@
 import { getNotionConfig, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
-
-function plainText(value) {
-  if (!value) return '';
-  if (value.type === 'title' || value.type === 'rich_text') {
-    return value[value.type]?.map(part => part.plain_text).join('') ?? '';
-  }
-  if (value.type === 'select') return value.select?.name ?? '';
-  if (value.type === 'multi_select') return value.multi_select.map(tag => tag.name).join(', ');
-  if (value.type === 'number') return String(value.number ?? '');
-  if (value.type === 'url') return value.url ?? '';
-  if (value.type === 'relation') return value.relation?.length ? `${value.relation.length}개 연결` : '';
-  return '';
-}
-
-function multiSelect(value) {
-  if (!value || value.type !== 'multi_select') return [];
-  return value.multi_select.map(tag => tag.name);
-}
-
-function textList(value) {
-  if (!value) return [];
-  if (value.type === 'multi_select') return value.multi_select.map(tag => tag.name);
-  const text = plainText(value);
-  return text
-    .split(/[,/、|]/)
-    .map(item => item.trim())
-    .filter(Boolean);
-}
-
-function pick(properties, names) {
-  return names.map(name => properties[name]).find(Boolean);
-}
+import { multiSelect, pick, plainText, textList } from './_notionProperties.js';
 
 function mapPageToConcept(page, index) {
   const properties = page.properties ?? {};

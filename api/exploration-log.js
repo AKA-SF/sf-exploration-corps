@@ -1,27 +1,7 @@
 import { getNotionConfig, notionRequest, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
+import { multiSelect, pick, plainText } from './_notionProperties.js';
 
 const DEFAULT_LOG_DATABASE_ID = '36998dbef69d80dfa4afc27813f25b11';
-
-function plainText(value) {
-  if (!value) return '';
-  if (value.type === 'title' || value.type === 'rich_text') {
-    return value[value.type]?.map(part => part.plain_text).join('') ?? '';
-  }
-  if (value.type === 'select') return value.select?.name ?? '';
-  if (value.type === 'multi_select') return value.multi_select.map(tag => tag.name).join(', ');
-  if (value.type === 'date') return value.date?.start ?? '';
-  if (value.type === 'url') return value.url ?? '';
-  return '';
-}
-
-function multiSelect(value) {
-  if (!value || value.type !== 'multi_select') return [];
-  return value.multi_select.map(tag => tag.name);
-}
-
-function pick(properties, names) {
-  return names.map(name => properties[name]).find(Boolean);
-}
 
 function normalizeName(value) {
   return value.replace(/\s/g, '').toLowerCase();

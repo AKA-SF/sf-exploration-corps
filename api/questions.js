@@ -1,20 +1,8 @@
 import { getNotionConfig, notionRequest, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
+import { pick, plainText } from './_notionProperties.js';
 
 const DEFAULT_QUESTIONS_DATABASE_ID = '36a98dbef69d803abd53c09b6ff7f2e3';
 const DEFAULT_BOARD_PASSWORD = 'sf';
-
-function plainText(value) {
-  if (!value) return '';
-  if (value.type === 'title' || value.type === 'rich_text') {
-    return value[value.type]?.map(part => part.plain_text).join('') ?? '';
-  }
-  if (value.type === 'select') return value.select?.name ?? '';
-  if (value.type === 'status') return value.status?.name ?? '';
-  if (value.type === 'date') return value.date?.start ?? '';
-  if (value.type === 'email') return value.email ?? '';
-  if (value.type === 'url') return value.url ?? '';
-  return '';
-}
 
 function findProperty(schema, preferredNames, type) {
   const entries = Object.entries(schema ?? {});
@@ -22,10 +10,6 @@ function findProperty(schema, preferredNames, type) {
     property.type === type && preferredNames.includes(name)
   ));
   return preferred ?? entries.find(([, property]) => property.type === type);
-}
-
-function pick(properties, names) {
-  return names.map(name => properties[name]).find(Boolean);
 }
 
 function mapPageToQuestion(page, index) {

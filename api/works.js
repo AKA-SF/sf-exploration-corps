@@ -4,6 +4,7 @@ import {
   queryNotionDatabaseAll,
   sendNotionError,
 } from './_notion.js';
+import { multiSelect, pick, pickName, plainText } from './_notionProperties.js';
 
 const ALADIN_LOOKUP_ENDPOINT = 'http://www.aladin.co.kr/ttb/api/ItemLookUp.aspx';
 const ALADIN_SEARCH_ENDPOINT = 'http://www.aladin.co.kr/ttb/api/ItemSearch.aspx';
@@ -21,31 +22,6 @@ const apiCache = globalThis.__sfWorksApiCache ??= {
   coverCache: new Map(),
   pendingCovers: new Map(),
 };
-
-function plainText(value) {
-  if (!value) return '';
-  if (value.type === 'title' || value.type === 'rich_text') {
-    return value[value.type]?.map(part => part.plain_text).join('') ?? '';
-  }
-  if (value.type === 'select') return value.select?.name ?? '';
-  if (value.type === 'multi_select') return value.multi_select.map(tag => tag.name).join(', ');
-  if (value.type === 'number') return String(value.number ?? '');
-  if (value.type === 'url') return value.url ?? '';
-  return '';
-}
-
-function multiSelect(value) {
-  if (!value || value.type !== 'multi_select') return [];
-  return value.multi_select.map(tag => tag.name);
-}
-
-function pick(properties, names) {
-  return names.map(name => properties[name]).find(Boolean);
-}
-
-function pickName(properties, names) {
-  return names.find(name => properties[name]);
-}
 
 function getAladinItemId(link) {
   if (!link) return '';
