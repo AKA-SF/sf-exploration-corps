@@ -37,6 +37,8 @@ import useTasteTest from './home/useTasteTest';
 import useWorkArchiveInteractions from './home/useWorkArchiveInteractions';
 import useWorksArchivePreview from './home/useWorksArchivePreview';
 import './Home.css';
+import './home/HeroSection.css';
+import './home/ArchiveDock.css';
 import './home/WorksArchiveSection.css';
 import './home/MediaArchiveSection.css';
 import './home/CoordinatesSection.css';

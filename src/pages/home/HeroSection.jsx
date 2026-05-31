@@ -1,5 +1,4 @@
 import { useMemo } from 'react';
-import { motion } from 'framer-motion';
 import { ChevronRight, Database } from 'lucide-react';
 
 const blips = [
@@ -60,8 +59,7 @@ function RadarDisplay() {
           />
         ))}
         {blips.map(blip => (
-          <motion.span
-            animate={{ opacity: [0.35, 1, 0.35], scale: [0.85, 1.25, 0.85] }}
+          <span
             className="radar-blip"
             key={`${blip.x}-${blip.y}`}
             style={{
@@ -69,8 +67,8 @@ function RadarDisplay() {
               top: `${blip.y}%`,
               width: blip.size,
               height: blip.size,
+              '--blip-delay': `${blip.delay}s`,
             }}
-            transition={{ duration: 2.4, delay: blip.delay, repeat: Infinity }}
           />
         ))}
       </div>
