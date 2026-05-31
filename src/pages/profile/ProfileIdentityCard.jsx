@@ -13,7 +13,7 @@ export default function ProfileIdentityCard({
         <span className="mono text-muted text-xs">EXPLORER_CALLSIGN</span>
         <h3 className="mono text-cyan">{nickname || '탐사 대원'}</h3>
         <div className="agent-role mono"><BadgeCheck size={12} /><span>{rank.current.title}</span></div>
-        <p className="agent-lock-note mono">CALLSIGN LOCKED</p>
+        <p className="agent-lock-note mono">INITIAL CALLSIGN</p>
       </div>
     </section>
   );

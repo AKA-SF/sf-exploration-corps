@@ -78,9 +78,21 @@ export function useProfileData(user) {
           .order('updated_at', { ascending: false }),
       ]);
 
+      const lockedNickname = user.user_metadata?.nickname || nextProfile?.nickname || fallbackNickname;
+
+      if (nextProfile && !nextProfile.nickname) {
+        const { data: repairedProfile } = await supabase
+          .from('profiles')
+          .update({ nickname: lockedNickname })
+          .eq('id', user.id)
+          .select('*')
+          .maybeSingle();
+        nextProfile = repairedProfile ?? { ...nextProfile, nickname: lockedNickname };
+      }
+
       if (isMounted) {
         setProfile(nextProfile);
-        setNickname(nextProfile.nickname ?? fallbackNickname);
+        setNickname(lockedNickname);
         setActivities(activityError ? [] : activityData ?? []);
         setWorkStatuses(statusError ? mapLocalWorkStatuses(user.id) : statusData ?? []);
         setSelectedMissionRoute(getSelectedMissionRoute(user.id));
@@ -101,26 +113,6 @@ export function useProfileData(user) {
       : emptyProfileViewModel
   ), [activities, profile, selectedMissionRoute, user, workStatuses]);
 
-  const saveNickname = async event => {
-    event.preventDefault();
-    if (!user || !supabase) return;
-    setStatus('saving');
-    const { data, error } = await supabase
-      .from('profiles')
-      .update({ nickname })
-      .eq('id', user.id)
-      .select('*')
-      .single();
-    if (error) {
-      setStatus('error');
-      setMessage(error.message);
-      return;
-    }
-    setProfile(data);
-    setStatus('ready');
-    setMessage('프로필이 저장되었습니다.');
-  };
-
   const chooseMissionRoute = routeId => {
     if (!viewModel.missionTree.trainingComplete) return;
     setSelectedMissionRoute(routeId);
@@ -132,8 +124,6 @@ export function useProfileData(user) {
     chooseMissionRoute,
     message,
     nickname,
-    onNicknameChange: setNickname,
-    onSaveNickname: saveNickname,
     profile,
     status,
     viewModel,

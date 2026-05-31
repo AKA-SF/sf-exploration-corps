@@ -8,7 +8,7 @@ export async function recordUserActivity(user, activity) {
   await supabase.from('profiles').upsert({
     id: user.id,
     nickname,
-  }, { onConflict: 'id' });
+  }, { onConflict: 'id', ignoreDuplicates: true });
 
   const { error } = await supabase.from('activity_logs').insert({
     user_id: user.id,

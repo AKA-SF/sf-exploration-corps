@@ -29,16 +29,25 @@ export default function Login() {
     try {
       if (!isConfigured || !supabase) throw new Error('Supabase 환경 변수가 아직 연결되지 않았습니다.');
       if (mode === 'signup') {
+        const nickname = form.nickname.trim();
+        if (!nickname) throw new Error('탐사 프로필에 남길 닉네임을 입력해주세요.');
+
         const { data, error } = await supabase.auth.signUp({
           email: form.email,
           password: form.password,
           options: {
             data: {
-              nickname: form.nickname || form.email.split('@')[0],
+              nickname,
             },
           },
         });
         if (error) throw error;
+        if (data.user && data.session) {
+          await supabase.from('profiles').upsert({
+            id: data.user.id,
+            nickname,
+          }, { onConflict: 'id', ignoreDuplicates: true });
+        }
         if (data.session) {
           navigate('/profile');
           return;
@@ -81,6 +90,7 @@ export default function Login() {
                 name="nickname"
                 onChange={updateForm}
                 placeholder="예: 오비터"
+                required
                 type="text"
                 value={form.nickname}
               />
