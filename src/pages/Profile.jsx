@@ -25,8 +25,6 @@ export default function Profile() {
     chooseMissionRoute,
     message,
     nickname,
-    onNicknameChange,
-    onSaveNickname,
     status,
     viewModel,
     workStatuses,
@@ -79,10 +77,7 @@ export default function Profile() {
 
           <ProfileIdentityCard
             nickname={nickname}
-            onNicknameChange={onNicknameChange}
-            onSaveNickname={onSaveNickname}
             rank={rank}
-            status={status}
             user={user}
           />
 

@@ -185,7 +185,7 @@
 
 .profile-identity-card {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) minmax(0, 0.52fr);
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: 18px;
 }
@@ -949,6 +949,18 @@
   width: fit-content;
   padding: 4px 7px;
   font-size: 9px;
+}
+
+.agent-lock-note {
+  width: fit-content;
+  margin: 4px 0 0;
+  border: 1px solid rgba(0, 255, 255, 0.16);
+  padding: 4px 7px;
+  color: rgba(191, 208, 214, 0.72);
+  background: rgba(0, 255, 255, 0.035);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 1px;
 }
 
 .agent-stats {
