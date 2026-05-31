@@ -337,28 +337,35 @@ export default function ProfileCyberIdCard({
   return (
     <section className="profile-cyber-id-panel panel">
       <div className="profile-cyber-id-copy">
-        <span className="mono text-muted text-xs">CYBER ID CARD</span>
-        <h3 className="mono">정식 탐사 대원증</h3>
+        <div>
+          <span className="mono text-muted text-xs">CYBER ID CARD</span>
+          <h3 className="mono">정식 탐사 대원증</h3>
+        </div>
         <p>
           {hasTasteProfile
-            ? '현재 프로필과 SF 성향 결과를 미래형 대원증 이미지로 저장합니다.'
-            : '성향 테스트를 완료하면 대원증에 탐사 유형과 추천 항로가 함께 기록됩니다.'}
+            ? '현재 프로필과 SF 성향 결과를 이미지로 저장합니다.'
+            : '성향 테스트를 완료하면 탐사 유형과 추천 항로가 함께 기록됩니다.'}
         </p>
       </div>
-      <div className="profile-cyber-id-preview" aria-hidden="true">
-        <i />
-        <strong className="mono">{tasteProfile?.code ?? 'TYPE-SCAN'}</strong>
-        <span>{tasteProfile?.title ?? '성향 미확인'}</span>
-      </div>
-      <div className="profile-cyber-id-actions">
-        <button type="button" onClick={handleDownload}>
-          <Download size={15} aria-hidden="true" />
-          PNG 다운로드
-        </button>
-        <button type="button" onClick={handleShare}>
-          <Share2 size={15} aria-hidden="true" />
-          공유
-        </button>
+
+      <div className="profile-cyber-id-body">
+        <div className="profile-cyber-id-preview" aria-hidden="true">
+          <i />
+          <small className="mono">CREW PASS</small>
+          <strong className="mono">{tasteProfile?.code ?? 'TYPE-SCAN'}</strong>
+          <span>{tasteProfile?.title ?? '성향 미확인'}</span>
+        </div>
+
+        <div className="profile-cyber-id-actions">
+          <button type="button" onClick={handleDownload}>
+            <Download size={15} aria-hidden="true" />
+            PNG 다운로드
+          </button>
+          <button type="button" onClick={handleShare}>
+            <Share2 size={15} aria-hidden="true" />
+            공유
+          </button>
+        </div>
       </div>
     </section>
   );
