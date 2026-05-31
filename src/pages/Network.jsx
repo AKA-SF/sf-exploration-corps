@@ -15,6 +15,9 @@ const LOG_TYPES = {
 };
 
 const SIGNAL_ACTIONS = ['RESONATE', 'DECODE_REQ', 'ECHO', 'DISTORT', 'ARCHIVE'];
+const MAX_VISIBLE_NODES = 80;
+const MAX_VISIBLE_EDGES = 160;
+const MAX_ANIMATED_EDGES = 72;
 const NETWORK_REACTIONS = [
   { code: 'RESONATE', label: '공명' },
   { code: 'DECODE', label: '해석 요청' },
@@ -39,7 +42,7 @@ const Network = () => {
 
   // Generate spatial coordinates and types for logs
   const spatialLogs = useMemo(() => {
-    return networkLogs.map((log) => {
+    return networkLogs.slice(0, MAX_VISIBLE_NODES).map((log) => {
       // Deterministic pseudo-random placement based on index/id
       const hash = log.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
       const r1 = Math.sin(hash) * 10000;
@@ -97,7 +100,9 @@ const Network = () => {
       }
     }
 
-    return lines;
+    return lines
+      .sort((a, b) => b.strength - a.strength)
+      .slice(0, MAX_VISIBLE_EDGES);
   }, [spatialLogs]);
 
   const transmissionStream = useMemo(() => {
@@ -186,7 +191,7 @@ const Network = () => {
               <div className="network-grid-depth"></div>
               
               <svg className="network-edges" width="2000" height="1500">
-                {edges.map(edge => (
+                {edges.map((edge, edgeIndex) => (
                   <g key={edge.id} className="signal-edge">
                     <line 
                       x1={edge.x1} y1={edge.y1} 
@@ -195,21 +200,25 @@ const Network = () => {
                       strokeWidth={0.8 + edge.strength * 1.4}
                       opacity={0.14 + edge.strength * 0.42}
                     />
-                    <circle r={1.6 + edge.strength * 2.4} fill="var(--primary-cyan)" opacity="0.88">
-                      <animateMotion 
-                        dur={`${5 - edge.strength * 2.2}s`} 
-                        repeatCount="indefinite" 
-                        path={`M ${edge.x1} ${edge.y1} L ${edge.x2} ${edge.y2}`}
-                      />
-                    </circle>
-                    <circle r="1.5" fill="var(--accent-amber)" opacity="0.7">
-                      <animateMotion 
-                        dur={`${7 - edge.strength * 2}s`}
-                        begin="1.2s"
-                        repeatCount="indefinite" 
-                        path={`M ${edge.x2} ${edge.y2} L ${edge.x1} ${edge.y1}`}
-                      />
-                    </circle>
+                    {edgeIndex < MAX_ANIMATED_EDGES && (
+                      <>
+                        <circle r={1.6 + edge.strength * 2.4} fill="var(--primary-cyan)" opacity="0.88">
+                          <animateMotion
+                            dur={`${5 - edge.strength * 2.2}s`}
+                            repeatCount="indefinite"
+                            path={`M ${edge.x1} ${edge.y1} L ${edge.x2} ${edge.y2}`}
+                          />
+                        </circle>
+                        <circle r="1.5" fill="var(--accent-amber)" opacity="0.7">
+                          <animateMotion
+                            dur={`${7 - edge.strength * 2}s`}
+                            begin="1.2s"
+                            repeatCount="indefinite"
+                            path={`M ${edge.x2} ${edge.y2} L ${edge.x1} ${edge.y1}`}
+                          />
+                        </circle>
+                      </>
+                    )}
                   </g>
                 ))}
               </svg>

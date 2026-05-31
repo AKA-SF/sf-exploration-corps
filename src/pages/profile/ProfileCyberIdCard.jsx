@@ -1,4 +1,5 @@
 import { Download, Share2 } from 'lucide-react';
+import './ProfileCyberIdCard.css';
 
 const CARD_WIDTH = 1200;
 const CARD_HEIGHT = 750;

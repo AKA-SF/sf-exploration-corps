@@ -1,0 +1,158 @@
+.profile-cyber-id-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 152px auto;
+  align-items: center;
+  gap: 14px;
+  overflow: hidden;
+}
+
+.profile-cyber-id-copy {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+
+.profile-cyber-id-copy h3 {
+  margin: 0;
+  color: var(--text-main);
+  font-size: 18px;
+  letter-spacing: 1.4px;
+}
+
+.profile-cyber-id-copy p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
+.profile-cyber-id-preview {
+  position: relative;
+  display: grid;
+  align-content: end;
+  min-height: 92px;
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  padding: 12px;
+  color: var(--primary-cyan);
+  background:
+    radial-gradient(circle at 78% 24%, rgba(0, 255, 255, 0.24), transparent 28%),
+    linear-gradient(135deg, rgba(0, 255, 255, 0.08), rgba(0, 0, 0, 0.2)),
+    rgba(0, 8, 12, 0.68);
+  box-shadow: inset 0 0 22px rgba(0, 255, 255, 0.08);
+}
+
+.profile-cyber-id-preview i {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  opacity: 0.5;
+}
+
+.profile-cyber-id-preview i::before,
+.profile-cyber-id-preview i::after {
+  position: absolute;
+  content: "";
+  background: currentColor;
+  opacity: 0.55;
+}
+
+.profile-cyber-id-preview i::before {
+  top: 50%;
+  left: 5px;
+  width: 22px;
+  height: 1px;
+}
+
+.profile-cyber-id-preview i::after {
+  top: 5px;
+  left: 50%;
+  width: 1px;
+  height: 22px;
+}
+
+.profile-cyber-id-preview strong {
+  font-size: 11px;
+  letter-spacing: 1.6px;
+}
+
+.profile-cyber-id-preview span {
+  margin-top: 5px;
+  color: var(--text-main);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.3;
+}
+
+.profile-cyber-id-actions {
+  display: grid;
+  gap: 8px;
+  min-width: 128px;
+}
+
+.profile-cyber-id-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  border: 1px solid rgba(0, 255, 255, 0.26);
+  padding: 0 12px;
+  color: var(--primary-cyan);
+  background: rgba(0, 0, 0, 0.34);
+  font-size: 11px;
+  font-weight: 900;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.profile-cyber-id-actions button:first-child {
+  color: #001417;
+  border-color: rgba(0, 255, 255, 0.54);
+  background: var(--primary-cyan);
+}
+
+.reading-mode .profile-cyber-id-preview {
+  border-color: rgba(47, 111, 120, 0.28);
+  color: var(--mode-reading-cyan);
+  background:
+    radial-gradient(circle at 78% 24%, rgba(47, 111, 120, 0.16), transparent 28%),
+    linear-gradient(135deg, rgba(47, 111, 120, 0.08), rgba(255, 255, 255, 0.2)),
+    rgba(255, 252, 244, 0.76);
+}
+
+.reading-mode .profile-cyber-id-copy h3,
+.reading-mode .profile-cyber-id-preview span {
+  color: var(--mode-reading-heading);
+}
+
+.reading-mode .profile-cyber-id-copy p {
+  color: var(--mode-reading-muted);
+}
+
+.reading-mode .profile-cyber-id-actions button:first-child {
+  border-color: rgba(47, 111, 120, 0.44);
+  color: var(--mode-reading-contrast);
+  background: var(--mode-reading-cyan);
+}
+
+@media (max-width: 760px) {
+  .profile-cyber-id-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-cyber-id-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 520px) {
+  .profile-cyber-id-actions {
+    grid-template-columns: 1fr;
+  }
+}

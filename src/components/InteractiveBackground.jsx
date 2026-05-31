@@ -11,29 +11,37 @@ const InteractiveBackground = () => {
   const { currentSystemState } = useLogs();
   const location = useLocation();
   const risk = currentSystemState.riskLevel || 0;
+  const isHome = location.pathname === '/';
+  const isVisualSurface = isHome
+    || location.pathname.startsWith('/works')
+    || location.pathname.startsWith('/media')
+    || location.pathname === '/exploration-log'
+    || location.pathname.startsWith('/questions')
+    || location.pathname.startsWith('/network');
+  const particleCount = isHome ? 40 : 18;
   
   const speed = 1 + (risk / 100) * 3; 
-  const isDanger = risk > 80;
+  const isDanger = risk > 80 && isVisualSurface;
 
-  // Generate random static particles
-  const particles = useMemo(() => Array.from({ length: 40 }).map((_, i) => ({
+  const particles = useMemo(() => Array.from({ length: particleCount }).map((_, i) => ({
     id: i,
     x: seeded(i + 11) * 100,
     y: seeded(i + 37) * 100,
     r: seeded(i + 71) * 0.8 + 0.2,
     delay: seeded(i + 103) * 2
-  })), []);
+  })), [particleCount]);
 
   return (
     <>
       <div className="noise-bg"></div>
       <div className="crt-overlay"></div>
       <div className="scanline"></div>
-      
-      <div className="bg-geometry" style={{ filter: isDanger ? 'hue-rotate(180deg) saturate(2)' : 'none' }}>
+
+      {isVisualSurface && (
+        <div className="bg-geometry" style={{ filter: isDanger ? 'hue-rotate(180deg) saturate(2)' : 'none' }}>
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="radar-svg">
           {/* Radar Grid and Sweep - Only on Home Page */}
-          {location.pathname === '/' ? (
+          {isHome ? (
             <>
               {/* Radar Grid Circles */}
               <circle cx="50" cy="50" r="20" className="geo-shape" strokeDasharray="1 2" />
@@ -104,6 +112,7 @@ const InteractiveBackground = () => {
           )}
         </svg>
       </div>
+      )}
     </>
   );
 };

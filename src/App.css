@@ -640,6 +640,28 @@ body.reading-mode-active .work-archive-link svg {
   scrollbar-width: none;
 }
 
+.page-transition {
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+  padding-bottom: 20px;
+  animation: pageEnter 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+    filter: blur(3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
 .glitch-transition {
   animation: pageGlitch 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
 }
