@@ -1,20 +1,17 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
-import { getWorkCategorySlug, workCategories } from '../data/workArchive';
 import { recordUserActivity } from '../lib/activityLogger';
 import ArchiveDock from './home/ArchiveDock';
 import CommunitySection from './home/CommunitySection';
 import ConceptDictionarySection from './home/ConceptDictionarySection';
 import ContactSection from './home/ContactSection';
-import CoordinateLogModal from './home/CoordinateLogModal';
 import CoordinatesSection from './home/CoordinatesSection';
 import HeroSection from './home/HeroSection';
+import HomeModals from './home/HomeModals';
 import HomeTopBar from './home/HomeTopBar';
 import MediaArchiveSection from './home/MediaArchiveSection';
 import TasteTestSection from './home/TasteTestSection';
-import WorkArchiveFormPanel from './home/WorkArchiveFormPanel';
-import WorkDetailPanel from './home/WorkDetailPanel';
 import WorksArchiveSection from './home/WorksArchiveSection';
 import {
   archiveCards,
@@ -33,10 +30,12 @@ import useCommunityComposer from './home/useCommunityComposer';
 import useConceptDictionary from './home/useConceptDictionary';
 import useCoordinateMap from './home/useCoordinateMap';
 import useHomeData from './home/useHomeData';
+import useHomeModalProps from './home/useHomeModalProps';
 import useHomeStatus from './home/useHomeStatus';
 import useMediaArchivePreview from './home/useMediaArchivePreview';
 import useTasteTest from './home/useTasteTest';
 import useWorkArchiveInteractions from './home/useWorkArchiveInteractions';
+import useWorksArchivePreview from './home/useWorksArchivePreview';
 import './Home.css';
 import './home/WorksArchiveSection.css';
 import './home/MediaArchiveSection.css';
@@ -77,33 +76,17 @@ export default function Home() {
     submitQuestion,
     updateQuestionForm,
   } = useCommunityComposer({ user });
-  const {
-    closeWorkDetail,
-    commentMessage,
-    commentStatus,
-    commentText,
-    isWorkSubmitOpen,
-    openWorkDetail,
-    openWorkSubmit,
-    selectedWork,
-    setCommentText,
-    setIsWorkSubmitOpen,
-    submitWorkArchive,
-    submitWorkComment,
-    updateWorkStatus,
-    updateWorkSubmitForm,
-    workComments,
-    workStatusSaving,
-    workStatuses,
-    workSubmitForm,
-    workSubmitMessage,
-    workSubmitStatus,
-  } = useWorkArchiveInteractions({
+  const workArchiveControls = useWorkArchiveInteractions({
     getRandomWorks,
     setRandomWorkCodes,
     setWorks,
     user,
   });
+  const {
+    openWorkDetail,
+    openWorkSubmit,
+    selectedWork,
+  } = workArchiveControls;
 
   const recordMissionSignal = useCallback(async (signalKey, activity) => {
     if (!user) return;
@@ -113,14 +96,15 @@ export default function Home() {
     if (result?.ok) localStorage.setItem(storageKey, '1');
   }, [user]);
 
+  const coordinateControls = useCoordinateMap({
+    concepts,
+    setDashboard,
+    works,
+  });
   const {
     activeGenre,
-    coordinateLogMessage,
-    coordinateLogStatus,
-    coordinateLogUrl,
     handleGenreNodeClick,
     hasCoordinateFocus,
-    isLogModalOpen,
     mapDescription,
     mapPositions,
     minimapViewport,
@@ -132,15 +116,18 @@ export default function Home() {
     selectedCoordinateId,
     selectedCoordinateQuestions,
     selectedCoordinateWorks,
-    setCoordinateLogUrl,
-    setIsLogModalOpen,
     setMapView,
-    submitCoordinateLog,
     visibleConnections,
-  } = useCoordinateMap({
-    concepts,
-    setDashboard,
-    works,
+  } = coordinateControls;
+  const modalProps = useHomeModalProps({
+    coordinate: {
+      ...coordinateControls,
+      closeCoordinateLogModal: () => coordinateControls.setIsLogModalOpen(false),
+    },
+    workArchive: {
+      ...workArchiveControls,
+      closeWorkSubmit: () => workArchiveControls.setIsWorkSubmitOpen(false),
+    },
   });
   const [currentTime, setCurrentTime] = useState(() => new Date());
 
@@ -206,13 +193,11 @@ export default function Home() {
     onConceptRead: recordConceptRead,
   });
 
-  const displayedWorks = works.filter(work => randomWorkCodes.includes(work.code)).slice(0, 6);
-  const workCategoryCounts = useMemo(() => Object.fromEntries(
-    workCategories.map(category => [
-      category.slug,
-      works.filter(work => getWorkCategorySlug(`${work.medium ?? ''} ${work.category ?? ''}`) === category.slug).length,
-    ]),
-  ), [works]);
+  const {
+    displayedWorks,
+    workCategories,
+    workCategoryCounts,
+  } = useWorksArchivePreview({ randomWorkCodes, works });
   const { metrics, recentSignals, systemReady } = useHomeStatus({
     concepts,
     dashboard,
@@ -328,43 +313,7 @@ export default function Home() {
 
       <ContactSection contactChannels={contactChannels} />
 
-      {isLogModalOpen && (
-        <CoordinateLogModal
-          coordinateLogMessage={coordinateLogMessage}
-          coordinateLogStatus={coordinateLogStatus}
-          coordinateLogUrl={coordinateLogUrl}
-          onClose={() => setIsLogModalOpen(false)}
-          onSubmit={submitCoordinateLog}
-          onUrlChange={setCoordinateLogUrl}
-          selectedCoordinate={selectedCoordinate}
-        />
-      )}
-
-      {isWorkSubmitOpen && (
-        <WorkArchiveFormPanel
-          form={workSubmitForm}
-          message={workSubmitMessage}
-          onChange={updateWorkSubmitForm}
-          onClose={() => setIsWorkSubmitOpen(false)}
-          onSubmit={submitWorkArchive}
-          status={workSubmitStatus}
-        />
-      )}
-
-      <WorkDetailPanel
-        commentMessage={commentMessage}
-        commentStatus={commentStatus}
-        commentText={commentText}
-        comments={workComments}
-        onClose={closeWorkDetail}
-        onCommentSubmit={submitWorkComment}
-        onCommentTextChange={setCommentText}
-        onWorkStatusChange={updateWorkStatus}
-        user={user}
-        work={selectedWork}
-        workStatus={selectedWork ? workStatuses[selectedWork.code] : ''}
-        workStatusSaving={workStatusSaving}
-      />
+      <HomeModals user={user} {...modalProps} />
     </PageTransition>
   );
 }
