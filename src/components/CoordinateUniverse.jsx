@@ -12,12 +12,12 @@ function clamp(value, min, max) {
 
 function nodeToPoint(node, time = 0) {
   const seed = node.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-  const driftA = time * (0.00016 + (seed % 5) * 0.000012) + seed;
-  const driftB = time * (0.00012 + (seed % 7) * 0.00001) + seed * 0.37;
+  const driftA = time * (0.00036 + (seed % 5) * 0.000026) + seed;
+  const driftB = time * (0.00028 + (seed % 7) * 0.000022) + seed * 0.37;
   return {
-    x: (node.x - 50) * 18 + Math.sin(driftA) * 20,
-    y: (node.y - 50) * 12 + Math.cos(driftB) * 14,
-    z: Math.sin(seed * 0.41) * 260 + Math.cos(seed * 0.17) * 110 + Math.sin(driftA * 0.78) * 42,
+    x: (node.x - 50) * 18 + Math.sin(driftA) * 42 + Math.cos(driftB * 0.7) * 14,
+    y: (node.y - 50) * 12 + Math.cos(driftB) * 30 + Math.sin(driftA * 0.52) * 10,
+    z: Math.sin(seed * 0.41) * 260 + Math.cos(seed * 0.17) * 110 + Math.sin(driftA * 0.78) * 88,
   };
 }
 
@@ -123,6 +123,58 @@ function drawSignalCluster(context, planet, time) {
   context.beginPath();
   context.ellipse(planet.x, planet.y, clusterRadius * 0.88, clusterRadius * 0.32, -0.16, 0, Math.PI * 2);
   context.stroke();
+  context.restore();
+}
+
+function quadraticPoint(start, control, end, progress) {
+  const inverse = 1 - progress;
+  return {
+    x: inverse * inverse * start.x + 2 * inverse * progress * control.x + progress * progress * end.x,
+    y: inverse * inverse * start.y + 2 * inverse * progress * control.y + progress * progress * end.y,
+  };
+}
+
+function drawConnection(context, start, end, active, hasFocus, time, index) {
+  const control = {
+    x: (start.x + end.x) / 2 + (end.y - start.y) * 0.055,
+    y: (start.y + end.y) / 2 - (end.x - start.x) * 0.055,
+  };
+  const dimmed = hasFocus && !active;
+  const alpha = dimmed ? 0.16 : active ? 0.92 : 0.54;
+  const stroke = active ? 'rgba(240, 184, 90, 0.9)' : 'rgba(25, 247, 241, 0.68)';
+
+  context.save();
+  context.globalCompositeOperation = 'lighter';
+  context.strokeStyle = stroke;
+  context.lineWidth = active ? 2.2 : 1.15;
+  context.globalAlpha = alpha * 0.38;
+  context.setLineDash([]);
+  context.beginPath();
+  context.moveTo(start.x, start.y);
+  context.quadraticCurveTo(control.x, control.y, end.x, end.y);
+  context.stroke();
+
+  context.globalAlpha = alpha;
+  context.lineWidth = active ? 1.15 : 0.72;
+  context.setLineDash(active ? [12, 10] : [4, 9]);
+  context.lineDashOffset = -time * 0.018 - index * 7;
+  context.beginPath();
+  context.moveTo(start.x, start.y);
+  context.quadraticCurveTo(control.x, control.y, end.x, end.y);
+  context.stroke();
+
+  const packetCount = active ? 3 : 2;
+  for (let packet = 0; packet < packetCount; packet += 1) {
+    const progress = ((time * (active ? 0.00018 : 0.00011)) + packet / packetCount + index * 0.067) % 1;
+    const point = quadraticPoint(start, control, end, progress);
+    context.globalAlpha = dimmed ? 0.18 : active ? 0.92 : 0.62;
+    context.fillStyle = active ? '#f0b85a' : '#dffcff';
+    context.shadowColor = active ? '#f0b85a' : '#19f7f1';
+    context.shadowBlur = active ? 16 : 10;
+    context.beginPath();
+    context.arc(point.x, point.y, active ? 2.1 : 1.45, 0, Math.PI * 2);
+    context.fill();
+  }
   context.restore();
 }
 
@@ -242,8 +294,8 @@ export default function CoordinateUniverse({
       drawAtlasBackground(context, width, height, time, starSeeds, dustSeeds);
 
       const projectedNodes = nodes.map(node => {
-        const autoYaw = view.yaw + Math.sin(time * 0.00006) * 0.028;
-        const autoPitch = view.pitch + Math.cos(time * 0.00005) * 0.014;
+        const autoYaw = view.yaw + Math.sin(time * 0.0001) * 0.065;
+        const autoPitch = view.pitch + Math.cos(time * 0.00008) * 0.032;
         const rotated = rotatePoint(nodeToPoint(node, time), autoYaw, autoPitch);
         const projected = project(rotated, width, height, view.zoom);
         const selected = selectedId === node.id;
@@ -267,23 +319,12 @@ export default function CoordinateUniverse({
         .forEach(planet => drawSignalCluster(context, planet, time));
 
       const nodeMap = new Map(projectedNodes.map(item => [item.node.id, item]));
-      connections.forEach(([from, to]) => {
+      connections.forEach(([from, to], index) => {
         const start = nodeMap.get(from);
         const end = nodeMap.get(to);
         if (!start || !end) return;
         const active = selectedId && (from === selectedId || to === selectedId);
-        context.save();
-        context.globalAlpha = hasFocus && !active ? 0.08 : active ? 0.74 : 0.24;
-        context.strokeStyle = active ? 'rgba(240, 184, 90, 0.82)' : 'rgba(25, 247, 241, 0.44)';
-        context.lineWidth = active ? 1.25 : 0.55;
-        context.setLineDash(active ? [] : [2, 7]);
-        context.beginPath();
-        const midX = (start.x + end.x) / 2 + (end.y - start.y) * 0.03;
-        const midY = (start.y + end.y) / 2 - (end.x - start.x) * 0.03;
-        context.moveTo(start.x, start.y);
-        context.quadraticCurveTo(midX, midY, end.x, end.y);
-        context.stroke();
-        context.restore();
+        drawConnection(context, start, end, active, hasFocus, time, index);
       });
 
       projectedNodes
