@@ -856,6 +856,63 @@
   }
 }
 
+@media (max-width: 520px) {
+  .profile-container {
+    gap: 10px;
+    padding-bottom: 96px !important;
+  }
+
+  .personal-terminal {
+    width: 100%;
+    padding: 6px;
+  }
+
+  .terminal-topbar {
+    grid-template-columns: auto 1fr;
+    gap: 8px;
+    padding: 0 8px;
+  }
+
+  .terminal-topbar span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .terminal-screen {
+    gap: 12px;
+    padding: 8px;
+  }
+
+  .profile-page-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .profile-page-title {
+    font-size: clamp(15px, 5.2vw, 18px);
+  }
+
+  .profile-signout {
+    width: 100%;
+  }
+
+  .profile-card {
+    padding: 16px;
+  }
+
+  .agent-id h3 {
+    font-size: 20px;
+  }
+
+  .agent-stats {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+}
+
 .profile-card {
   display: flex;
   flex-direction: column;
@@ -1397,5 +1454,15 @@
 @media (max-width: 760px) {
   .profile-card.profile-identity-card {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 520px) {
+  .profile-card {
+    padding: 16px;
+  }
+
+  .profile-card.profile-identity-card {
+    gap: 14px;
   }
 }

@@ -108,6 +108,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  width: 100%;
   max-width: 1520px;
   margin: 0 auto 24px;
 }
@@ -623,12 +624,37 @@
 
 @media (max-width: 720px) {
   .questions-page {
-    padding: 24px 16px 56px;
+    padding: 20px 12px 56px;
   }
 
   .questions-header,
   .question-write-panel {
-    padding: 20px;
+    padding: 18px;
+  }
+
+  .questions-header {
+    gap: 16px;
+  }
+
+  .questions-header h1 {
+    font-size: clamp(32px, 11.5vw, 44px);
+  }
+
+  .questions-header p {
+    font-size: 14px;
+  }
+
+  .questions-filter {
+    flex-wrap: nowrap;
+    min-height: 50px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .questions-filter button {
+    flex: 0 0 auto;
+    white-space: nowrap;
   }
 
   .questions-board-head {

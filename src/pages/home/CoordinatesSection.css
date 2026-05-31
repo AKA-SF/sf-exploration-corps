@@ -854,3 +854,42 @@
 .mini-node.tone-amber {
   background: #f0b85a;
 }
+
+@media (max-width: 620px) {
+  .coordinate-log-modal {
+    align-items: start;
+    place-items: start center;
+    padding: 10px;
+    overflow-y: auto;
+  }
+
+  .coordinate-log-form {
+    padding: 18px;
+  }
+
+  .coordinate-log-form h3 {
+    font-size: 24px;
+  }
+
+  .coordinate-log-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .coordinate-log-actions button {
+    width: 100%;
+  }
+
+  .coordinate-log-message {
+    order: 2;
+  }
+
+  .coordinate-work-item {
+    grid-template-columns: 1fr;
+  }
+
+  .coordinate-work-item em {
+    text-align: left;
+  }
+}

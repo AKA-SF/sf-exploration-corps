@@ -136,6 +136,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  width: 100%;
   max-width: 1680px;
   margin: 0 auto 24px;
   min-height: 52px;
@@ -174,6 +175,7 @@
 .log-masonry {
   columns: 6 210px;
   column-gap: 18px;
+  width: 100%;
   max-width: 1680px;
   margin: 0 auto;
 }
@@ -437,5 +439,48 @@
 
   .log-header-status {
     justify-items: start;
+  }
+}
+
+@media (max-width: 620px) {
+  .exploration-log-page {
+    padding: 20px 12px 52px;
+  }
+
+  .log-archive-header {
+    gap: 16px;
+    padding: 18px;
+  }
+
+  .log-archive-header h1 {
+    font-size: clamp(34px, 14vw, 54px);
+  }
+
+  .log-archive-header p {
+    font-size: 14px;
+  }
+
+  .log-reading-toggle {
+    width: 100%;
+  }
+
+  .log-search-bar {
+    min-height: 48px;
+    padding: 0 12px;
+  }
+
+  .log-search-bar span {
+    display: none;
+  }
+
+  .log-masonry,
+  .exploration-log-page.is-reading-local .log-masonry {
+    columns: 1;
+    column-gap: 0;
+  }
+
+  .log-card {
+    margin-bottom: 14px;
+    transform: none;
   }
 }
