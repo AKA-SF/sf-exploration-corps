@@ -51,7 +51,7 @@ export default function QuestionWritePanel({
         </div>
 
         <label>
-          <span>분류</span>
+          <span>말머리</span>
           <select name="category" onChange={onChange} value={form.category}>
             <option>자유글</option>
             <option>작품추천</option>

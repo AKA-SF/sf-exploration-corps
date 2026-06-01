@@ -20,6 +20,7 @@ function mapPageToQuestion(page, index) {
   const category = plainText(pick(properties, ['분류', 'Category', 'Type']));
   const status = plainText(pick(properties, ['상태', 'Status']));
   const date = plainText(pick(properties, ['작성일', '날짜', 'Date']));
+  const views = Number(plainText(pick(properties, ['조회수', '조회', 'Views', 'View Count']))) || 0;
 
   return {
     id: page.id,
@@ -31,6 +32,7 @@ function mapPageToQuestion(page, index) {
     category: category || '토론 질문',
     status,
     date,
+    views,
   };
 }
 
@@ -96,6 +98,39 @@ function setIfPresent(properties, schema, names, type, value) {
   if (payload) properties[name] = payload;
 }
 
+async function incrementViewCount({ page, schema, token }) {
+  const entry = findProperty(schema, ['조회수', '조회', 'Views', 'View Count'], 'number');
+  if (!entry) return page;
+
+  const [name] = entry;
+  const current = Number(plainText(page.properties?.[name])) || 0;
+  const next = current + 1;
+
+  try {
+    await notionRequest(`/pages/${page.id}`, {
+      token,
+      method: 'PATCH',
+      body: {
+        properties: {
+          [name]: { number: next },
+        },
+      },
+    });
+    return {
+      ...page,
+      properties: {
+        ...page.properties,
+        [name]: {
+          ...page.properties?.[name],
+          number: next,
+        },
+      },
+    };
+  } catch {
+    return page;
+  }
+}
+
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store');
 
@@ -139,6 +174,8 @@ export default async function handler(request, response) {
           payload: { question: null, comments: [] },
         });
       }
+
+      page = await incrementViewCount({ page, schema, token });
 
       const blocks = await notionRequest(`/blocks/${questionId}/children?page_size=100`, { token })
         .catch(() => ({ results: [] }));

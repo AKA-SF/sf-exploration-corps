@@ -11,7 +11,9 @@ export default function QuestionsBoard({
   visibleQuestions,
 }) {
   const getCategoryCount = category => (
-    questions.filter(question => normalizeQuestionCategory(question.category) === category).length
+    category === '전체'
+      ? questions.length
+      : questions.filter(question => normalizeQuestionCategory(question.category) === category).length
   );
 
   return (
@@ -32,15 +34,21 @@ export default function QuestionsBoard({
 
       <section className="questions-board" aria-label="커뮤니티 게시글">
         <div className="questions-board-head">
+          <span>글번호</span>
+          <span>말머리</span>
           <span>제목</span>
           <span>작성자</span>
           <span>날짜</span>
+          <span>조회수</span>
         </div>
         {visibleQuestions.length > 0 ? visibleQuestions.map(question => (
           <Link className="question-row" key={question.id} to={`/questions/${question.id}`}>
+            <span className="question-code">{question.code}</span>
+            <span className="question-category">{normalizeQuestionCategory(question.category)}</span>
             <strong>{question.title}</strong>
             <span>{question.author}</span>
             <time>{question.date || '-'}</time>
+            <span className="question-views">{question.views ?? 0}</span>
           </Link>
         )) : (
           <div className="questions-empty">
