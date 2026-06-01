@@ -16,6 +16,118 @@ export const badgeRules = [
     progress: stats => Math.min(100, stats.total * 100),
   },
   {
+    id: 'orbit-entry',
+    title: '궤도 진입',
+    description: '독서 로그 3개 작성',
+    icon: 'orbit',
+    condition: stats => stats.reviews >= 3,
+    progress: stats => Math.min(100, (stats.reviews / 3) * 100),
+  },
+  {
+    id: 'stellar-system-pass',
+    title: '항성계 통과',
+    description: '독서 로그 5개 작성',
+    icon: 'award',
+    condition: stats => stats.reviews >= 5,
+    progress: stats => Math.min(100, (stats.reviews / 5) * 100),
+  },
+  {
+    id: 'deep-space-voyager',
+    title: '심우주 항해자',
+    description: '독서 로그 10개 작성',
+    icon: 'trophy',
+    condition: stats => stats.reviews >= 10,
+    progress: stats => Math.min(100, (stats.reviews / 10) * 100),
+  },
+  {
+    id: 'comment-operator',
+    title: '댓글 교신자',
+    description: '댓글 5개 작성',
+    icon: 'badge',
+    condition: stats => stats.comments >= 5,
+    progress: stats => Math.min(100, (stats.comments / 5) * 100),
+  },
+  {
+    id: 'signal-amplifier',
+    title: '신호 증폭자',
+    description: '반응 10회 남기기',
+    icon: 'sparkles',
+    condition: stats => stats.reactions >= 10,
+    progress: stats => Math.min(100, (stats.reactions / 10) * 100),
+  },
+  {
+    id: 'curator-cadet',
+    title: '큐레이터 후보생',
+    description: '추천 리스트 1개 작성',
+    icon: 'award',
+    condition: stats => stats.recommendationLists >= 1,
+    progress: stats => Math.min(100, stats.recommendationLists * 100),
+  },
+  {
+    id: 'beginner-guide',
+    title: '입문자 안내원',
+    description: 'SF 입문 추천글 작성',
+    icon: 'shield',
+    condition: stats => stats.beginnerGuide >= 1,
+    progress: stats => Math.min(100, stats.beginnerGuide * 100),
+  },
+  {
+    id: 'cyberpunk-connector',
+    title: '사이버펑크 접속자',
+    description: '사이버펑크 기록 3개',
+    icon: 'badge',
+    condition: stats => stats.cyberpunk >= 3,
+    progress: stats => Math.min(100, (stats.cyberpunk / 3) * 100),
+  },
+  {
+    id: 'dystopia-survivor',
+    title: '디스토피아 생존자',
+    description: '디스토피아 기록 3개',
+    icon: 'trophy',
+    condition: stats => stats.dystopia >= 3,
+    progress: stats => Math.min(100, (stats.dystopia / 3) * 100),
+  },
+  {
+    id: 'hard-sf-engineer',
+    title: '하드 SF 엔지니어',
+    description: '하드 SF 기록 3개',
+    icon: 'shield',
+    condition: stats => stats.hardSf >= 3,
+    progress: stats => Math.min(100, (stats.hardSf / 3) * 100),
+  },
+  {
+    id: 'cosmic-horror-witness',
+    title: '코즈믹 호러 목격자',
+    description: '코즈믹 호러 기록 3개',
+    icon: 'sparkles',
+    condition: stats => stats.cosmicHorror >= 3,
+    progress: stats => Math.min(100, (stats.cosmicHorror / 3) * 100),
+  },
+  {
+    id: 'time-loop-detector',
+    title: '시간 루프 감지자',
+    description: '시간여행 기록 3개',
+    icon: 'orbit',
+    condition: stats => stats.timeTravel >= 3,
+    progress: stats => Math.min(100, (stats.timeTravel / 3) * 100),
+  },
+  {
+    id: 'alien-intelligence-envoy',
+    title: '외계지성 교섭관',
+    description: '외계 문명 기록 3개',
+    icon: 'badge',
+    condition: stats => stats.alienCivilization >= 3,
+    progress: stats => Math.min(100, (stats.alienCivilization / 3) * 100),
+  },
+  {
+    id: 'climate-disaster-sentinel',
+    title: '기후 재난 감시자',
+    description: '클라이파이 기록 3개',
+    icon: 'shield',
+    condition: stats => stats.cliFi >= 3,
+    progress: stats => Math.min(100, (stats.cliFi / 3) * 100),
+  },
+  {
     id: 'archive-scribe',
     title: '아카이브 기록자',
     description: '리뷰/로그 5개 작성',
@@ -34,10 +146,74 @@ export const badgeRules = [
   {
     id: 'android-dream',
     title: '안드로이드의 꿈',
-    description: '필립 K. 딕 관련 활동 3개',
+    description: '필립 K. 딕 기록 3개',
     icon: 'badge',
     condition: stats => stats.android >= 3,
     progress: stats => Math.min(100, (stats.android / 3) * 100),
+  },
+  {
+    id: 'leguin-envoy',
+    title: '르 귄의 사절',
+    description: '르 귄 기록 3개',
+    icon: 'orbit',
+    condition: stats => stats.leguin >= 3,
+    progress: stats => Math.min(100, (stats.leguin / 3) * 100),
+  },
+  {
+    id: 'ted-chiang-equation',
+    title: '테드 창의 방정식',
+    description: '테드 창 기록 3개',
+    icon: 'shield',
+    condition: stats => stats.tedChiang >= 3,
+    progress: stats => Math.min(100, (stats.tedChiang / 3) * 100),
+  },
+  {
+    id: 'korean-sf-cartographer',
+    title: '한국 SF 좌표 기록자',
+    description: '한국 SF 기록 5개',
+    icon: 'award',
+    condition: stats => stats.koreanSf >= 5,
+    progress: stats => Math.min(100, (stats.koreanSf / 5) * 100),
+  },
+  {
+    id: 'non-anglo-route-pioneer',
+    title: '비영미권 항로 개척자',
+    description: '비영미권 SF 기록 5개',
+    icon: 'orbit',
+    condition: stats => stats.nonAngloSf >= 5,
+    progress: stats => Math.min(100, (stats.nonAngloSf / 5) * 100),
+  },
+  {
+    id: 'women-sf-explorer',
+    title: '여성 SF 탐사자',
+    description: '여성 작가 SF 기록 5개',
+    icon: 'sparkles',
+    condition: stats => stats.womenSf >= 5,
+    progress: stats => Math.min(100, (stats.womenSf / 5) * 100),
+  },
+  {
+    id: 'long-sleep-return',
+    title: '장기 동면 해제',
+    description: '30일 이상 공백 후 복귀',
+    icon: 'badge',
+    condition: stats => stats.returnAfter30Days >= 1,
+    progress: stats => Math.min(100, stats.returnAfter30Days * 100),
+  },
+  {
+    id: 'galactic-hitchhiker',
+    title: '은하계 히치하이커',
+    description: '서로 다른 섹터 5개 탐사',
+    icon: 'orbit',
+    condition: stats => stats.uniqueSectors >= 5,
+    progress: stats => Math.min(100, (stats.uniqueSectors / 5) * 100),
+  },
+  {
+    id: 'unknown-signal',
+    title: '미확인 신호',
+    description: '숨겨진 조건 달성',
+    icon: 'sparkles',
+    condition: stats => stats.unknownSignal >= 1,
+    progress: stats => Math.min(100, stats.unknownSignal * 100),
   },
   {
     id: 'resistance-leader',
@@ -143,6 +319,9 @@ export function getRank(points) {
 }
 
 export function getActivityStats(activities) {
+  const sortedActivities = [...activities].sort((a, b) => (
+    new Date(a.created_at ?? 0).getTime() - new Date(b.created_at ?? 0).getTime()
+  ));
   const text = activities
     .map(activity => [
       activity.action_type,
@@ -150,24 +329,54 @@ export function getActivityStats(activities) {
       activity.metadata?.title,
       activity.metadata?.work_title,
       activity.metadata?.node,
+      activity.metadata?.body,
+      activity.metadata?.content,
+      activity.metadata?.tags,
+      JSON.stringify(activity.metadata ?? {}),
     ].filter(Boolean).join(' '))
     .join(' ')
     .toLowerCase();
+  const uniqueSectors = new Set(activities
+    .map(activity => activity.genre)
+    .filter(Boolean)
+    .map(genre => String(genre).trim().toLowerCase())).size;
+  const returnAfter30Days = sortedActivities.some((activity, index) => {
+    if (index === 0) return false;
+    const previousTime = new Date(sortedActivities[index - 1].created_at ?? 0).getTime();
+    const currentTime = new Date(activity.created_at ?? 0).getTime();
+    return currentTime - previousTime >= 30 * 24 * 60 * 60 * 1000;
+  }) ? 1 : 0;
 
   return {
     total: activities.length,
     comments: activities.filter(activity => activity.action_type === 'comment').length,
     posts: activities.filter(activity => activity.action_type === 'post').length,
     reviews: activities.filter(activity => ['review', 'exploration_log'].includes(activity.action_type)).length,
+    reactions: activities.filter(activity => ['reaction', 'signal_reaction', 'amplify'].includes(activity.action_type)).length,
+    recommendationLists: activities.filter(activity => ['recommendation_list', 'curation_list'].includes(activity.action_type)).length,
     tasteTests: activities.filter(activity => activity.action_type === 'taste_test').length,
     conceptReads: activities.filter(activity => activity.action_type === 'concept_read').length,
     mediaVisits: activities.filter(activity => activity.action_type === 'media_visit').length,
-    hardSf: (text.match(/하드|hard|과학|양자|물리/g) ?? []).length,
+    beginnerGuide: (text.match(/입문|초보|처음\s*읽|시작\s*추천|입문자/g) ?? []).length,
+    cyberpunk: (text.match(/사이버펑크|cyberpunk|해커|가상현실|네트워크|포스트휴먼/g) ?? []).length,
+    hardSf: (text.match(/하드|hard|과학|양자|물리|공학|엔지니어/g) ?? []).length,
     dystopia: (text.match(/디스토피아|dystopia|감시|저항/g) ?? []).length,
+    cosmicHorror: (text.match(/코즈믹|cosmic|우주\s*공포|러브크래프트|크툴루|심연/g) ?? []).length,
+    timeTravel: (text.match(/시간여행|시간\s*루프|타임\s*루프|타임머신|time travel|time loop/g) ?? []).length,
+    alienCivilization: (text.match(/외계|외계지성|외계\s*문명|alien|first contact|퍼스트\s*콘택트/g) ?? []).length,
+    cliFi: (text.match(/클라이파이|기후|기후재난|생태|환경|clifi|cli-fi|climate/g) ?? []).length,
     socialSf: (text.match(/인문|사회|뉴웨이브|new wave|디스토피아|dystopia|의식|기억|정체성|감시|저항/g) ?? []).length,
     android: (text.match(/필립|philip|딕|dick|안드로이드|android/g) ?? []).length,
+    leguin: (text.match(/르\s*귄|르귄|le guin|leguin|어슐러|ursula/g) ?? []).length,
+    tedChiang: (text.match(/테드\s*창|테드창|ted chiang/g) ?? []).length,
+    koreanSf: (text.match(/한국\s*sf|한국\s*과학소설|한국소설|천선란|김초엽|김보영|듀나|문목하|청예/g) ?? []).length,
+    nonAngloSf: (text.match(/비영미|비영어|폴란드|중국|일본|한국|라오서|류츠신|스타니스와프|렘|아시아|non-anglo/g) ?? []).length,
+    womenSf: (text.match(/여성\s*작가|여성작가|옥타비아|버틀러|르\s*귄|르귄|어슐러|김초엽|김보영|천선란|코니\s*윌리스|베키\s*체임버스/g) ?? []).length,
     coordinates: (text.match(/좌표|coordinate|node|genre|장르|탐사/g) ?? []).length,
     communitySignals: activities.filter(activity => ['post', 'comment'].includes(activity.action_type)).length,
+    uniqueSectors,
+    returnAfter30Days,
+    unknownSignal: activities.length >= 1 && uniqueSectors >= 5 && (text.match(/미확인|unknown|secret|숨겨진/g) ?? []).length >= 1 ? 1 : 0,
   };
 }
 
