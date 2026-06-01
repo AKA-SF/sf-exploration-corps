@@ -21,19 +21,44 @@ const emptyQuestionForm = {
 };
 
 const emptyCommentForm = { name: '', content: '' };
+const OWNER_TOKEN_STORAGE_KEY = 'sfa-community-owner-token';
 
-export default function useQuestionsBoard({ questionId, user }) {
+const createOwnerToken = () => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID();
+  }
+  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+};
+
+const getOwnerToken = () => {
+  if (typeof window === 'undefined') return '';
+  const current = window.localStorage.getItem(OWNER_TOKEN_STORAGE_KEY);
+  if (current) return current;
+  const next = createOwnerToken();
+  window.localStorage.setItem(OWNER_TOKEN_STORAGE_KEY, next);
+  return next;
+};
+
+export default function useQuestionsBoard({ onQuestionDeleted, questionId, user }) {
   const [questions, setQuestions] = useState(fallbackQuestions);
   const [activeQuestion, setActiveQuestion] = useState(null);
   const [comments, setComments] = useState([]);
   const [questionForm, setQuestionForm] = useState(emptyQuestionForm);
   const [commentForm, setCommentForm] = useState(emptyCommentForm);
+  const [questionEditForm, setQuestionEditForm] = useState(emptyQuestionForm);
+  const [commentEditForm, setCommentEditForm] = useState(emptyCommentForm);
   const [questionStatus, setQuestionStatus] = useState('idle');
   const [questionMessage, setQuestionMessage] = useState('');
+  const [questionEditStatus, setQuestionEditStatus] = useState('idle');
+  const [questionEditMessage, setQuestionEditMessage] = useState('');
   const [commentStatus, setCommentStatus] = useState('idle');
   const [commentMessage, setCommentMessage] = useState('');
+  const [commentEditStatus, setCommentEditStatus] = useState('idle');
+  const [commentEditMessage, setCommentEditMessage] = useState('');
   const [loadStatus, setLoadStatus] = useState('loading');
   const [activeCategory, setActiveCategory] = useState('전체');
+  const [isQuestionEditing, setIsQuestionEditing] = useState(false);
+  const [editingCommentId, setEditingCommentId] = useState('');
 
   const loadQuestions = () => {
     fetch('/api/questions', { cache: 'no-store' })
@@ -52,7 +77,9 @@ export default function useQuestionsBoard({ questionId, user }) {
   };
 
   const loadQuestionDetail = id => {
-    fetch(`/api/questions?id=${encodeURIComponent(id)}`, { cache: 'no-store' })
+    const ownerToken = getOwnerToken();
+    const query = new URLSearchParams({ id, ownerToken });
+    fetch(`/api/questions?${query.toString()}`, { cache: 'no-store' })
       .then(response => {
         if (!response.ok) throw new Error('Question detail unavailable');
         return response.json();
@@ -93,6 +120,16 @@ export default function useQuestionsBoard({ questionId, user }) {
     setCommentForm(form => ({ ...form, [name]: value }));
   };
 
+  const updateQuestionEditForm = event => {
+    const { name, value } = event.target;
+    setQuestionEditForm(form => ({ ...form, [name]: value }));
+  };
+
+  const updateCommentEditForm = event => {
+    const { name, value } = event.target;
+    setCommentEditForm(form => ({ ...form, [name]: value }));
+  };
+
   const submitQuestion = async event => {
     event.preventDefault();
     if (!questionForm.title.trim() || !questionForm.content.trim()) {
@@ -108,7 +145,10 @@ export default function useQuestionsBoard({ questionId, user }) {
       const response = await fetch('/api/questions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(questionForm),
+        body: JSON.stringify({
+          ...questionForm,
+          ownerToken: getOwnerToken(),
+        }),
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
@@ -152,6 +192,7 @@ export default function useQuestionsBoard({ questionId, user }) {
         body: JSON.stringify({
           mode: 'comment',
           questionId,
+          ownerToken: getOwnerToken(),
           ...commentForm,
         }),
       });
@@ -183,23 +224,225 @@ export default function useQuestionsBoard({ questionId, user }) {
     }
   };
 
+  const beginQuestionEdit = () => {
+    if (!activeQuestion?.canEdit) return;
+    setQuestionEditForm({
+      title: activeQuestion.title ?? '',
+      content: activeQuestion.content ?? '',
+      name: activeQuestion.author === '익명' ? '' : activeQuestion.author ?? '',
+      contact: activeQuestion.contact ?? '',
+      category: normalizeQuestionCategory(activeQuestion.category),
+    });
+    setQuestionEditMessage('');
+    setQuestionEditStatus('idle');
+    setIsQuestionEditing(true);
+  };
+
+  const cancelQuestionEdit = () => {
+    setIsQuestionEditing(false);
+    setQuestionEditMessage('');
+    setQuestionEditStatus('idle');
+  };
+
+  const submitQuestionEdit = async event => {
+    event.preventDefault();
+    if (!questionEditForm.title.trim() || !questionEditForm.content.trim()) {
+      setQuestionEditStatus('error');
+      setQuestionEditMessage('글 제목과 글 내용을 입력해주세요.');
+      return;
+    }
+
+    setQuestionEditStatus('submitting');
+    setQuestionEditMessage('');
+
+    try {
+      const response = await fetch('/api/questions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'post',
+          questionId,
+          ownerToken: getOwnerToken(),
+          ...questionEditForm,
+        }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.notion?.message || data?.error || '글 수정에 실패했습니다.');
+      }
+      const data = await response.json().catch(() => ({}));
+      setActiveQuestion(current => ({
+        ...(current ?? {}),
+        ...(data.question ?? questionEditForm),
+        canEdit: true,
+      }));
+      setIsQuestionEditing(false);
+      setQuestionEditStatus('success');
+      setQuestionEditMessage('글이 수정되었습니다.');
+    } catch (error) {
+      setQuestionEditStatus('error');
+      setQuestionEditMessage(error.message);
+    }
+  };
+
+  const deleteQuestion = async () => {
+    if (!questionId || !activeQuestion?.canEdit) return;
+    const shouldDelete = window.confirm('이 글을 삭제할까요? 삭제 후에는 게시판에서 보이지 않습니다.');
+    if (!shouldDelete) return;
+
+    setQuestionEditStatus('submitting');
+    setQuestionEditMessage('');
+
+    try {
+      const response = await fetch('/api/questions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'post',
+          questionId,
+          ownerToken: getOwnerToken(),
+        }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.notion?.message || data?.error || '글 삭제에 실패했습니다.');
+      }
+      setQuestionEditStatus('success');
+      setQuestionEditMessage('글이 삭제되었습니다.');
+      onQuestionDeleted?.();
+    } catch (error) {
+      setQuestionEditStatus('error');
+      setQuestionEditMessage(error.message);
+    }
+  };
+
+  const beginCommentEdit = comment => {
+    if (!comment?.canEdit) return;
+    setEditingCommentId(comment.id);
+    setCommentEditForm({
+      name: comment.name === '익명' ? '' : comment.name ?? '',
+      content: comment.content ?? '',
+    });
+    setCommentEditStatus('idle');
+    setCommentEditMessage('');
+  };
+
+  const cancelCommentEdit = () => {
+    setEditingCommentId('');
+    setCommentEditForm(emptyCommentForm);
+    setCommentEditStatus('idle');
+    setCommentEditMessage('');
+  };
+
+  const submitCommentEdit = async event => {
+    event.preventDefault();
+    if (!editingCommentId || !commentEditForm.content.trim()) {
+      setCommentEditStatus('error');
+      setCommentEditMessage('댓글 내용을 입력해주세요.');
+      return;
+    }
+
+    setCommentEditStatus('submitting');
+    setCommentEditMessage('');
+
+    try {
+      const response = await fetch('/api/questions', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'comment',
+          commentId: editingCommentId,
+          ownerToken: getOwnerToken(),
+          ...commentEditForm,
+        }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.notion?.message || data?.error || '댓글 수정에 실패했습니다.');
+      }
+      const data = await response.json().catch(() => ({}));
+      if (data.comment) {
+        setComments(current => current.map(comment => (
+          comment.id === editingCommentId ? data.comment : comment
+        )));
+      }
+      setEditingCommentId('');
+      setCommentEditForm(emptyCommentForm);
+      setCommentEditStatus('success');
+      setCommentEditMessage('댓글이 수정되었습니다.');
+    } catch (error) {
+      setCommentEditStatus('error');
+      setCommentEditMessage(error.message);
+    }
+  };
+
+  const deleteComment = async commentId => {
+    const target = comments.find(comment => comment.id === commentId);
+    if (!target?.canEdit) return;
+    const shouldDelete = window.confirm('이 댓글을 삭제할까요?');
+    if (!shouldDelete) return;
+
+    setCommentEditStatus('submitting');
+    setCommentEditMessage('');
+
+    try {
+      const response = await fetch('/api/questions', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'comment',
+          commentId,
+          ownerToken: getOwnerToken(),
+        }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.notion?.message || data?.error || '댓글 삭제에 실패했습니다.');
+      }
+      setComments(current => current.filter(comment => comment.id !== commentId));
+      setCommentEditStatus('success');
+      setCommentEditMessage('댓글이 삭제되었습니다.');
+    } catch (error) {
+      setCommentEditStatus('error');
+      setCommentEditMessage(error.message);
+    }
+  };
+
   return {
     activeCategory,
     activeQuestion,
+    beginCommentEdit,
+    beginQuestionEdit,
+    cancelCommentEdit,
+    cancelQuestionEdit,
     categories,
+    commentEditForm,
+    commentEditMessage,
+    commentEditStatus,
     commentForm,
     commentMessage,
     comments,
     commentStatus,
+    deleteComment,
+    deleteQuestion,
+    editingCommentId,
+    isQuestionEditing,
     loadStatus,
+    questionEditForm,
+    questionEditMessage,
+    questionEditStatus,
     questionForm,
     questionMessage,
     questions,
     questionStatus,
     setActiveCategory,
     submitComment,
+    submitCommentEdit,
     submitQuestion,
+    submitQuestionEdit,
+    updateCommentEditForm,
     updateCommentForm,
+    updateQuestionEditForm,
     updateQuestionForm,
     visibleQuestions,
   };

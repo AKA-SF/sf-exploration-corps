@@ -4,6 +4,8 @@ import { pick, plainText } from './_notionProperties.js';
 import { findPropertyEntry, readJsonBody, richTextPayload } from './_notionWrite.js';
 
 const DEFAULT_QUESTIONS_DATABASE_ID = '36a98dbef69d803abd53c09b6ff7f2e3';
+const OWNER_PREFIX = 'SFA_OWNER:';
+const COMMENT_PREFIX = 'SFA_COMMENT:';
 
 function findProperty(schema, preferredNames, type) {
   return findPropertyEntry(schema, preferredNames, type)
@@ -38,16 +40,35 @@ function mapPageToQuestion(page, index) {
 function parseCommentBlock(block) {
   if (block.type !== 'paragraph') return null;
   const text = block.paragraph?.rich_text?.map(part => part.plain_text).join('') ?? '';
-  if (!text.startsWith('SFA_COMMENT:')) return null;
+  if (!text.startsWith(COMMENT_PREFIX)) return null;
 
   try {
     return {
       id: block.id,
-      ...JSON.parse(text.replace('SFA_COMMENT:', '')),
+      ...JSON.parse(text.replace(COMMENT_PREFIX, '')),
     };
   } catch {
     return null;
   }
+}
+
+function parseOwnerBlock(block) {
+  if (block.type !== 'paragraph') return '';
+  const text = block.paragraph?.rich_text?.map(part => part.plain_text).join('') ?? '';
+  return text.startsWith(OWNER_PREFIX) ? text.replace(OWNER_PREFIX, '').trim() : '';
+}
+
+function sanitizeOwnerToken(value) {
+  return String(value ?? '').trim().slice(0, 96);
+}
+
+function sanitizeComment(comment, ownerToken) {
+  if (!comment) return null;
+  const { ownerToken: commentOwnerToken, ...rest } = comment;
+  return {
+    ...rest,
+    canEdit: Boolean(ownerToken && commentOwnerToken && ownerToken === commentOwnerToken),
+  };
 }
 
 function getStatusName(property, preferredName) {
@@ -93,6 +114,39 @@ function setIfPresent(properties, schema, names, type, value) {
   if (payload) properties[name] = payload;
 }
 
+function buildQuestionProperties(schema, {
+  category,
+  contact,
+  content,
+  name,
+  title,
+}, { includeDate = false } = {}) {
+  const properties = {};
+
+  setIfPresent(properties, schema, ['질문', '제목', 'Title', 'Name', '이름'], 'title', title);
+  setIfPresent(properties, schema, ['내용', '본문', '질문 내용', 'Content', 'Description'], 'rich_text', content);
+  setIfPresent(properties, schema, ['작성자', '이름', 'Name', 'Author'], 'rich_text', name || '익명');
+  setIfPresent(properties, schema, ['연락처', 'Contact', 'Email', '이메일'], 'rich_text', contact);
+  setIfPresent(properties, schema, ['이메일', 'Email'], 'email', contact);
+  setIfPresent(properties, schema, ['분류', 'Category', 'Type'], 'select', category);
+  setIfPresent(properties, schema, ['상태', 'Status'], 'status', '공개');
+  if (includeDate) {
+    setIfPresent(properties, schema, ['작성일', '날짜', 'Date'], 'date', new Date().toISOString().slice(0, 10));
+  }
+
+  return properties;
+}
+
+async function loadPageBlocks({ pageId, token }) {
+  return notionRequest(`/blocks/${pageId}/children?page_size=100`, { token })
+    .catch(() => ({ results: [] }));
+}
+
+function pageCanEdit(blocks, ownerToken) {
+  if (!ownerToken) return false;
+  return (blocks.results ?? []).some(block => parseOwnerBlock(block) === ownerToken);
+}
+
 async function incrementViewCount({ page, schema, token }) {
   const entry = findProperty(schema, ['조회수', '조회', 'Views', 'View Count'], 'number');
   if (!entry) return page;
@@ -129,8 +183,8 @@ async function incrementViewCount({ page, schema, token }) {
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store');
 
-  if (!['GET', 'POST', 'DELETE'].includes(request.method)) {
-    response.setHeader('Allow', 'GET, POST, DELETE');
+  if (!['GET', 'POST', 'PATCH', 'DELETE'].includes(request.method)) {
+    response.setHeader('Allow', 'GET, POST, PATCH, DELETE');
     return response.status(405).json({ error: 'Method not allowed' });
   }
 
@@ -172,14 +226,18 @@ export default async function handler(request, response) {
 
       page = await incrementViewCount({ page, schema, token });
 
-      const blocks = await notionRequest(`/blocks/${questionId}/children?page_size=100`, { token })
-        .catch(() => ({ results: [] }));
+      const ownerToken = sanitizeOwnerToken(request.query?.ownerToken);
+      const blocks = await loadPageBlocks({ pageId: questionId, token });
       const comments = (blocks.results ?? [])
         .map(parseCommentBlock)
-        .filter(Boolean);
+        .filter(Boolean)
+        .map(comment => sanitizeComment(comment, ownerToken));
 
       return response.status(200).json({
-        question: mapPageToQuestion(page, 0),
+        question: {
+          ...mapPageToQuestion(page, 0),
+          canEdit: pageCanEdit(blocks, ownerToken),
+        },
         comments,
       });
     }
@@ -209,16 +267,118 @@ export default async function handler(request, response) {
     return response.status(400).json({ error: 'Invalid JSON body' });
   }
 
-  if (request.method === 'DELETE') {
-    const adminUser = await requireAdminUser(request, response);
-    if (!adminUser) return null;
-
+  if (request.method === 'PATCH') {
     const mode = String(body?.mode ?? 'post').trim();
+    const ownerToken = sanitizeOwnerToken(body?.ownerToken);
+
+    try {
+      if (mode === 'comment') {
+        const commentId = String(body?.commentId ?? '').trim();
+        const name = String(body?.name ?? '').trim() || '익명';
+        const content = String(body?.content ?? '').trim();
+        if (!commentId || !content) {
+          return response.status(400).json({ error: 'Comment ID and content are required' });
+        }
+
+        const block = await notionRequest(`/blocks/${commentId}`, { token });
+        const currentComment = parseCommentBlock(block);
+        if (!currentComment?.ownerToken || currentComment.ownerToken !== ownerToken) {
+          return response.status(403).json({ error: 'Only the original writer can edit this comment' });
+        }
+
+        const updatedComment = {
+          ...currentComment,
+          name,
+          content,
+        };
+
+        await notionRequest(`/blocks/${commentId}`, {
+          token,
+          method: 'PATCH',
+          body: {
+            paragraph: {
+              rich_text: richTextPayload(`${COMMENT_PREFIX}${JSON.stringify(updatedComment)}`),
+            },
+          },
+        });
+
+        return response.status(200).json({
+          ok: true,
+          comment: sanitizeComment(updatedComment, ownerToken),
+        });
+      }
+
+      const questionId = String(body?.questionId ?? '').trim();
+      const title = String(body?.title ?? '').trim();
+      const content = String(body?.content ?? '').trim();
+      const name = String(body?.name ?? '').trim();
+      const contact = String(body?.contact ?? '').trim();
+      const category = String(body?.category ?? '').trim() || '자유글';
+
+      if (!questionId || !title || !content) {
+        return response.status(400).json({ error: 'Question ID, title, and content are required' });
+      }
+
+      const blocks = await loadPageBlocks({ pageId: questionId, token });
+      if (!pageCanEdit(blocks, ownerToken)) {
+        return response.status(403).json({ error: 'Only the original writer can edit this post' });
+      }
+
+      const properties = buildQuestionProperties(schema, {
+        category,
+        contact,
+        content,
+        name,
+        title,
+      });
+
+      await notionRequest(`/pages/${questionId}`, {
+        token,
+        method: 'PATCH',
+        body: { properties },
+      });
+
+      const updatedPage = await notionRequest(`/pages/${questionId}`, { token });
+
+      return response.status(200).json({
+        ok: true,
+        question: {
+          ...mapPageToQuestion(updatedPage, 0),
+          canEdit: true,
+        },
+      });
+    } catch (error) {
+      return sendNotionError(response, {
+        error,
+        fallbackMessage: 'Community update failed',
+      });
+    }
+  }
+
+  if (request.method === 'DELETE') {
+    const mode = String(body?.mode ?? 'post').trim();
+    const ownerToken = sanitizeOwnerToken(body?.ownerToken);
 
     try {
       if (mode === 'comment') {
         const commentId = String(body?.commentId ?? '').trim();
         if (!commentId) return response.status(400).json({ error: 'Comment ID is required' });
+
+        if (ownerToken) {
+          const block = await notionRequest(`/blocks/${commentId}`, { token });
+          const comment = parseCommentBlock(block);
+          if (comment?.ownerToken === ownerToken) {
+            await notionRequest(`/blocks/${commentId}`, {
+              token,
+              method: 'PATCH',
+              body: { archived: true },
+            });
+            return response.status(200).json({ ok: true });
+          }
+        }
+
+        const adminUser = await requireAdminUser(request, response);
+        if (!adminUser) return null;
 
         await notionRequest(`/blocks/${commentId}`, {
           token,
@@ -230,6 +390,21 @@ export default async function handler(request, response) {
 
       const questionId = String(body?.questionId ?? '').trim();
       if (!questionId) return response.status(400).json({ error: 'Question ID is required' });
+
+      if (ownerToken) {
+        const blocks = await loadPageBlocks({ pageId: questionId, token });
+        if (pageCanEdit(blocks, ownerToken)) {
+          await notionRequest(`/pages/${questionId}`, {
+            token,
+            method: 'PATCH',
+            body: { archived: true },
+          });
+          return response.status(200).json({ ok: true });
+        }
+      }
+
+      const adminUser = await requireAdminUser(request, response);
+      if (!adminUser) return null;
 
       await notionRequest(`/pages/${questionId}`, {
         token,
@@ -251,6 +426,7 @@ export default async function handler(request, response) {
     const questionId = String(body?.questionId ?? '').trim();
     const name = String(body?.name ?? '').trim() || '익명';
     const content = String(body?.content ?? '').trim();
+    const ownerToken = sanitizeOwnerToken(body?.ownerToken);
 
     if (!questionId || !content) {
       return response.status(400).json({ error: 'Question ID and comment content are required' });
@@ -260,10 +436,11 @@ export default async function handler(request, response) {
       name,
       content,
       date: new Date().toISOString().slice(0, 10),
+      ownerToken,
     };
 
     try {
-      await notionRequest(`/blocks/${questionId}/children`, {
+      const appended = await notionRequest(`/blocks/${questionId}/children`, {
         token,
         method: 'PATCH',
         body: {
@@ -272,12 +449,13 @@ export default async function handler(request, response) {
               object: 'block',
               type: 'paragraph',
               paragraph: {
-                rich_text: richTextPayload(`SFA_COMMENT:${JSON.stringify(comment)}`),
+                rich_text: richTextPayload(`${COMMENT_PREFIX}${JSON.stringify(comment)}`),
               },
             },
           ],
         },
       });
+      comment.id = appended?.results?.[0]?.id;
     } catch (error) {
       return sendNotionError(response, {
         error,
@@ -285,29 +463,27 @@ export default async function handler(request, response) {
       });
     }
 
-    return response.status(200).json({ ok: true, comment });
+    return response.status(200).json({ ok: true, comment: sanitizeComment(comment, ownerToken) });
   }
 
   const title = String(body?.title ?? '').trim();
   const content = String(body?.content ?? '').trim();
   const name = String(body?.name ?? '').trim();
   const contact = String(body?.contact ?? '').trim();
-  const category = String(body?.category ?? '').trim() || '커뮤니티';
+  const category = String(body?.category ?? '').trim() || '자유글';
+  const ownerToken = sanitizeOwnerToken(body?.ownerToken);
 
   if (!title || !content) {
     return response.status(400).json({ error: 'Title and content are required' });
   }
 
-  const properties = {};
-
-  setIfPresent(properties, schema, ['질문', '제목', 'Title', 'Name', '이름'], 'title', title);
-  setIfPresent(properties, schema, ['내용', '본문', '질문 내용', 'Content', 'Description'], 'rich_text', content);
-  setIfPresent(properties, schema, ['작성자', '이름', 'Name', 'Author'], 'rich_text', name || '익명');
-  setIfPresent(properties, schema, ['연락처', 'Contact', 'Email', '이메일'], 'rich_text', contact);
-  setIfPresent(properties, schema, ['이메일', 'Email'], 'email', contact);
-  setIfPresent(properties, schema, ['분류', 'Category', 'Type'], 'select', category);
-  setIfPresent(properties, schema, ['상태', 'Status'], 'status', '공개');
-  setIfPresent(properties, schema, ['작성일', '날짜', 'Date'], 'date', new Date().toISOString().slice(0, 10));
+  const properties = buildQuestionProperties(schema, {
+    category,
+    contact,
+    content,
+    name,
+    title,
+  }, { includeDate: true });
 
   if (!Object.values(schema).some(property => property.type === 'title') || Object.keys(properties).length === 0) {
     return response.status(400).json({ error: 'Question database needs a title property' });
@@ -320,6 +496,15 @@ export default async function handler(request, response) {
       body: {
         parent: { database_id: databaseId },
         properties,
+        children: ownerToken ? [
+          {
+            object: 'block',
+            type: 'paragraph',
+            paragraph: {
+              rich_text: richTextPayload(`${OWNER_PREFIX}${ownerToken}`),
+            },
+          },
+        ] : [],
       },
     });
   } catch (error) {

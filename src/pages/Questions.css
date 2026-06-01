@@ -403,6 +403,7 @@
 
 .question-detail {
   position: relative;
+  padding-bottom: 96px;
 }
 
 .question-reading-toggle {
@@ -496,6 +497,87 @@
   white-space: pre-line;
 }
 
+.question-owner-actions,
+.comment-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.question-owner-actions {
+  position: absolute;
+  right: 30px;
+  bottom: 26px;
+}
+
+.question-owner-actions.is-editing {
+  position: static;
+  margin-top: 4px;
+}
+
+.question-owner-actions .question-status,
+.comment-edit-status {
+  min-height: 1.4em;
+  margin-right: auto;
+  font-size: 13px;
+}
+
+.question-owner-actions button,
+.comment-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: auto;
+  min-height: 38px;
+  border: 1px solid rgba(25, 247, 241, 0.34);
+  padding: 0 14px;
+  color: var(--cyan);
+  background: rgba(0, 14, 20, 0.72);
+  cursor: pointer;
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  white-space: nowrap;
+  box-shadow: none;
+}
+
+.question-owner-actions button:hover,
+.question-owner-actions button:focus-visible,
+.comment-actions button:hover,
+.comment-actions button:focus-visible {
+  border-color: rgba(25, 247, 241, 0.78);
+  color: #00161a;
+  background: var(--cyan);
+}
+
+.question-owner-actions button.is-danger,
+.comment-actions button.is-danger {
+  border-color: rgba(240, 184, 90, 0.42);
+  color: #f0b85a;
+}
+
+.question-owner-actions button.is-danger:hover,
+.question-owner-actions button.is-danger:focus-visible,
+.comment-actions button.is-danger:hover,
+.comment-actions button.is-danger:focus-visible {
+  border-color: rgba(240, 184, 90, 0.78);
+  color: #1d0f05;
+  background: #f0b85a;
+}
+
+.question-owner-actions button svg,
+.comment-actions button svg {
+  width: 14px;
+  height: 14px;
+}
+
+.question-edit-form {
+  padding-top: 28px;
+}
+
 .comments-panel {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(340px, 0.48fr);
@@ -520,6 +602,26 @@
   font-weight: 650;
   line-height: 1.75;
   white-space: pre-line;
+}
+
+.comment-actions {
+  justify-content: flex-start;
+  margin-top: 12px;
+}
+
+.comment-edit-form {
+  margin-top: 14px;
+  padding: 14px;
+  border: 1px solid rgba(25, 247, 241, 0.14);
+  background: rgba(0, 8, 12, 0.28);
+}
+
+.comment-edit-form .comment-actions {
+  justify-content: flex-end;
+}
+
+.comment-edit-status {
+  margin: 14px 0 0;
 }
 
 .question-write-brief {
@@ -644,6 +746,24 @@
 .question-form button svg {
   width: 17px;
   height: 17px;
+}
+
+.question-form .question-owner-actions button,
+.question-form .comment-actions button {
+  width: auto;
+  min-height: 38px;
+  border: 1px solid rgba(25, 247, 241, 0.34);
+  padding: 0 14px;
+  color: var(--cyan);
+  background: rgba(0, 14, 20, 0.72);
+  font-size: 11px;
+  box-shadow: none;
+}
+
+.question-form .question-owner-actions button.is-danger,
+.question-form .comment-actions button.is-danger {
+  border-color: rgba(240, 184, 90, 0.42);
+  color: #f0b85a;
 }
 
 .reading-mode .page-container:has(.questions-page),
@@ -820,6 +940,43 @@
   box-shadow: 0 12px 28px rgba(36, 28, 15, 0.12) !important;
 }
 
+.reading-mode .question-owner-actions button,
+.reading-mode .comment-actions button {
+  border-color: rgba(47, 111, 120, 0.3) !important;
+  color: #2f6f78 !important;
+  background: rgba(255, 252, 244, 0.72) !important;
+  box-shadow: none !important;
+}
+
+.reading-mode .question-owner-actions button:hover,
+.reading-mode .question-owner-actions button:focus-visible,
+.reading-mode .comment-actions button:hover,
+.reading-mode .comment-actions button:focus-visible {
+  border-color: rgba(47, 111, 120, 0.52) !important;
+  color: #fffdf6 !important;
+  background: #2f6f78 !important;
+}
+
+.reading-mode .question-owner-actions button.is-danger,
+.reading-mode .comment-actions button.is-danger {
+  border-color: rgba(155, 77, 34, 0.28) !important;
+  color: #9b4d22 !important;
+}
+
+.reading-mode .question-owner-actions button.is-danger:hover,
+.reading-mode .question-owner-actions button.is-danger:focus-visible,
+.reading-mode .comment-actions button.is-danger:hover,
+.reading-mode .comment-actions button.is-danger:focus-visible {
+  border-color: rgba(155, 77, 34, 0.5) !important;
+  color: #fffdf6 !important;
+  background: #9b4d22 !important;
+}
+
+.reading-mode .comment-edit-form {
+  border-color: rgba(46, 72, 77, 0.16) !important;
+  background: rgba(255, 255, 255, 0.42) !important;
+}
+
 .reading-mode .question-form button:disabled {
   background: rgba(47, 111, 120, 0.46) !important;
   color: rgba(255, 253, 246, 0.78) !important;
@@ -935,6 +1092,10 @@
     padding: 18px;
   }
 
+  .question-detail {
+    padding-bottom: 118px;
+  }
+
   .question-detail h2 {
     margin-right: 0;
     padding-right: 86px;
@@ -966,5 +1127,33 @@
 
   .question-form button {
     width: 100%;
+  }
+
+  .question-owner-actions {
+    right: 18px;
+    bottom: 18px;
+    left: 18px;
+    justify-content: stretch;
+  }
+
+  .question-owner-actions button {
+    flex: 1;
+  }
+
+  .question-owner-actions .question-status {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 48px;
+    margin: 0;
+  }
+
+  .question-owner-actions.is-editing {
+    flex-wrap: wrap;
+  }
+
+  .question-owner-actions.is-editing .question-status {
+    position: static;
+    flex-basis: 100%;
   }
 }

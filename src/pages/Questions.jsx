@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { PenLine, X } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
@@ -13,29 +13,52 @@ import './Questions.css';
 
 export default function Questions() {
   const { questionId } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [localReadingMode, setLocalReadingMode] = useState(false);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
   const {
     activeCategory,
     activeQuestion,
+    beginCommentEdit,
+    beginQuestionEdit,
+    cancelCommentEdit,
+    cancelQuestionEdit,
     categories,
+    commentEditForm,
+    commentEditMessage,
+    commentEditStatus,
     commentForm,
     commentMessage,
     comments,
     commentStatus,
+    deleteComment,
+    deleteQuestion,
+    editingCommentId,
+    isQuestionEditing,
     loadStatus,
+    questionEditForm,
+    questionEditMessage,
+    questionEditStatus,
     questionForm,
     questionMessage,
     questions,
     questionStatus,
     setActiveCategory,
     submitComment,
+    submitCommentEdit,
     submitQuestion,
+    submitQuestionEdit,
+    updateCommentEditForm,
     updateCommentForm,
+    updateQuestionEditForm,
     updateQuestionForm,
     visibleQuestions,
-  } = useQuestionsBoard({ questionId, user });
+  } = useQuestionsBoard({
+    questionId,
+    user,
+    onQuestionDeleted: () => navigate('/questions'),
+  });
 
   if (questionId) {
     return (
@@ -50,16 +73,34 @@ export default function Questions() {
 
         <QuestionDetailView
           activeQuestion={activeQuestion}
+          editForm={questionEditForm}
+          editMessage={questionEditMessage}
+          editStatus={questionEditStatus}
+          isEditing={isQuestionEditing}
           loadStatus={loadStatus}
           localReadingMode={localReadingMode}
+          onDelete={deleteQuestion}
+          onEditCancel={cancelQuestionEdit}
+          onEditChange={updateQuestionEditForm}
+          onEditStart={beginQuestionEdit}
+          onEditSubmit={submitQuestionEdit}
           onReadingModeToggle={() => setLocalReadingMode(value => !value)}
         />
 
         <CommentsPanel
+          editForm={commentEditForm}
+          editMessage={commentEditMessage}
+          editingCommentId={editingCommentId}
+          editStatus={commentEditStatus}
           comments={comments}
           form={commentForm}
           message={commentMessage}
           onChange={updateCommentForm}
+          onDeleteComment={deleteComment}
+          onEditCancel={cancelCommentEdit}
+          onEditChange={updateCommentEditForm}
+          onEditStart={beginCommentEdit}
+          onEditSubmit={submitCommentEdit}
           onSubmit={submitComment}
           status={commentStatus}
         />
