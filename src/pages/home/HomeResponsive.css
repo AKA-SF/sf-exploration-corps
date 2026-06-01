@@ -6,6 +6,9 @@
   .top-nav {
     grid-column: 1 / -1;
     justify-content: flex-start;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
     overflow-x: auto;
     padding-bottom: 8px;
   }
@@ -160,7 +163,15 @@
 
   .hero-panel {
     min-height: auto;
+    width: 100%;
+    min-width: 0;
     padding: 34px 0 22px;
+  }
+
+  .hero-copy {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .signal-label {
@@ -178,7 +189,11 @@
   }
 
   .hero-description {
+    max-width: 100%;
     font-size: 15px;
+    line-break: anywhere;
+    overflow-wrap: anywhere;
+    word-break: break-all;
   }
 
   .hero-actions {
@@ -391,6 +406,9 @@
 
   .top-nav {
     gap: 18px;
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
     overflow-x: auto;
     scroll-snap-type: x proximity;
     -webkit-overflow-scrolling: touch;
@@ -416,6 +434,12 @@
     font-size: clamp(52px, 19vw, 82px);
   }
 
+  .hero-copy,
+  .hero-signal-banner,
+  .mission-card {
+    max-width: min(100%, 366px);
+  }
+
   .hero-kicker {
     font-size: 13px;
     letter-spacing: 3px;
@@ -424,6 +448,9 @@
 
   .hero-description {
     font-size: 14px;
+    line-break: anywhere;
+    overflow-wrap: anywhere;
+    word-break: break-all;
   }
 
   .hero-actions a {

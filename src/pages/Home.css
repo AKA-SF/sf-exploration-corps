@@ -56,9 +56,9 @@
   position: relative;
   z-index: 3;
   display: grid;
-  grid-template-columns: minmax(250px, auto) 1fr 188px;
+  grid-template-columns: minmax(220px, 330px) minmax(0, 1fr) 188px;
   align-items: center;
-  gap: 22px;
+  gap: 18px;
   min-height: 86px;
   padding: 22px 24px 10px;
   border-bottom: 1px solid var(--line);
@@ -98,18 +98,23 @@
 }
 
 .brand-mark em {
+  min-width: 0;
+  max-width: 190px;
+  overflow: hidden;
   color: var(--muted);
   font-size: 10px;
   font-style: normal;
   font-weight: 800;
   letter-spacing: 2px;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .top-nav {
   display: flex;
   justify-content: center;
-  gap: clamp(18px, 3.2vw, 56px);
+  min-width: 0;
+  gap: clamp(12px, 2vw, 34px);
 }
 
 .top-nav a {
