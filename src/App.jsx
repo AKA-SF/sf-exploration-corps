@@ -19,6 +19,7 @@ const Login = lazy(() => import('./pages/Login'));
 const Badges = lazy(() => import('./pages/Badges'));
 const Network = lazy(() => import('./pages/Network'));
 const NetworkDetail = lazy(() => import('./pages/NetworkDetail'));
+const Admin = lazy(() => import('./pages/Admin'));
 
 function RouteLoader() {
   return (
@@ -38,7 +39,9 @@ function App() {
     || location.pathname === '/exploration-log'
     || location.pathname.startsWith('/questions');
   const isReadingMode = siteMode === 'reading';
-  const isLowPowerSurface = location.pathname.startsWith('/profile') || location.pathname.startsWith('/badges');
+  const isLowPowerSurface = location.pathname.startsWith('/profile')
+    || location.pathname.startsWith('/badges')
+    || location.pathname.startsWith('/admin');
 
   useEffect(() => {
     localStorage.setItem('sf-site-mode', siteMode);
@@ -79,6 +82,7 @@ function App() {
               <Route path="/badges" element={<Badges />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/login" element={<Login />} />
+              <Route path="/admin" element={<Admin />} />
             </Routes>
           </Suspense>
         </div>
