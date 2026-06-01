@@ -3,7 +3,7 @@ import { Link, Navigate } from 'react-router-dom';
 import { Award, BadgeCheck, Orbit, Shield, Sparkles, Trophy } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
-import { getActivityStats, getBadges } from '../data/profileProgress';
+import { getActivityStats, getBadges, mergeManualBadges } from '../data/profileProgress';
 import { supabase } from '../lib/supabaseClient';
 import './Profile.css';
 
@@ -20,6 +20,7 @@ export default function Badges() {
   const { isConfigured, loading, user } = useAuth();
   const [activities, setActivities] = useState([]);
   const [workStatuses, setWorkStatuses] = useState([]);
+  const [manualBadges, setManualBadges] = useState([]);
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
 
@@ -32,6 +33,7 @@ export default function Badges() {
       const [
         { data, error },
         { data: statusData, error: statusError },
+        { data: badgeData, error: badgeError },
       ] = await Promise.all([
         supabase
           .from('activity_logs')
@@ -43,11 +45,17 @@ export default function Badges() {
           .select('*')
           .eq('user_id', user.id)
           .order('updated_at', { ascending: false }),
+        supabase
+          .from('user_badges')
+          .select('badge_id,awarded_at,badges(title,description)')
+          .eq('user_id', user.id)
+          .order('awarded_at', { ascending: false }),
       ]);
 
       if (!isMounted) return;
       setActivities(error ? [] : data ?? []);
       setWorkStatuses(statusError ? [] : statusData ?? []);
+      setManualBadges(badgeError ? [] : badgeData ?? []);
       setStatus(error ? 'error' : 'ready');
       setMessage(error ? error.message : '');
     }
@@ -59,7 +67,7 @@ export default function Badges() {
   }, [user]);
 
   const stats = useMemo(() => getActivityStats(activities, workStatuses), [activities, workStatuses]);
-  const badges = getBadges(stats);
+  const badges = mergeManualBadges(getBadges(stats), manualBadges);
   const unlockedCount = badges.filter(badge => badge.unlocked).length;
 
   if (!loading && !user) return <Navigate to="/login" replace />;

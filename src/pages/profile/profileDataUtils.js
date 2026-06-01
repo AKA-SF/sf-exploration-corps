@@ -1,4 +1,4 @@
-import { getActivityStats, getBadges, getMissionTree, getRank } from '../../data/profileProgress';
+import { getActivityStats, getBadges, getMissionTree, getRank, mergeManualBadges } from '../../data/profileProgress';
 import { tasteProfiles } from '../../data/tasteTest';
 
 export function getFallbackNickname(user) {
@@ -54,11 +54,11 @@ function getLatestTasteProfile(activities) {
     };
 }
 
-export function buildProfileViewModel({ activities, profile, selectedMissionRoute, workStatuses }) {
+export function buildProfileViewModel({ activities, manualBadges = [], profile, selectedMissionRoute, workStatuses }) {
   const points = profile?.mileage ?? activities.reduce((sum, activity) => sum + (activity.points ?? 0), 0);
   const rank = getRank(points);
   const stats = getActivityStats(activities, workStatuses);
-  const badges = getBadges(stats);
+  const badges = mergeManualBadges(getBadges(stats), manualBadges);
   const missionTree = getMissionTree(stats, selectedMissionRoute);
   const unlockedBadges = badges.filter(badge => badge.unlocked);
   const todayKey = new Date().toLocaleDateString('sv-SE');

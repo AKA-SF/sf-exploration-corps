@@ -554,6 +554,36 @@ export function getBadges(stats) {
   }));
 }
 
+export function normalizeManualBadges(userBadges = []) {
+  return userBadges.map(item => {
+    const badge = item.badges ?? {};
+    return {
+      id: item.badge_id,
+      title: badge.title ?? item.badge_id,
+      description: badge.description ?? '관리자가 수동으로 지급한 히든 배지입니다.',
+      icon: 'sparkles',
+      manual: true,
+      awardedAt: item.awarded_at,
+      unlocked: true,
+      progress: 100,
+    };
+  });
+}
+
+export function mergeManualBadges(badges, userBadges = []) {
+  const manualBadges = normalizeManualBadges(userBadges);
+  const existingIds = new Set(badges.map(badge => badge.id));
+  const mergedBadges = badges.map(badge => {
+    const manualBadge = manualBadges.find(item => item.id === badge.id);
+    return manualBadge ? { ...badge, ...manualBadge, unlocked: true, progress: 100 } : badge;
+  });
+
+  return [
+    ...mergedBadges,
+    ...manualBadges.filter(badge => !existingIds.has(badge.id)),
+  ];
+}
+
 export function hydrateMissions(missions, stats, locked = false) {
   return missions.map(mission => {
     const value = stats[mission.metric] ?? 0;

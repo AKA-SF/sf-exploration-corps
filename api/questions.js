@@ -1,4 +1,5 @@
 import { getNotionConfig, notionRequest, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
+import { requireAdminUser } from './_adminAuth.js';
 import { pick, plainText } from './_notionProperties.js';
 import { findPropertyEntry, readJsonBody, richTextPayload } from './_notionWrite.js';
 
@@ -39,7 +40,10 @@ function parseCommentBlock(block) {
   if (!text.startsWith('SFA_COMMENT:')) return null;
 
   try {
-    return JSON.parse(text.replace('SFA_COMMENT:', ''));
+    return {
+      id: block.id,
+      ...JSON.parse(text.replace('SFA_COMMENT:', '')),
+    };
   } catch {
     return null;
   }
@@ -95,8 +99,8 @@ function setIfPresent(properties, schema, names, type, value) {
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store');
 
-  if (!['GET', 'POST'].includes(request.method)) {
-    response.setHeader('Allow', 'GET, POST');
+  if (!['GET', 'POST', 'DELETE'].includes(request.method)) {
+    response.setHeader('Allow', 'GET, POST, DELETE');
     return response.status(405).json({ error: 'Method not allowed' });
   }
 
@@ -172,6 +176,43 @@ export default async function handler(request, response) {
   } catch {
     return response.status(400).json({ error: 'Invalid JSON body' });
   }
+
+  if (request.method === 'DELETE') {
+    const adminUser = await requireAdminUser(request, response);
+    if (!adminUser) return null;
+
+    const mode = String(body?.mode ?? 'post').trim();
+
+    try {
+      if (mode === 'comment') {
+        const commentId = String(body?.commentId ?? '').trim();
+        if (!commentId) return response.status(400).json({ error: 'Comment ID is required' });
+
+        await notionRequest(`/blocks/${commentId}`, {
+          token,
+          method: 'PATCH',
+          body: { archived: true },
+        });
+        return response.status(200).json({ ok: true });
+      }
+
+      const questionId = String(body?.questionId ?? '').trim();
+      if (!questionId) return response.status(400).json({ error: 'Question ID is required' });
+
+      await notionRequest(`/pages/${questionId}`, {
+        token,
+        method: 'PATCH',
+        body: { archived: true },
+      });
+      return response.status(200).json({ ok: true });
+    } catch (error) {
+      return sendNotionError(response, {
+        error,
+        fallbackMessage: 'Community deletion failed',
+      });
+    }
+  }
+
   const mode = String(body?.mode ?? 'post').trim();
   const password = String(body?.password ?? '').trim();
   const boardPassword = process.env.COMMUNITY_BOARD_PASSWORD || DEFAULT_BOARD_PASSWORD;

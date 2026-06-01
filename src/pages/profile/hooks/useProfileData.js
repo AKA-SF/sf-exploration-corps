@@ -10,6 +10,7 @@ import {
 
 const emptyProfileViewModel = buildProfileViewModel({
   activities: [],
+  manualBadges: [],
   profile: null,
   selectedMissionRoute: '',
   workStatuses: [],
@@ -23,6 +24,7 @@ export function useProfileData(user) {
   const [message, setMessage] = useState('');
   const [selectedMissionRoute, setSelectedMissionRoute] = useState('');
   const [workStatuses, setWorkStatuses] = useState([]);
+  const [manualBadges, setManualBadges] = useState([]);
 
   useEffect(() => {
     if (!user || !supabase) return;
@@ -65,6 +67,7 @@ export function useProfileData(user) {
       const [
         { data: activityData, error: activityError },
         { data: statusData, error: statusError },
+        { data: badgeData, error: badgeError },
       ] = await Promise.all([
         supabase
           .from('activity_logs')
@@ -76,6 +79,11 @@ export function useProfileData(user) {
           .select('*')
           .eq('user_id', user.id)
           .order('updated_at', { ascending: false }),
+        supabase
+          .from('user_badges')
+          .select('badge_id,awarded_at,badges(title,description)')
+          .eq('user_id', user.id)
+          .order('awarded_at', { ascending: false }),
       ]);
 
       const lockedNickname = user.user_metadata?.nickname || nextProfile?.nickname || fallbackNickname;
@@ -95,6 +103,7 @@ export function useProfileData(user) {
         setNickname(lockedNickname);
         setActivities(activityError ? [] : activityData ?? []);
         setWorkStatuses(statusError ? mapLocalWorkStatuses(user.id) : statusData ?? []);
+        setManualBadges(badgeError ? [] : badgeData ?? []);
         setSelectedMissionRoute(getSelectedMissionRoute(user.id));
         setStatus(activityError ? 'partial' : 'ready');
         setMessage(activityError ? activityError.message : '');
@@ -109,9 +118,9 @@ export function useProfileData(user) {
 
   const viewModel = useMemo(() => (
     user
-      ? buildProfileViewModel({ activities, profile, selectedMissionRoute, workStatuses })
+      ? buildProfileViewModel({ activities, manualBadges, profile, selectedMissionRoute, workStatuses })
       : emptyProfileViewModel
-  ), [activities, profile, selectedMissionRoute, user, workStatuses]);
+  ), [activities, manualBadges, profile, selectedMissionRoute, user, workStatuses]);
 
   const chooseMissionRoute = routeId => {
     if (!viewModel.missionTree.trainingComplete) return;
