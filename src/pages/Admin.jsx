@@ -6,7 +6,9 @@ import {
   BadgeCheck,
   Database,
   Gift,
+  History,
   MessageSquareText,
+  NotebookPen,
   RadioTower,
   ShieldCheck,
   Trash2,
@@ -16,83 +18,22 @@ import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
 import { rankTable } from '../data/profileProgress';
 import { supabase } from '../lib/supabaseClient';
+import {
+  checkEndpoint,
+  endpointChecks,
+  errorMessage,
+  filterMembers,
+  formatDate,
+  getAdminAccessToken,
+  getCount,
+  getOptionalCount,
+  hasAdminRole,
+  initialCounts,
+  initialMemberAction,
+  initialMemberFilters,
+  shortId,
+} from './admin/adminUtils';
 import './Admin.css';
-
-const initialCounts = {
-  activityLogs: 0,
-  members: 0,
-  radioMessages: 0,
-  userBadges: 0,
-  workComments: 0,
-  workStatuses: 0,
-};
-
-const initialMemberAction = {
-  badgeDescription: '',
-  badgeId: '',
-  badgeTitle: '',
-  mp: 10,
-  reason: '관리자 MP 부여',
-  title: '',
-};
-
-const endpointChecks = [
-  { key: 'works', label: '작품 아카이브', path: '/api/works?covers=0', pick: data => data.works?.length ?? 0 },
-  { key: 'media', label: '미디어 아카이브', path: '/api/media', pick: data => data.media?.length ?? 0 },
-  { key: 'concepts', label: 'SF 개념 사전', path: '/api/concepts', pick: data => data.concepts?.length ?? 0 },
-  { key: 'questions', label: '커뮤니티 게시판', path: '/api/questions', pick: data => data.questions?.length ?? 0 },
-];
-
-function hasAdminRole(user) {
-  const appMetadata = user?.app_metadata ?? {};
-  return appMetadata.role === 'admin' || appMetadata.roles?.includes?.('admin');
-}
-
-function formatDate(value) {
-  if (!value) return 'UNKNOWN';
-  return new Date(value).toLocaleString('ko-KR', {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
-}
-
-function shortId(value) {
-  return String(value ?? '').slice(0, 8);
-}
-
-function errorMessage(error) {
-  return error?.message || '요청 처리 중 문제가 생겼습니다.';
-}
-
-async function getCount(table, column = 'id') {
-  const { count, error } = await supabase
-    .from(table)
-    .select(column, { count: 'exact', head: true });
-  if (error) throw error;
-  return count ?? 0;
-}
-
-async function checkEndpoint({ key, label, path, pick }) {
-  const response = await fetch(path, { cache: 'no-store' });
-  if (!response.ok) throw new Error(`${label} 연결 실패`);
-  const data = await response.json();
-  return {
-    count: pick(data),
-    key,
-    label,
-    ok: true,
-  };
-}
-
-async function getAdminAccessToken() {
-  const { data, error } = await supabase.auth.getSession();
-  if (error) throw error;
-  const token = data.session?.access_token;
-  if (!token) throw new Error('관리자 세션을 다시 확인해주세요.');
-  return token;
-}
 
 export default function Admin() {
   const { isConfigured, loading, user } = useAuth();
@@ -103,9 +44,14 @@ export default function Admin() {
   const [radioMessages, setRadioMessages] = useState([]);
   const [questions, setQuestions] = useState([]);
   const [userBadges, setUserBadges] = useState([]);
+  const [adminLogs, setAdminLogs] = useState([]);
+  const [memberNotes, setMemberNotes] = useState([]);
   const [checks, setChecks] = useState([]);
   const [selectedMemberId, setSelectedMemberId] = useState('');
   const [memberAction, setMemberAction] = useState(initialMemberAction);
+  const [memberFilters, setMemberFilters] = useState(initialMemberFilters);
+  const [noteDraftMemberId, setNoteDraftMemberId] = useState('');
+  const [noteDraft, setNoteDraft] = useState('');
   const [questionComments, setQuestionComments] = useState({});
   const [status, setStatus] = useState('idle');
   const [actionStatus, setActionStatus] = useState('idle');
@@ -120,7 +66,16 @@ export default function Admin() {
   const selectedMemberBadges = useMemo(() => (
     userBadges.filter(badge => badge.user_id === selectedMember?.id)
   ), [selectedMember?.id, userBadges]);
+  const selectedMemberNote = useMemo(() => (
+    memberNotes.find(note => note.user_id === selectedMember?.id) ?? null
+  ), [memberNotes, selectedMember?.id]);
+  const filteredMembers = useMemo(() => (
+    filterMembers(members, memberFilters)
+  ), [memberFilters, members]);
   const memberActionTitle = memberAction.title || selectedMember?.title || rankTable[0].title;
+  const currentNoteValue = noteDraftMemberId === selectedMember?.id
+    ? noteDraft
+    : selectedMemberNote?.note ?? '';
 
   const loadAdminDashboard = useCallback(async () => {
     if (!user || !isAdmin || !supabase) return;
@@ -135,25 +90,31 @@ export default function Admin() {
         workStatusCount,
         radioCount,
         badgeCount,
+        adminActionCount,
+        memberNoteCount,
         memberResult,
         activityResult,
         commentResult,
         radioResult,
         userBadgeResult,
+        adminLogResult,
+        memberNoteResult,
         questionResult,
         endpointResults,
       ] = await Promise.all([
-        getCount('profiles'),
-        getCount('activity_logs'),
-        getCount('work_comments'),
-        getCount('work_statuses', 'work_code'),
-        getCount('radio_messages'),
-        getCount('user_badges', 'badge_id'),
+        getCount(supabase, 'profiles'),
+        getCount(supabase, 'activity_logs'),
+        getCount(supabase, 'work_comments'),
+        getCount(supabase, 'work_statuses', 'work_code'),
+        getCount(supabase, 'radio_messages'),
+        getCount(supabase, 'user_badges', 'badge_id'),
+        getOptionalCount(supabase, 'admin_action_logs'),
+        getOptionalCount(supabase, 'member_admin_notes', 'user_id'),
         supabase
           .from('profiles')
           .select('id,nickname,title,mileage,created_at,updated_at')
           .order('created_at', { ascending: false })
-          .limit(18),
+          .limit(200),
         supabase
           .from('activity_logs')
           .select('id,action_type,points,genre,metadata,created_at')
@@ -174,6 +135,16 @@ export default function Admin() {
           .select('user_id,badge_id,awarded_at,badges(title,description)')
           .order('awarded_at', { ascending: false })
           .limit(120),
+        supabase
+          .from('admin_action_logs')
+          .select('id,admin_user_id,action_type,target_type,target_id,target_label,metadata,created_at')
+          .order('created_at', { ascending: false })
+          .limit(20),
+        supabase
+          .from('member_admin_notes')
+          .select('user_id,note,updated_by,updated_at')
+          .order('updated_at', { ascending: false })
+          .limit(200),
         fetch('/api/questions', { cache: 'no-store' }).then(response => (response.ok ? response.json() : { questions: [] })),
         Promise.allSettled(endpointChecks.map(checkEndpoint)),
       ]);
@@ -187,6 +158,8 @@ export default function Admin() {
 
       setCounts({
         activityLogs: activityCount,
+        adminActions: adminActionCount,
+        memberNotes: memberNoteCount,
         members: memberCount,
         radioMessages: radioCount,
         userBadges: badgeCount,
@@ -198,6 +171,8 @@ export default function Admin() {
       setComments(commentResult.data ?? []);
       setRadioMessages(radioResult.data ?? []);
       setUserBadges(userBadgeResult.data ?? []);
+      setAdminLogs(adminLogResult.error ? [] : adminLogResult.data ?? []);
+      setMemberNotes(memberNoteResult.error ? [] : memberNoteResult.data ?? []);
       setQuestions((questionResult.questions ?? []).slice(0, 12));
       setChecks(endpointResults.map((result, index) => (
         result.status === 'fulfilled'
@@ -222,6 +197,8 @@ export default function Admin() {
     { icon: BadgeCheck, label: '독서 상태', value: counts.workStatuses, note: '읽고 싶어요/읽고 있어요/완료' },
     { icon: Gift, label: '지급 배지', value: counts.userBadges, note: '수동/히든 배지 포함' },
     { icon: RadioTower, label: '무전 메시지', value: counts.radioMessages, note: '네트워크 탭 공개 신호' },
+    { icon: NotebookPen, label: '관리 메모', value: counts.memberNotes, note: '회원 비공개 운영 메모' },
+    { icon: History, label: '관리 로그', value: counts.adminActions, note: '삭제/권한/메모 기록' },
   ]), [counts]);
 
   async function runAdminAction(task, successMessage) {
@@ -239,7 +216,7 @@ export default function Admin() {
   }
 
   async function deleteCommunityPayload(payload) {
-    const token = await getAdminAccessToken();
+    const token = await getAdminAccessToken(supabase);
     const response = await fetch('/api/questions', {
       method: 'DELETE',
       headers: {
@@ -251,6 +228,17 @@ export default function Admin() {
 
     const data = await response.json().catch(() => ({}));
     if (!response.ok) throw new Error(data.error || '커뮤니티 항목 삭제에 실패했습니다.');
+  }
+
+  async function recordAdminAction(actionType, targetType, targetId, targetLabel, metadata = {}) {
+    const { error } = await supabase.rpc('admin_record_action', {
+      p_action_type: actionType,
+      p_metadata: metadata,
+      p_target_id: targetId,
+      p_target_label: targetLabel,
+      p_target_type: targetType,
+    });
+    if (error) throw error;
   }
 
   async function loadQuestionComments(questionId) {
@@ -270,8 +258,12 @@ export default function Admin() {
   }
 
   function deleteCommunityPost(questionId) {
+    const question = questions.find(item => item.id === questionId);
     runAdminAction(
-      () => deleteCommunityPayload({ mode: 'post', questionId }),
+      async () => {
+        await deleteCommunityPayload({ mode: 'post', questionId });
+        await recordAdminAction('community_post_delete', 'notion_question', questionId, question?.title ?? questionId);
+      },
       '커뮤니티 글을 보관 처리했습니다.',
     );
   }
@@ -280,6 +272,7 @@ export default function Admin() {
     runAdminAction(
       async () => {
         await deleteCommunityPayload({ commentId, mode: 'comment' });
+        await recordAdminAction('community_comment_delete', 'notion_comment', commentId, questionId);
         await loadQuestionComments(questionId);
       },
       '커뮤니티 댓글을 삭제했습니다.',
@@ -290,11 +283,32 @@ export default function Admin() {
     runAdminAction(async () => {
       const { error } = await supabase.from(table).delete().eq('id', id);
       if (error) throw error;
+      await recordAdminAction(`${table}_delete`, table, id, table);
     }, successMessage);
   }
 
   function updateMemberAction(key, value) {
     setMemberAction(current => ({ ...current, [key]: value }));
+  }
+
+  function updateMemberFilter(key, value) {
+    setMemberFilters(current => ({ ...current, [key]: value }));
+  }
+
+  function updateNoteDraft(value) {
+    setNoteDraftMemberId(selectedMember?.id ?? '');
+    setNoteDraft(value);
+  }
+
+  function saveMemberNote() {
+    if (!selectedMember) return;
+    runAdminAction(async () => {
+      const { error } = await supabase.rpc('admin_upsert_member_note', {
+        p_note: currentNoteValue,
+        p_target_user_id: selectedMember.id,
+      });
+      if (error) throw error;
+    }, `${selectedMember.nickname} 대원의 관리자 메모를 저장했습니다.`);
   }
 
   function setMemberTitle() {
@@ -424,15 +438,53 @@ export default function Admin() {
           <strong>회원 권한 / MP / 히든 배지</strong>
         </div>
 
+        <div className="admin-member-filters">
+          <label>
+            <span>회원 검색</span>
+            <input
+              placeholder="닉네임, 등급, ID"
+              value={memberFilters.query}
+              onChange={event => updateMemberFilter('query', event.target.value)}
+            />
+          </label>
+          <label>
+            <span>등급</span>
+            <select value={memberFilters.title} onChange={event => updateMemberFilter('title', event.target.value)}>
+              <option value="all">전체 등급</option>
+              {rankTable.map(rank => <option key={rank.title} value={rank.title}>{rank.title}</option>)}
+            </select>
+          </label>
+          <label>
+            <span>최소 MP</span>
+            <input type="number" value={memberFilters.minMp} onChange={event => updateMemberFilter('minMp', event.target.value)} />
+          </label>
+          <label>
+            <span>최대 MP</span>
+            <input type="number" value={memberFilters.maxMp} onChange={event => updateMemberFilter('maxMp', event.target.value)} />
+          </label>
+          <label>
+            <span>정렬</span>
+            <select value={memberFilters.sort} onChange={event => updateMemberFilter('sort', event.target.value)}>
+              <option value="recent">최근 가입순</option>
+              <option value="mp-desc">MP 높은순</option>
+              <option value="mp-asc">MP 낮은순</option>
+              <option value="name">닉네임순</option>
+            </select>
+          </label>
+        </div>
+
         <div className="admin-member-layout">
           <div className="admin-member-list">
-            {members.map(member => (
+            {filteredMembers.map(member => (
               <button
                 className={`admin-member-button ${selectedMember?.id === member.id ? 'is-active' : ''}`}
                 key={member.id}
                 onClick={() => {
+                  const note = memberNotes.find(item => item.user_id === member.id);
                   setSelectedMemberId(member.id);
                   setMemberAction(current => ({ ...current, title: member.title || rankTable[0].title }));
+                  setNoteDraftMemberId(member.id);
+                  setNoteDraft(note?.note ?? '');
                 }}
                 type="button"
               >
@@ -440,7 +492,7 @@ export default function Admin() {
                 <span>{member.title} / {member.mileage} MP / {shortId(member.id)}</span>
               </button>
             ))}
-            {status !== 'loading' && members.length === 0 && <p className="admin-empty">표시할 회원 데이터가 없습니다.</p>}
+            {status !== 'loading' && filteredMembers.length === 0 && <p className="admin-empty">검색 조건에 맞는 회원이 없습니다.</p>}
           </div>
 
           {selectedMember && (
@@ -499,6 +551,19 @@ export default function Admin() {
                 ))}
                 {selectedMemberBadges.length === 0 && <p className="admin-empty">지급된 배지가 없습니다.</p>}
               </div>
+
+              <div className="admin-note-editor">
+                <label>
+                  <span>관리자 메모</span>
+                  <textarea
+                    placeholder="운영진, 워크숍 참여자, 테스트 계정 등 비공개 메모를 남겨둘 수 있습니다."
+                    value={currentNoteValue}
+                    onChange={event => updateNoteDraft(event.target.value)}
+                  />
+                </label>
+                <button className="admin-action-button" disabled={actionStatus === 'loading'} onClick={saveMemberNote} type="button">메모 저장</button>
+                {selectedMemberNote?.updated_at && <em className="admin-note-date">최근 수정 {formatDate(selectedMemberNote.updated_at)}</em>}
+              </div>
             </div>
           )}
         </div>
@@ -521,6 +586,27 @@ export default function Admin() {
               </div>
             ))}
             {status !== 'loading' && activities.length === 0 && <p className="admin-empty">표시할 활동 데이터가 없습니다.</p>}
+          </div>
+        </article>
+
+        <article className="admin-section panel">
+          <div className="admin-section-head">
+            <span className="mono">ADMIN LOG</span>
+            <strong>관리자 활동 로그</strong>
+          </div>
+          <div className="admin-list">
+            {adminLogs.map(log => (
+              <div className="admin-list-row" key={log.id}>
+                <div>
+                  <strong>{log.action_type}</strong>
+                  <span>{log.target_label || log.target_id || log.target_type} / {shortId(log.admin_user_id)}</span>
+                </div>
+                <em>{formatDate(log.created_at)}</em>
+              </div>
+            ))}
+            {status !== 'loading' && adminLogs.length === 0 && (
+              <p className="admin-empty">아직 표시할 관리자 활동 로그가 없습니다. SQL을 다시 실행하면 이후 기록이 쌓입니다.</p>
+            )}
           </div>
         </article>
 
