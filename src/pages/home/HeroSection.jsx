@@ -1,5 +1,6 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronRight, Database } from 'lucide-react';
+import { formatTimestamp } from './homeUtils';
 
 const blips = [
   { x: 23, y: 43, size: 6, delay: 0 },
@@ -76,7 +77,18 @@ function RadarDisplay() {
   );
 }
 
-function SidePanel({ activeGenre, archiveMode, metrics, recentSignals, timestamp }) {
+function ArchiveSyncClock() {
+  const [timestamp, setTimestamp] = useState(() => formatTimestamp(new Date()));
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setTimestamp(formatTimestamp(new Date())), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  return <p>{timestamp}</p>;
+}
+
+function SidePanel({ activeGenre, archiveMode, metrics, recentSignals }) {
   const onlineCount = Object.values(metrics.status).filter(Boolean).length;
   const syncState = onlineCount >= 3 ? 'READY' : 'PARTIAL';
 
@@ -109,7 +121,7 @@ function SidePanel({ activeGenre, archiveMode, metrics, recentSignals, timestamp
       </section>
       <section className="hud-panel timestamp">
         <h2>ARCHIVE SYNC</h2>
-        <p>{timestamp}</p>
+        <ArchiveSyncClock />
         <dl className="sync-list">
           <div>
             <dt>STATUS</dt>
@@ -143,7 +155,6 @@ export default function HeroSection({
   metrics,
   onResetCoordinateMap,
   recentSignals,
-  timestamp,
 }) {
   return (
     <main className="home-stage" id="top">
@@ -196,7 +207,6 @@ export default function HeroSection({
           archiveMode={archiveMode}
           metrics={metrics}
           recentSignals={recentSignals}
-          timestamp={timestamp}
         />
       </section>
 

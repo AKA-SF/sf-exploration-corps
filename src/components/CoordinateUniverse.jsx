@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 const toneColors = {
   cyan: ['#19f7f1', '#075966', '#00131c'],
@@ -11,7 +11,7 @@ function clamp(value, min, max) {
 }
 
 function nodeToPoint(node, time = 0) {
-  const seed = node.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const seed = node.renderSeed ?? getSeed(node.id);
   const driftA = time * (0.00036 + (seed % 5) * 0.000026) + seed;
   const driftB = time * (0.00028 + (seed % 7) * 0.000022) + seed * 0.37;
 
@@ -169,7 +169,7 @@ function drawSphereGuide(context, width, height, time, view) {
 
 function drawSignalCluster(context, planet, time) {
   const [light] = toneColors[planet.node.tone] ?? toneColors.cyan;
-  const seed = getSeed(planet.node.id);
+  const seed = planet.node.renderSeed ?? getSeed(planet.node.id);
   const isSecondary = planet.node.secondary;
   const count = isSecondary ? 2 : Math.min(12, 5 + (planet.node.signals ?? 8));
   const clusterRadius = planet.radius * (planet.selected ? 5.4 : isSecondary ? 2.8 : 4.1);
@@ -318,14 +318,50 @@ export default function CoordinateUniverse({
   const dragRef = useRef(null);
   const seedsRef = useRef(null);
   const lastFrameRef = useRef(0);
+  const sizeRef = useRef({ height: 0, ratio: 1, width: 0 });
   const [view, setView] = useState({ yaw: -0.24, pitch: 0.18, zoom: 1 });
   const [isDragging, setIsDragging] = useState(false);
   const [isRenderable, setIsRenderable] = useState(true);
   const [motionProfile, setMotionProfile] = useState(getMotionProfile);
+  const renderNodes = useMemo(() => (
+    nodes.map(node => ({
+      ...node,
+      renderSeed: getSeed(node.id),
+    }))
+  ), [nodes]);
 
   useEffect(() => {
     onViewChange?.(view);
   }, [onViewChange, view]);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    const wrapper = canvas?.parentElement;
+    if (!canvas || !wrapper) return undefined;
+
+    const updateSize = () => {
+      const rect = wrapper.getBoundingClientRect();
+      const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
+      const width = Math.floor(rect.width * ratio);
+      const height = Math.floor(rect.height * ratio);
+      sizeRef.current = { width: rect.width, height: rect.height, ratio };
+      if (canvas.width !== width || canvas.height !== height) {
+        canvas.width = width;
+        canvas.height = height;
+      }
+    };
+
+    updateSize();
+
+    if ('ResizeObserver' in window) {
+      const observer = new ResizeObserver(updateSize);
+      observer.observe(wrapper);
+      return () => observer.disconnect();
+    }
+
+    window.addEventListener('resize', updateSize);
+    return () => window.removeEventListener('resize', updateSize);
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -428,23 +464,19 @@ export default function CoordinateUniverse({
       }
       lastFrameRef.current = time;
 
-      const rect = canvas.getBoundingClientRect();
-      const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
-      if (canvas.width !== Math.floor(rect.width * ratio) || canvas.height !== Math.floor(rect.height * ratio)) {
-        canvas.width = Math.floor(rect.width * ratio);
-        canvas.height = Math.floor(rect.height * ratio);
+      const { height, ratio, width } = sizeRef.current;
+      if (!width || !height) {
+        animationRef.current = requestAnimationFrame(render);
+        return;
       }
-
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
-      const width = rect.width;
-      const height = rect.height;
       context.clearRect(0, 0, width, height);
       drawAtlasBackground(context, width, height, time, starSeeds, dustSeeds);
       drawSphereGuide(context, width, height, time, view);
 
-      const projectedNodes = nodes.map(node => {
-        const autoYaw = view.yaw + Math.sin(time * 0.0001) * 0.065 * autoYawScale;
-        const autoPitch = view.pitch + Math.cos(time * 0.00008) * 0.032 * autoYawScale;
+      const autoYaw = view.yaw + Math.sin(time * 0.0001) * 0.065 * autoYawScale;
+      const autoPitch = view.pitch + Math.cos(time * 0.00008) * 0.032 * autoYawScale;
+      const projectedNodes = renderNodes.map(node => {
         const rotated = rotatePoint(nodeToPoint(node, time), autoYaw, autoPitch);
         const projected = project(rotated, width, height, view.zoom);
         const selected = selectedId === node.id;
@@ -494,7 +526,7 @@ export default function CoordinateUniverse({
 
     animationRef.current = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animationRef.current);
-  }, [connections, hasFocus, isRenderable, motionProfile, nodes, relatedIds, selectedId, view]);
+  }, [connections, hasFocus, isRenderable, motionProfile, relatedIds, renderNodes, selectedId, view]);
 
   const zoom = amount => {
     setView(current => ({ ...current, zoom: clamp(Number((current.zoom + amount).toFixed(2)), 0.65, 1.8) }));

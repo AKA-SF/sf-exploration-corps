@@ -19,6 +19,14 @@ const initialDashboard = {
   },
 };
 
+const isAbortError = error => error?.name === 'AbortError';
+
+const fetchJson = async (path, options = {}) => {
+  const response = await fetch(path, options);
+  if (!response.ok) throw new Error(options.errorMessage || 'Request failed');
+  return response.json();
+};
+
 export default function useHomeData({
   conceptEntries,
   fallbackWorks,
@@ -76,12 +84,12 @@ export default function useHomeData({
 
   useEffect(() => {
     let isMounted = true;
+    const controller = new AbortController();
 
-    fetch('/api/works?covers=0')
-      .then(response => {
-        if (!response.ok) throw new Error('Notion archive unavailable');
-        return response.json();
-      })
+    fetchJson('/api/works?covers=0', {
+      signal: controller.signal,
+      errorMessage: 'Notion archive unavailable',
+    })
       .then(data => {
         if (isMounted && Array.isArray(data.works) && data.works.length > 0) {
           setWorks(data.works);
@@ -89,7 +97,8 @@ export default function useHomeData({
           setDashboard(state => ({ ...state, status: { ...state.status, works: true } }));
         }
       })
-      .catch(() => {
+      .catch(error => {
+        if (isAbortError(error)) return;
         if (isMounted) {
           setWorks(fallbackWorks);
           setDashboard(state => ({ ...state, status: { ...state.status, works: false } }));
@@ -98,49 +107,54 @@ export default function useHomeData({
 
     return () => {
       isMounted = false;
+      controller.abort();
     };
   }, [fallbackWorks, getRandomWorks]);
 
   useEffect(() => {
     if (!lazySections.worksCovers) return undefined;
     let isMounted = true;
+    const controller = new AbortController();
 
-    fetch('/api/works')
-      .then(response => {
-        if (!response.ok) throw new Error('Notion archive covers unavailable');
-        return response.json();
-      })
+    fetchJson('/api/works', {
+      signal: controller.signal,
+      errorMessage: 'Notion archive covers unavailable',
+    })
       .then(data => {
         if (isMounted && Array.isArray(data.works) && data.works.length > 0) {
           setWorks(current => mergeWorksByCode(current, data.works));
           setDashboard(state => ({ ...state, status: { ...state.status, works: true } }));
         }
       })
-      .catch(() => {
+      .catch(error => {
+        if (isAbortError(error)) return;
         // Cover enrichment is optional; the text archive remains usable without it.
       });
 
     return () => {
       isMounted = false;
+      controller.abort();
     };
   }, [lazySections.worksCovers, mergeWorksByCode]);
 
   useEffect(() => {
     if (!lazySections.media) return undefined;
     let isMounted = true;
+    const controller = new AbortController();
 
-    fetch('/api/media', { cache: 'no-store' })
-      .then(response => {
-        if (!response.ok) throw new Error('Notion media unavailable');
-        return response.json();
-      })
+    fetchJson('/api/media', {
+      cache: 'no-store',
+      signal: controller.signal,
+      errorMessage: 'Notion media unavailable',
+    })
       .then(data => {
         if (isMounted && Array.isArray(data.media)) {
           setMediaItems(data.media);
           setDashboard(state => ({ ...state, status: { ...state.status, media: true } }));
         }
       })
-      .catch(() => {
+      .catch(error => {
+        if (isAbortError(error)) return;
         if (isMounted) {
           setMediaItems([]);
           setDashboard(state => ({ ...state, status: { ...state.status, media: false } }));
@@ -149,18 +163,20 @@ export default function useHomeData({
 
     return () => {
       isMounted = false;
+      controller.abort();
     };
   }, [lazySections.media]);
 
   useEffect(() => {
     if (!lazySections.concepts) return undefined;
     let isMounted = true;
+    const controller = new AbortController();
 
-    fetch('/api/concepts', { cache: 'no-store' })
-      .then(response => {
-        if (!response.ok) throw new Error('Notion concepts unavailable');
-        return response.json();
-      })
+    fetchJson('/api/concepts', {
+      cache: 'no-store',
+      signal: controller.signal,
+      errorMessage: 'Notion concepts unavailable',
+    })
       .then(data => {
         if (isMounted && Array.isArray(data.concepts)) {
           const randomizedConcepts = getRandomWorks(data.concepts, data.concepts.length);
@@ -170,7 +186,8 @@ export default function useHomeData({
           setDashboard(state => ({ ...state, status: { ...state.status, concepts: true } }));
         }
       })
-      .catch(() => {
+      .catch(error => {
+        if (isAbortError(error)) return;
         if (isMounted) {
           const randomizedConcepts = getRandomWorks(conceptEntries, conceptEntries.length);
           setConcepts(conceptEntries);
@@ -182,23 +199,27 @@ export default function useHomeData({
 
     return () => {
       isMounted = false;
+      controller.abort();
     };
   }, [conceptEntries, getRandomWorks, lazySections.concepts]);
 
   useEffect(() => {
     let isMounted = true;
+    const controller = new AbortController();
     const scheduleIdle = window.requestIdleCallback ?? (callback => window.setTimeout(callback, 1400));
     const cancelIdle = window.cancelIdleCallback ?? window.clearTimeout;
 
     const idleId = scheduleIdle(() => {
       Promise.allSettled([
-        fetch('/api/exploration-log', { cache: 'no-store' }).then(response => {
-          if (!response.ok) throw new Error('Exploration log unavailable');
-          return response.json();
+        fetchJson('/api/exploration-log', {
+          cache: 'no-store',
+          signal: controller.signal,
+          errorMessage: 'Exploration log unavailable',
         }),
-        fetch('/api/questions', { cache: 'no-store' }).then(response => {
-          if (!response.ok) throw new Error('Questions unavailable');
-          return response.json();
+        fetchJson('/api/questions', {
+          cache: 'no-store',
+          signal: controller.signal,
+          errorMessage: 'Questions unavailable',
         }),
       ]).then(([logsResult, questionsResult]) => {
         if (!isMounted) return;
@@ -218,6 +239,7 @@ export default function useHomeData({
 
     return () => {
       isMounted = false;
+      controller.abort();
       cancelIdle(idleId);
     };
   }, []);

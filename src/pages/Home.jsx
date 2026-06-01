@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback } from 'react';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
 import { recordUserActivity } from '../lib/activityLogger';
@@ -21,7 +21,6 @@ import {
   navItems,
 } from './home/homeContent';
 import {
-  formatTimestamp,
   getConceptSource,
   getRandomWorks,
   mergeWorksByCode,
@@ -131,13 +130,6 @@ export default function Home() {
       closeWorkSubmit: () => workArchiveControls.setIsWorkSubmitOpen(false),
     },
   });
-  const [currentTime, setCurrentTime] = useState(() => new Date());
-
-  useEffect(() => {
-    const timer = window.setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => window.clearInterval(timer);
-  }, []);
-
   const recordTasteComplete = useCallback((tasteProfileResult) => recordMissionSignal(`taste:${tasteProfileResult.code}`, {
     actionType: 'taste_test',
     points: 10,
@@ -222,7 +214,6 @@ export default function Home() {
         metrics={metrics}
         onResetCoordinateMap={resetCoordinateMap}
         recentSignals={recentSignals}
-        timestamp={formatTimestamp(currentTime)}
       />
 
       <ArchiveDock archiveCards={archiveCards} onResetCoordinateMap={resetCoordinateMap} />
