@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLogs } from '../context/LogContext';
 import { Lock, Radar, Activity, Skull, AlertTriangle, Hexagon, RadioTower, SendHorizontal, MessageSquareText, Users, Zap } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import PageTransition from '../components/PageTransition';
 import { ZoomableMap } from '../components/ZoomableMap';
 import { useAuth } from '../context/authContextValue';
@@ -21,7 +20,19 @@ const SIGNAL_ACTIONS = ['RESONATE', 'DECODE_REQ', 'ECHO', 'DISTORT', 'ARCHIVE'];
 const MAX_VISIBLE_NODES = 80;
 const MAX_VISIBLE_EDGES = 160;
 const MAX_ANIMATED_EDGES = 72;
+const MAX_EDGE_COMPARE_WINDOW = 26;
 const RADIO_MESSAGE_LIMIT = 48;
+
+function getNetworkMotionProfile() {
+  if (typeof window === 'undefined') {
+    return { compact: false, reduced: false };
+  }
+
+  return {
+    compact: window.matchMedia('(max-width: 760px)').matches,
+    reduced: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  };
+}
 
 function getUserNickname(user) {
   return user?.user_metadata?.nickname || user?.email?.split('@')[0] || '탐사자';
@@ -55,6 +66,23 @@ const Network = () => {
   const [replyBody, setReplyBody] = useState('');
   const [replyTarget, setReplyTarget] = useState(null);
   const [isRadioSubmitting, setIsRadioSubmitting] = useState(false);
+  const [motionProfile, setMotionProfile] = useState(getNetworkMotionProfile);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const compactQuery = window.matchMedia('(max-width: 760px)');
+    const reducedQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updateProfile = () => setMotionProfile(getNetworkMotionProfile());
+
+    compactQuery.addEventListener('change', updateProfile);
+    reducedQuery.addEventListener('change', updateProfile);
+
+    return () => {
+      compactQuery.removeEventListener('change', updateProfile);
+      reducedQuery.removeEventListener('change', updateProfile);
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -67,7 +95,7 @@ const Network = () => {
 
       const { data, error } = await supabase
         .from('radio_messages')
-        .select('*')
+        .select('id,user_id,author_name,body,parent_id,recipient_name,created_at')
         .order('created_at', { ascending: false })
         .limit(RADIO_MESSAGE_LIMIT);
 
@@ -217,7 +245,8 @@ const Network = () => {
 
   // Generate spatial coordinates and types for logs
   const spatialLogs = useMemo(() => {
-    return networkLogs.slice(0, MAX_VISIBLE_NODES).map((log) => {
+    const nodeLimit = motionProfile.reduced ? 42 : motionProfile.compact ? 56 : MAX_VISIBLE_NODES;
+    return networkLogs.slice(0, nodeLimit).map((log) => {
       // Deterministic pseudo-random placement based on index/id
       const hash = log.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
       const r1 = Math.sin(hash) * 10000;
@@ -234,13 +263,16 @@ const Network = () => {
 
       return { ...log, x, y, typeKey };
     });
-  }, [networkLogs, userLogCount]);
+  }, [motionProfile, networkLogs, userLogCount]);
 
   // Generate edges between similar logs (same genre or emotion)
   const edges = useMemo(() => {
     const lines = [];
+    const compareWindow = motionProfile.reduced ? 12 : motionProfile.compact ? 18 : MAX_EDGE_COMPARE_WINDOW;
+    const edgeLimit = motionProfile.reduced ? 54 : motionProfile.compact ? 92 : MAX_VISIBLE_EDGES;
     for (let i = 0; i < spatialLogs.length; i++) {
-      for (let j = i + 1; j < spatialLogs.length; j++) {
+      const maxJ = Math.min(spatialLogs.length, i + 1 + compareWindow);
+      for (let j = i + 1; j < maxJ; j++) {
         const logA = spatialLogs[i];
         const logB = spatialLogs[j];
         
@@ -277,8 +309,8 @@ const Network = () => {
 
     return lines
       .sort((a, b) => b.strength - a.strength)
-      .slice(0, MAX_VISIBLE_EDGES);
-  }, [spatialLogs]);
+      .slice(0, edgeLimit);
+  }, [motionProfile, spatialLogs]);
 
   const transmissionStream = useMemo(() => {
     const radioSignals = radioStream.map(signal => ({
@@ -333,14 +365,14 @@ const Network = () => {
     }
   };
 
+  const animatedEdgeLimit = motionProfile.reduced ? 0 : motionProfile.compact ? 28 : MAX_ANIMATED_EDGES;
+
   const renderRelayLine = (signal, index, ghost = false) => (
-    <motion.div
+    <div
       aria-hidden={ghost ? 'true' : undefined}
       key={`${ghost ? 'ghost' : 'live'}-${signal.id}`}
-      className={`relay-line ${signal.isReplyToMe ? 'is-received-reply' : ''}`}
-      initial={ghost ? false : { opacity: 0, x: -8 }}
-      animate={ghost ? undefined : { opacity: 1, x: 0 }}
-      transition={ghost ? undefined : { delay: index * 0.05 }}
+      className={`relay-line ${ghost ? 'is-ghost' : ''} ${signal.isReplyToMe ? 'is-received-reply' : ''}`}
+      style={ghost ? undefined : { animationDelay: `${index * 0.05}s` }}
     >
       <span className="relay-pulse" style={{ backgroundColor: signal.color, boxShadow: `0 0 10px ${signal.color}` }} />
       <div>
@@ -362,7 +394,7 @@ const Network = () => {
           </button>
         )}
       </div>
-    </motion.div>
+    </div>
   );
 
   return (
@@ -418,7 +450,7 @@ const Network = () => {
                       strokeWidth={0.8 + edge.strength * 1.4}
                       opacity={0.14 + edge.strength * 0.42}
                     />
-                    {edgeIndex < MAX_ANIMATED_EDGES && (
+                    {edgeIndex < animatedEdgeLimit && (
                       <>
                         <circle r={1.6 + edge.strength * 2.4} fill="var(--primary-cyan)" opacity="0.88">
                           <animateMotion
@@ -479,12 +511,8 @@ const Network = () => {
                         }}
                       ></div>
 
-                      <AnimatePresence>
-                        {isHovered && (
-                          <motion.div 
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 5 }}
+                      {isHovered && (
+                          <div
                             className={`node-hud ${isEncrypted ? 'encrypted-hud' : ''}`}
                             style={{ borderColor: isEncrypted ? '#ef4444' : 'var(--primary-cyan)' }}
                           >
@@ -512,9 +540,8 @@ const Network = () => {
                                 </div>
                               </>
                             )}
-                          </motion.div>
+                          </div>
                         )}
-                      </AnimatePresence>
 
                     </div>
                   </div>

@@ -1,6 +1,10 @@
-import { supabase } from './supabaseClient';
+async function getActivityClient() {
+  const { supabase } = await import('./supabaseClient');
+  return supabase;
+}
 
 export async function recordUserActivity(user, activity) {
+  const supabase = await getActivityClient();
   if (!user || !supabase) return { ok: false, skipped: true };
 
   const nickname = user.user_metadata?.nickname || user.email?.split('@')[0] || '탐사자';
@@ -23,6 +27,7 @@ export async function recordUserActivity(user, activity) {
 }
 
 export async function recordDailyLoginBonus(user) {
+  const supabase = await getActivityClient();
   if (!user || !supabase) return { ok: false, skipped: true };
 
   const now = new Date();

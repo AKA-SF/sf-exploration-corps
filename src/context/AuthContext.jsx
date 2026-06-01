@@ -1,33 +1,47 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { AuthContext } from './authContextValue';
-import { isSupabaseConfigured, supabase } from '../lib/supabaseClient';
+import { isSupabaseConfigured } from '../lib/supabaseConfig';
 import { recordDailyLoginBonus } from '../lib/activityLogger';
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(isSupabaseConfigured);
+  const supabaseRef = useRef(null);
 
   useEffect(() => {
-    if (!isSupabaseConfigured || !supabase) {
+    if (!isSupabaseConfigured) {
       return undefined;
     }
 
     let isMounted = true;
+    let authSubscription;
 
-    supabase.auth.getSession().then(({ data }) => {
+    import('../lib/supabaseClient').then(({ supabase }) => {
       if (!isMounted) return;
-      setSession(data.session ?? null);
-      setLoading(false);
-    });
+      if (!supabase) {
+        setLoading(false);
+        return;
+      }
+      supabaseRef.current = supabase;
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-      setLoading(false);
+      supabase.auth.getSession().then(({ data }) => {
+        if (!isMounted) return;
+        setSession(data.session ?? null);
+        setLoading(false);
+      });
+
+      const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+        setSession(nextSession);
+        setLoading(false);
+      });
+      authSubscription = listener.subscription;
+    }).catch(() => {
+      if (isMounted) setLoading(false);
     });
 
     return () => {
       isMounted = false;
-      listener.subscription.unsubscribe();
+      authSubscription?.unsubscribe();
     };
   }, []);
 
@@ -50,7 +64,8 @@ export function AuthProvider({ children }) {
     session,
     user: session?.user ?? null,
     signOut: async () => {
-      if (supabase) await supabase.auth.signOut();
+      const client = supabaseRef.current ?? (await import('../lib/supabaseClient')).supabase;
+      if (client) await client.auth.signOut();
     },
   }), [loading, session]);
 

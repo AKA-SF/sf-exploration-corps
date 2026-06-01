@@ -654,6 +654,22 @@
   align-items: start;
   border-bottom: 1px dashed rgba(255, 255, 255, 0.09);
   padding-bottom: 7px;
+  animation: relayLineIn 0.28s ease both;
+}
+
+.relay-line.is-ghost {
+  animation: none;
+}
+
+@keyframes relayLineIn {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 .relay-line.is-received-reply {
@@ -764,6 +780,18 @@
     left: 10px;
     right: 10px;
     width: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .network-container .signal-sweep,
+  .network-container .signal-radar-ring,
+  .network-container .signal-strength-ring,
+  .network-container .relay-stream-track,
+  .network-container .relay-pulse,
+  .network-container .transmission-strip span,
+  .network-container .relay-line {
+    animation: none;
   }
 }
 

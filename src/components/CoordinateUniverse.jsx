@@ -66,6 +66,17 @@ function getSeed(id) {
   return id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
 }
 
+function getMotionProfile() {
+  if (typeof window === 'undefined') {
+    return { compact: false, reduced: false };
+  }
+
+  return {
+    compact: window.matchMedia('(max-width: 760px)').matches,
+    reduced: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
+  };
+}
+
 function drawAtlasBackground(context, width, height, time, starSeeds, dustSeeds) {
   const background = context.createRadialGradient(width * 0.48, height * 0.47, 60, width * 0.48, height * 0.47, width * 0.76);
   background.addColorStop(0, 'rgba(25, 247, 241, 0.1)');
@@ -310,6 +321,7 @@ export default function CoordinateUniverse({
   const [view, setView] = useState({ yaw: -0.24, pitch: 0.18, zoom: 1 });
   const [isDragging, setIsDragging] = useState(false);
   const [isRenderable, setIsRenderable] = useState(true);
+  const [motionProfile, setMotionProfile] = useState(getMotionProfile);
 
   useEffect(() => {
     onViewChange?.(view);
@@ -331,6 +343,25 @@ export default function CoordinateUniverse({
 
     wrapper.addEventListener('wheel', preventPageWheel, { passive: false });
     return () => wrapper.removeEventListener('wheel', preventPageWheel);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+
+    const compactQuery = window.matchMedia('(max-width: 760px)');
+    const reducedQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const updateProfile = () => {
+      seedsRef.current = null;
+      setMotionProfile(getMotionProfile());
+    };
+
+    compactQuery.addEventListener('change', updateProfile);
+    reducedQuery.addEventListener('change', updateProfile);
+
+    return () => {
+      compactQuery.removeEventListener('change', updateProfile);
+      reducedQuery.removeEventListener('change', updateProfile);
+    };
   }, []);
 
   useEffect(() => {
@@ -366,15 +397,16 @@ export default function CoordinateUniverse({
     if (!canvas || !isRenderable) return undefined;
     const context = canvas.getContext('2d');
     if (!seedsRef.current) {
+      const seedCount = motionProfile.reduced ? 28 : motionProfile.compact ? 42 : 72;
       seedsRef.current = {
-        starSeeds: Array.from({ length: 72 }, (_, index) => ({
+        starSeeds: Array.from({ length: seedCount }, (_, index) => ({
           x: ((index * 73) % 997) / 997,
           y: ((index * 151) % 991) / 991,
           r: 0.4 + (index % 5) * 0.16,
           a: 0.18 + (index % 7) * 0.07,
           tint: index % 13 === 0 ? '#f0b85a' : index % 5 === 0 ? '#7cc7ff' : '#ffffff',
         })),
-        dustSeeds: Array.from({ length: 72 }, (_, index) => ({
+        dustSeeds: Array.from({ length: seedCount }, (_, index) => ({
           progress: ((index * 37) % 239) / 239,
           angle: ((index * 83) % 360) * (Math.PI / 180),
           scale: 0.7 + (index % 13) * 0.03,
@@ -386,9 +418,11 @@ export default function CoordinateUniverse({
     }
 
     const { dustSeeds, starSeeds } = seedsRef.current;
+    const frameInterval = motionProfile.reduced ? 96 : motionProfile.compact ? 48 : 32;
+    const autoYawScale = motionProfile.reduced ? 0 : motionProfile.compact ? 0.55 : 1;
 
     const render = time => {
-      if (time - lastFrameRef.current < 32) {
+      if (time - lastFrameRef.current < frameInterval) {
         animationRef.current = requestAnimationFrame(render);
         return;
       }
@@ -409,8 +443,8 @@ export default function CoordinateUniverse({
       drawSphereGuide(context, width, height, time, view);
 
       const projectedNodes = nodes.map(node => {
-        const autoYaw = view.yaw + Math.sin(time * 0.0001) * 0.065;
-        const autoPitch = view.pitch + Math.cos(time * 0.00008) * 0.032;
+        const autoYaw = view.yaw + Math.sin(time * 0.0001) * 0.065 * autoYawScale;
+        const autoPitch = view.pitch + Math.cos(time * 0.00008) * 0.032 * autoYawScale;
         const rotated = rotatePoint(nodeToPoint(node, time), autoYaw, autoPitch);
         const projected = project(rotated, width, height, view.zoom);
         const selected = selectedId === node.id;
@@ -460,7 +494,7 @@ export default function CoordinateUniverse({
 
     animationRef.current = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animationRef.current);
-  }, [connections, hasFocus, isRenderable, nodes, relatedIds, selectedId, view]);
+  }, [connections, hasFocus, isRenderable, motionProfile, nodes, relatedIds, selectedId, view]);
 
   const zoom = amount => {
     setView(current => ({ ...current, zoom: clamp(Number((current.zoom + amount).toFixed(2)), 0.65, 1.8) }));
