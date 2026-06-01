@@ -1,10 +1,13 @@
-import { useState, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLogs } from '../context/LogContext';
 import { Lock, Radar, Activity, Skull, AlertTriangle, Hexagon, RadioTower, SendHorizontal, MessageSquareText, Users, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import PageTransition from '../components/PageTransition';
 import { ZoomableMap } from '../components/ZoomableMap';
+import { useAuth } from '../context/authContextValue';
+import { recordUserActivity } from '../lib/activityLogger';
+import { supabase } from '../lib/supabaseClient';
 import './Network.css';
 
 const LOG_TYPES = {
@@ -18,13 +21,18 @@ const SIGNAL_ACTIONS = ['RESONATE', 'DECODE_REQ', 'ECHO', 'DISTORT', 'ARCHIVE'];
 const MAX_VISIBLE_NODES = 80;
 const MAX_VISIBLE_EDGES = 160;
 const MAX_ANIMATED_EDGES = 72;
-const NETWORK_REACTIONS = [
-  { code: 'RESONATE', label: '공명' },
-  { code: 'DECODE', label: '해석 요청' },
-  { code: 'ECHO', label: '비슷한 반응' },
-  { code: 'DISTORT', label: '다른 해석' },
-  { code: 'ARCHIVE', label: '저장' },
-];
+const RADIO_MESSAGE_LIMIT = 48;
+
+function getUserNickname(user) {
+  return user?.user_metadata?.nickname || user?.email?.split('@')[0] || '탐사자';
+}
+
+function formatSignalTime(value) {
+  return new Date(value).toLocaleTimeString('ko-KR', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
 
 const getSignalLine = (log, index) => {
   const emotion = log.emotions?.[0] || '미확인 감정';
@@ -35,10 +43,177 @@ const getSignalLine = (log, index) => {
 
 const Network = () => {
   const { logs, networkLogs } = useLogs();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const userLogCount = logs.length;
 
   const [hoveredNode, setHoveredNode] = useState(null);
+  const [radioMessages, setRadioMessages] = useState([]);
+  const [radioStatus, setRadioStatus] = useState('loading');
+  const [radioNotice, setRadioNotice] = useState('');
+  const [radioBody, setRadioBody] = useState('');
+  const [replyBody, setReplyBody] = useState('');
+  const [replyTarget, setReplyTarget] = useState(null);
+  const [isRadioSubmitting, setIsRadioSubmitting] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadRadioMessages() {
+      if (!supabase) {
+        setRadioStatus('unavailable');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('radio_messages')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(RADIO_MESSAGE_LIMIT);
+
+      if (!isMounted) return;
+      if (error) {
+        setRadioStatus(error.code === '42P01' ? 'schema-missing' : 'error');
+        setRadioNotice(error.message);
+        return;
+      }
+
+      setRadioMessages(data ?? []);
+      setRadioStatus('ready');
+      setRadioNotice('');
+    }
+
+    loadRadioMessages();
+
+    if (!supabase) return () => {
+      isMounted = false;
+    };
+
+    const channel = supabase
+      .channel('radio-messages-live')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'radio_messages',
+      }, payload => {
+        setRadioMessages(current => {
+          if (current.some(message => message.id === payload.new.id)) return current;
+          return [payload.new, ...current].slice(0, RADIO_MESSAGE_LIMIT);
+        });
+      })
+      .subscribe();
+
+    return () => {
+      isMounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const radioParentMap = useMemo(() => new Map(radioMessages.map(message => [message.id, message])), [radioMessages]);
+
+  const radioStream = useMemo(() => radioMessages.slice(0, 12).map(message => {
+    const parent = message.parent_id ? radioParentMap.get(message.parent_id) : null;
+    const isReplyToMe = Boolean(parent && user && parent.user_id === user.id && message.user_id !== user.id);
+    return {
+      id: message.id,
+      color: isReplyToMe ? 'var(--accent-amber)' : message.parent_id ? '#a855f7' : 'var(--primary-cyan)',
+      status: isReplyToMe ? 'DIRECT_REPLY' : message.parent_id ? 'REPLY_SIGNAL' : 'OPEN_RADIO',
+      sender: message.author_name,
+      body: message.parent_id
+        ? `${message.recipient_name || parent?.author_name || '탐사자'}에게 답신 // ${message.body}`
+        : message.body,
+      time: formatSignalTime(message.created_at),
+      message,
+      parent,
+      isReplyToMe,
+    };
+  }), [radioMessages, radioParentMap, user]);
+
+  const submitRadioMessage = async event => {
+    event.preventDefault();
+    if (!user) {
+      setRadioNotice('로그인 후 무전 메시지를 송신할 수 있습니다.');
+      return;
+    }
+    if (!radioBody.trim()) {
+      setRadioNotice('무전 내용을 입력해주세요.');
+      return;
+    }
+
+    setIsRadioSubmitting(true);
+    setRadioNotice('');
+    const body = radioBody.trim().slice(0, 240);
+    const { data, error } = await supabase
+      .from('radio_messages')
+      .insert({
+        user_id: user.id,
+        author_name: getUserNickname(user),
+        body,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      setRadioNotice(error.code === '42P01' ? '무전 테이블 연결이 필요합니다. Supabase SQL 스키마를 다시 실행해주세요.' : error.message);
+      setIsRadioSubmitting(false);
+      return;
+    }
+
+    setRadioMessages(current => current.some(message => message.id === data.id) ? current : [data, ...current].slice(0, RADIO_MESSAGE_LIMIT));
+    setRadioBody('');
+    await recordUserActivity(user, {
+      actionType: 'radio_message',
+      points: 4,
+      genre: '네트워크 무전',
+      metadata: { title: '무전 메시지 송신', body },
+    });
+    setIsRadioSubmitting(false);
+  };
+
+  const submitRadioReply = async event => {
+    event.preventDefault();
+    if (!replyTarget) return;
+    if (!user) {
+      setRadioNotice('로그인 후 답신을 보낼 수 있습니다.');
+      return;
+    }
+    if (!replyBody.trim()) {
+      setRadioNotice('답신 내용을 입력해주세요.');
+      return;
+    }
+
+    setIsRadioSubmitting(true);
+    setRadioNotice('');
+    const body = replyBody.trim().slice(0, 180);
+    const { data, error } = await supabase
+      .from('radio_messages')
+      .insert({
+        user_id: user.id,
+        author_name: getUserNickname(user),
+        body,
+        parent_id: replyTarget.id,
+        recipient_name: replyTarget.author_name,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      setRadioNotice(error.code === '42P01' ? '무전 테이블 연결이 필요합니다. Supabase SQL 스키마를 다시 실행해주세요.' : error.message);
+      setIsRadioSubmitting(false);
+      return;
+    }
+
+    setRadioMessages(current => current.some(message => message.id === data.id) ? current : [data, ...current].slice(0, RADIO_MESSAGE_LIMIT));
+    setReplyBody('');
+    setReplyTarget(null);
+    await recordUserActivity(user, {
+      actionType: 'radio_reply',
+      points: 3,
+      genre: '네트워크 답신',
+      metadata: { title: '무전 답신 송신', body, recipient: replyTarget.author_name },
+    });
+    setIsRadioSubmitting(false);
+  };
 
   // Generate spatial coordinates and types for logs
   const spatialLogs = useMemo(() => {
@@ -106,6 +281,17 @@ const Network = () => {
   }, [spatialLogs]);
 
   const transmissionStream = useMemo(() => {
+    const radioSignals = radioStream.map(signal => ({
+      id: `radio-${signal.id}`,
+      color: signal.color,
+      status: signal.status,
+      sender: signal.sender,
+      body: signal.body,
+      time: signal.time,
+      message: signal.message,
+      isReplyToMe: signal.isReplyToMe,
+    }));
+
     const baseStream = spatialLogs
       .slice()
       .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
@@ -130,7 +316,7 @@ const Network = () => {
         ];
       });
 
-    if (baseStream.length < 5) {
+    if (baseStream.length + radioSignals.length < 5) {
       baseStream.push(
         { id: 'system-watch-01', color: 'var(--primary-cyan)', status: 'SYSTEM', sender: 'ARCHIVE-CORE', body: '섹터별 감정 동기화율을 갱신 중입니다.' },
         { id: 'system-watch-02', color: 'var(--accent-amber)', status: 'MISSION', sender: 'MISSION-CONTROL', body: '이번 주 공동 목표: LOST_TRANSMISSION 3개 해독.' },
@@ -138,8 +324,8 @@ const Network = () => {
       );
     }
 
-    return baseStream.slice(0, 8);
-  }, [spatialLogs, userLogCount]);
+    return [...radioSignals, ...baseStream].slice(0, 10);
+  }, [radioStream, spatialLogs, userLogCount]);
 
   const handleNodeClick = (log) => {
     if (userLogCount >= log.encryptionLevel) {
@@ -349,26 +535,59 @@ const Network = () => {
           <div className="relay-metrics">
             <div className="relay-metric mono">
               <Users size={11} />
-              <span>{Math.max(7, spatialLogs.length * 3)} ACTIVE</span>
+              <span>{Math.max(7, spatialLogs.length * 3 + radioMessages.length)} ACTIVE</span>
             </div>
             <div className="relay-metric mono">
               <Zap size={11} />
-              <span>{edges.length * 2} PACKETS</span>
+              <span>{edges.length * 2 + radioMessages.length} PACKETS</span>
             </div>
           </div>
-          <div className="reaction-grid mono">
-            {NETWORK_REACTIONS.map(action => (
-              <button key={action.code} type="button">
-                <span>{action.code}</span>
-                <em>{action.label}</em>
+          <form className="radio-composer" onSubmit={submitRadioMessage}>
+            <label className="mono" htmlFor="radio-message">OPEN_RADIO_MESSAGE</label>
+            <textarea
+              id="radio-message"
+              maxLength={240}
+              onChange={event => setRadioBody(event.target.value)}
+              placeholder={user ? '현재 탐사 중인 좌표, 읽는 책, 감지한 신호를 짧게 남겨보세요.' : '로그인 후 무전 메시지를 송신할 수 있습니다.'}
+              value={radioBody}
+            />
+            <div className="radio-composer-bottom">
+              <span className="mono">{radioBody.length}/240</span>
+              <button className="mono" disabled={!user || isRadioSubmitting || !radioBody.trim()} type="submit">
+                송신 +4MP
               </button>
-            ))}
-          </div>
+            </div>
+          </form>
+          {replyTarget && (
+            <form className="radio-reply-composer" onSubmit={submitRadioReply}>
+              <div className="radio-reply-target mono">
+                <span>REPLY_TO</span>
+                <strong>{replyTarget.author_name}</strong>
+                <button type="button" onClick={() => setReplyTarget(null)}>취소</button>
+              </div>
+              <textarea
+                maxLength={180}
+                onChange={event => setReplyBody(event.target.value)}
+                placeholder={`${replyTarget.author_name} 대원에게 공개 답신 보내기`}
+                value={replyBody}
+              />
+              <div className="radio-composer-bottom">
+                <span className="mono">{replyBody.length}/180</span>
+                <button className="mono" disabled={!user || isRadioSubmitting || !replyBody.trim()} type="submit">
+                  답신 +3MP
+                </button>
+              </div>
+            </form>
+          )}
+          {radioStatus === 'schema-missing' && (
+            <p className="radio-notice">무전 테이블 연결이 필요합니다. Supabase SQL 스키마를 다시 실행해주세요.</p>
+          )}
+          {radioNotice && radioStatus !== 'schema-missing' && <p className="radio-notice">{radioNotice}</p>}
           <div className="relay-stream">
             {transmissionStream.map((signal, index) => (
               <motion.div
                 key={signal.id}
-                className="relay-line"
+                className={`relay-line ${signal.isReplyToMe ? 'is-received-reply' : ''}`}
                 initial={{ opacity: 0, x: -8 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: index * 0.05 }}
@@ -377,9 +596,21 @@ const Network = () => {
                 <div>
                   <div className="relay-line-meta mono">
                     <span style={{ color: signal.color }}>{signal.status}</span>
-                    <span>{signal.sender}</span>
+                    <span>{signal.time || signal.sender}</span>
                   </div>
                   <p>{signal.body}</p>
+                  {signal.message && signal.message.user_id !== user?.id && (
+                    <button
+                      className="radio-reply-button mono"
+                      onClick={() => {
+                        setReplyTarget(signal.message);
+                        setReplyBody('');
+                      }}
+                      type="button"
+                    >
+                      답신 보내기
+                    </button>
+                  )}
                 </div>
               </motion.div>
             ))}

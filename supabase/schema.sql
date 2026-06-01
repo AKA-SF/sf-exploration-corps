@@ -55,11 +55,27 @@ create table if not exists public.work_statuses (
   primary key (user_id, work_code)
 );
 
+create table if not exists public.radio_messages (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  author_name text not null default '탐사자',
+  body text not null check (char_length(body) between 1 and 240),
+  parent_id uuid references public.radio_messages(id) on delete cascade,
+  recipient_name text,
+  created_at timestamptz not null default now()
+);
+
 create index if not exists work_comments_work_code_created_at_idx
   on public.work_comments (work_code, created_at);
 
 create index if not exists work_statuses_user_status_idx
   on public.work_statuses (user_id, status);
+
+create index if not exists radio_messages_created_at_idx
+  on public.radio_messages (created_at desc);
+
+create index if not exists radio_messages_parent_id_idx
+  on public.radio_messages (parent_id, created_at);
 
 alter table public.profiles enable row level security;
 alter table public.activity_logs enable row level security;
@@ -67,6 +83,7 @@ alter table public.badges enable row level security;
 alter table public.user_badges enable row level security;
 alter table public.work_comments enable row level security;
 alter table public.work_statuses enable row level security;
+alter table public.radio_messages enable row level security;
 
 drop policy if exists "profiles_select_own" on public.profiles;
 create policy "profiles_select_own" on public.profiles
@@ -119,6 +136,26 @@ create policy "work_statuses_insert_own" on public.work_statuses
 drop policy if exists "work_statuses_update_own" on public.work_statuses;
 create policy "work_statuses_update_own" on public.work_statuses
   for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+drop policy if exists "radio_messages_read_all" on public.radio_messages;
+create policy "radio_messages_read_all" on public.radio_messages
+  for select using (true);
+
+drop policy if exists "radio_messages_insert_own" on public.radio_messages;
+create policy "radio_messages_insert_own" on public.radio_messages
+  for insert with check (auth.uid() = user_id);
+
+drop policy if exists "radio_messages_update_own" on public.radio_messages;
+create policy "radio_messages_update_own" on public.radio_messages
+  for update using (auth.uid() = user_id) with check (auth.uid() = user_id);
+
+do $$
+begin
+  alter publication supabase_realtime add table public.radio_messages;
+exception
+  when duplicate_object then null;
+  when undefined_object then null;
+end $$;
 
 insert into public.badges (id, title, description, condition_key) values
   ('first-signal', '첫 신호 수신', '첫 활동 기록을 남기면 획득', 'total_activity_1'),
