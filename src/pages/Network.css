@@ -590,12 +590,61 @@
 }
 
 .relay-stream {
+  position: relative;
+  max-height: 310px;
+  overflow: hidden;
+  padding-right: 4px;
+  mask-image: linear-gradient(to bottom, transparent 0, #000 28px, #000 calc(100% - 34px), transparent 100%);
+}
+
+.relay-stream::before,
+.relay-stream::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 4px;
+  z-index: 4;
+  height: 32px;
+  pointer-events: none;
+}
+
+.relay-stream::before {
+  top: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.72), transparent);
+}
+
+.relay-stream::after {
+  bottom: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.74), transparent);
+}
+
+.relay-stream-track {
   display: flex;
   flex-direction: column;
   gap: 7px;
-  max-height: 310px;
-  overflow-y: auto;
-  padding-right: 4px;
+  animation: relayStreamUp var(--relay-duration, 34s) linear infinite;
+  will-change: transform;
+}
+
+.relay-stream:hover .relay-stream-track,
+.relay-stream:focus-within .relay-stream-track {
+  animation-play-state: paused;
+}
+
+.relay-stream-set {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.relay-stream-set.is-duplicate {
+  pointer-events: none;
+  opacity: 0.72;
+}
+
+@keyframes relayStreamUp {
+  from { transform: translateY(0); }
+  to { transform: translateY(-50%); }
 }
 
 .relay-line {

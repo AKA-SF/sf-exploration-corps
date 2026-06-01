@@ -333,6 +333,38 @@ const Network = () => {
     }
   };
 
+  const renderRelayLine = (signal, index, ghost = false) => (
+    <motion.div
+      aria-hidden={ghost ? 'true' : undefined}
+      key={`${ghost ? 'ghost' : 'live'}-${signal.id}`}
+      className={`relay-line ${signal.isReplyToMe ? 'is-received-reply' : ''}`}
+      initial={ghost ? false : { opacity: 0, x: -8 }}
+      animate={ghost ? undefined : { opacity: 1, x: 0 }}
+      transition={ghost ? undefined : { delay: index * 0.05 }}
+    >
+      <span className="relay-pulse" style={{ backgroundColor: signal.color, boxShadow: `0 0 10px ${signal.color}` }} />
+      <div>
+        <div className="relay-line-meta mono">
+          <span style={{ color: signal.color }}>{signal.status}</span>
+          <span>{signal.time || signal.sender}</span>
+        </div>
+        <p>{signal.body}</p>
+        {!ghost && signal.message && signal.message.user_id !== user?.id && (
+          <button
+            className="radio-reply-button mono"
+            onClick={() => {
+              setReplyTarget(signal.message);
+              setReplyBody('');
+            }}
+            type="button"
+          >
+            답신 보내기
+          </button>
+        )}
+      </div>
+    </motion.div>
+  );
+
   return (
     <PageTransition className="network-container">
       <header className="page-header pointer-area">
@@ -583,37 +615,18 @@ const Network = () => {
             <p className="radio-notice">무전 테이블 연결이 필요합니다. Supabase SQL 스키마를 다시 실행해주세요.</p>
           )}
           {radioNotice && radioStatus !== 'schema-missing' && <p className="radio-notice">{radioNotice}</p>}
-          <div className="relay-stream">
-            {transmissionStream.map((signal, index) => (
-              <motion.div
-                key={signal.id}
-                className={`relay-line ${signal.isReplyToMe ? 'is-received-reply' : ''}`}
-                initial={{ opacity: 0, x: -8 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.05 }}
-              >
-                <span className="relay-pulse" style={{ backgroundColor: signal.color, boxShadow: `0 0 10px ${signal.color}` }} />
-                <div>
-                  <div className="relay-line-meta mono">
-                    <span style={{ color: signal.color }}>{signal.status}</span>
-                    <span>{signal.time || signal.sender}</span>
-                  </div>
-                  <p>{signal.body}</p>
-                  {signal.message && signal.message.user_id !== user?.id && (
-                    <button
-                      className="radio-reply-button mono"
-                      onClick={() => {
-                        setReplyTarget(signal.message);
-                        setReplyBody('');
-                      }}
-                      type="button"
-                    >
-                      답신 보내기
-                    </button>
-                  )}
-                </div>
-              </motion.div>
-            ))}
+          <div
+            className="relay-stream"
+            style={{ '--relay-duration': `${Math.max(26, transmissionStream.length * 4.2)}s` }}
+          >
+            <div className="relay-stream-track">
+              <div className="relay-stream-set">
+                {transmissionStream.map((signal, index) => renderRelayLine(signal, index))}
+              </div>
+              <div className="relay-stream-set is-duplicate">
+                {transmissionStream.map((signal, index) => renderRelayLine(signal, index, true))}
+              </div>
+            </div>
           </div>
         </div>
       </div>
