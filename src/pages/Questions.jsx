@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { PenLine, X } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
 import CommentsPanel from './questions/CommentsPanel';
@@ -14,6 +15,7 @@ export default function Questions() {
   const { questionId } = useParams();
   const { user } = useAuth();
   const [localReadingMode, setLocalReadingMode] = useState(false);
+  const [isComposerOpen, setIsComposerOpen] = useState(false);
   const {
     activeCategory,
     activeQuestion,
@@ -79,16 +81,33 @@ export default function Questions() {
         categories={categories}
         loadStatus={loadStatus}
         onCategoryChange={setActiveCategory}
+        questions={questions}
         visibleQuestions={visibleQuestions}
       />
 
-      <QuestionWritePanel
-        form={questionForm}
-        message={questionMessage}
-        onChange={updateQuestionForm}
-        onSubmit={submitQuestion}
-        status={questionStatus}
-      />
+      <button className="question-write-fab" onClick={() => setIsComposerOpen(true)} type="button">
+        <PenLine aria-hidden="true" />
+        <span>새 글 쓰기</span>
+      </button>
+
+      {isComposerOpen && (
+        <div className="question-write-modal" role="dialog" aria-modal="true" aria-label="새 글 쓰기">
+          <button className="question-write-backdrop" onClick={() => setIsComposerOpen(false)} type="button" aria-label="글쓰기 닫기" />
+          <div className="question-write-dialog">
+            <button className="question-write-close" onClick={() => setIsComposerOpen(false)} type="button">
+              <X aria-hidden="true" />
+              닫기
+            </button>
+            <QuestionWritePanel
+              form={questionForm}
+              message={questionMessage}
+              onChange={updateQuestionForm}
+              onSubmit={submitQuestion}
+              status={questionStatus}
+            />
+          </div>
+        </div>
+      )}
     </PageTransition>
   );
 }

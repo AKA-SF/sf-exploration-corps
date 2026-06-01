@@ -6,8 +6,15 @@ export default function QuestionsBoard({
   categories,
   loadStatus,
   onCategoryChange,
+  questions,
   visibleQuestions,
 }) {
+  const getCategoryCount = category => (
+    category === '전체'
+      ? questions.length
+      : questions.filter(question => question.category === category).length
+  );
+
   return (
     <>
       <nav className="questions-filter" aria-label="커뮤니티 게시판 분류">
@@ -18,7 +25,8 @@ export default function QuestionsBoard({
             onClick={() => onCategoryChange(category)}
             type="button"
           >
-            {category}
+            <span>{category}</span>
+            <em>{getCategoryCount(category)}</em>
           </button>
         ))}
       </nav>
