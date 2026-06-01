@@ -15,7 +15,7 @@ export default function CommunitySection({
           <h2>커뮤니티 게시판</h2>
           <p>
             SF 작품을 읽고 남은 질문, 추천, 제안, 함께 나누고 싶은 이야기를
-            비밀번호 입력 후 바로 남길 수 있습니다.
+            바로 남길 수 있습니다.
           </p>
         </div>
 
@@ -35,7 +35,7 @@ export default function CommunitySection({
               </div>
               <div>
                 <dt>MODE</dt>
-                <dd>비밀번호 입력 후 바로 저장</dd>
+                <dd>작성 후 바로 저장</dd>
               </div>
             </dl>
           </aside>
@@ -89,23 +89,11 @@ export default function CommunitySection({
             <label>
               <span>분류</span>
               <select name="category" onChange={onQuestionFormChange} value={questionForm.category}>
-                <option>커뮤니티</option>
-                <option>토론 질문</option>
-                <option>작품 추천</option>
-                <option>강의/워크숍 주제</option>
-                <option>아카이브 제안</option>
+                <option>자유글</option>
+                <option>작품추천</option>
+                <option>질문</option>
+                <option>토론</option>
               </select>
-            </label>
-
-            <label>
-              <span>게시판 비밀번호</span>
-              <input
-                name="password"
-                onChange={onQuestionFormChange}
-                placeholder="비밀번호를 입력하세요"
-                type="password"
-                value={questionForm.password}
-              />
             </label>
 
             <div className="question-form-actions">
@@ -113,7 +101,7 @@ export default function CommunitySection({
                 {questionStatus === 'success' && questionMessage}
                 {questionStatus === 'error' && questionMessage}
                 {questionStatus === 'submitting' && '새 글을 저장 중입니다.'}
-                {questionStatus === 'idle' && '비밀번호를 입력한 뒤 새글 저장을 눌러주세요.'}
+                {questionStatus === 'idle' && '글을 작성한 뒤 새글 저장을 눌러주세요.'}
               </p>
               <button type="submit" disabled={questionStatus === 'submitting'}>
                 <Send aria-hidden="true" />

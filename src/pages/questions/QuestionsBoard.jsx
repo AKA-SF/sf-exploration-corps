@@ -46,7 +46,7 @@ export default function QuestionsBoard({
           <div className="questions-empty">
             <MessageSquare aria-hidden="true" />
             <strong>{loadStatus === 'loading' ? '게시글을 불러오는 중입니다' : '아직 게시글이 없습니다'}</strong>
-            <span>비밀번호를 입력해 새 글을 남기면 이곳에 바로 표시됩니다.</span>
+            <span>새 글을 남기면 이곳에 바로 표시됩니다.</span>
           </div>
         )}
       </section>

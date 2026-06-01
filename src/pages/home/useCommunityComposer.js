@@ -6,8 +6,7 @@ const initialQuestionForm = {
   content: '',
   name: '',
   contact: '',
-  category: '커뮤니티',
-  password: '',
+  category: '자유글',
 };
 
 export default function useCommunityComposer({ user }) {
@@ -39,7 +38,6 @@ export default function useCommunityComposer({ user }) {
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        if (response.status === 401) throw new Error('비밀번호가 맞지 않습니다. 기본 비밀번호는 sf 입니다.');
         throw new Error(data?.notion?.message || data?.error || '저장에 실패했습니다.');
       }
 

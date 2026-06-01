@@ -13,7 +13,7 @@ export default function QuestionWritePanel({
         <MessageSquare aria-hidden="true" />
         <span>WRITE POST</span>
         <h2>새 글 쓰기</h2>
-        <p>비밀번호를 입력해 저장하면 게시판 목록에 바로 올라갑니다.</p>
+        <p>저장하면 게시판 목록에 바로 올라갑니다.</p>
       </div>
 
       <form className="question-form" onSubmit={onSubmit}>
@@ -60,23 +60,12 @@ export default function QuestionWritePanel({
           </select>
         </label>
 
-        <label>
-          <span>게시판 비밀번호</span>
-          <input
-            name="password"
-            onChange={onChange}
-            placeholder="비밀번호를 입력하세요"
-            type="password"
-            value={form.password}
-          />
-        </label>
-
         <div className="question-form-actions">
           <p className={`question-status is-${status}`}>
             {status === 'success' && message}
             {status === 'error' && message}
             {status === 'submitting' && '새 글을 저장 중입니다.'}
-            {status === 'idle' && '비밀번호를 입력한 뒤 새글 저장을 눌러주세요.'}
+            {status === 'idle' && '글을 작성한 뒤 새글 저장을 눌러주세요.'}
           </p>
           <button type="submit" disabled={status === 'submitting'}>
             <Send aria-hidden="true" />

@@ -214,18 +214,19 @@ export default async function handler(request, response) {
   }
 
   const mode = String(body?.mode ?? 'post').trim();
-  const password = String(body?.password ?? '').trim();
-  const boardPassword = process.env.COMMUNITY_BOARD_PASSWORD || DEFAULT_BOARD_PASSWORD;
-  const validPasswords = new Set([
-    normalizePassword(boardPassword),
-    normalizePassword(DEFAULT_BOARD_PASSWORD),
-  ]);
-
-  if (!validPasswords.has(normalizePassword(password))) {
-    return response.status(401).json({ error: 'Invalid board password' });
-  }
 
   if (mode === 'comment') {
+    const password = String(body?.password ?? '').trim();
+    const boardPassword = process.env.COMMUNITY_BOARD_PASSWORD || DEFAULT_BOARD_PASSWORD;
+    const validPasswords = new Set([
+      normalizePassword(boardPassword),
+      normalizePassword(DEFAULT_BOARD_PASSWORD),
+    ]);
+
+    if (!validPasswords.has(normalizePassword(password))) {
+      return response.status(401).json({ error: 'Invalid board password' });
+    }
+
     const questionId = String(body?.questionId ?? '').trim();
     const name = String(body?.name ?? '').trim() || '익명';
     const content = String(body?.content ?? '').trim();
