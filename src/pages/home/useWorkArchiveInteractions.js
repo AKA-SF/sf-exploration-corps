@@ -182,6 +182,20 @@ export default function useWorkArchiveInteractions({
       return;
     }
 
+    await recordUserActivity(user, {
+      actionType: 'work_status',
+      points: nextStatus === 'done' ? 15 : 5,
+      genre: selectedWork.medium,
+      metadata: {
+        title: `${selectedWork.title} 독서 상태`,
+        work_code: selectedWork.code,
+        work_title: selectedWork.title,
+        status: nextStatus,
+        tags: selectedWork.tags ?? [],
+        node: 'works-archive',
+      },
+    });
+
     setCommentStatus('success');
     setCommentMessage('독서 상태가 저장되었습니다.');
   };

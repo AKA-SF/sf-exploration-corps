@@ -19,6 +19,7 @@ const iconMap = {
 export default function Badges() {
   const { isConfigured, loading, user } = useAuth();
   const [activities, setActivities] = useState([]);
+  const [workStatuses, setWorkStatuses] = useState([]);
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
 
@@ -28,14 +29,25 @@ export default function Badges() {
 
     async function loadActivities() {
       setStatus('loading');
-      const { data, error } = await supabase
-        .from('activity_logs')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
+      const [
+        { data, error },
+        { data: statusData, error: statusError },
+      ] = await Promise.all([
+        supabase
+          .from('activity_logs')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('work_statuses')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('updated_at', { ascending: false }),
+      ]);
 
       if (!isMounted) return;
       setActivities(error ? [] : data ?? []);
+      setWorkStatuses(statusError ? [] : statusData ?? []);
       setStatus(error ? 'error' : 'ready');
       setMessage(error ? error.message : '');
     }
@@ -46,7 +58,7 @@ export default function Badges() {
     };
   }, [user]);
 
-  const stats = useMemo(() => getActivityStats(activities), [activities]);
+  const stats = useMemo(() => getActivityStats(activities, workStatuses), [activities, workStatuses]);
   const badges = getBadges(stats);
   const unlockedCount = badges.filter(badge => badge.unlocked).length;
 

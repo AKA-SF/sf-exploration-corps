@@ -57,7 +57,7 @@ function getLatestTasteProfile(activities) {
 export function buildProfileViewModel({ activities, profile, selectedMissionRoute, workStatuses }) {
   const points = profile?.mileage ?? activities.reduce((sum, activity) => sum + (activity.points ?? 0), 0);
   const rank = getRank(points);
-  const stats = getActivityStats(activities);
+  const stats = getActivityStats(activities, workStatuses);
   const badges = getBadges(stats);
   const missionTree = getMissionTree(stats, selectedMissionRoute);
   const unlockedBadges = badges.filter(badge => badge.unlocked);
