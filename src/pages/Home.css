@@ -2,16 +2,6 @@
   display: none;
 }
 
-.mobile-container.desktop-home {
-  width: 100vw;
-  height: 100vh;
-  max-width: none;
-  max-height: none;
-  border: 0;
-  box-shadow: none;
-  background: #02080d;
-}
-
 .page-container:has(.archive-home) {
   padding: 0;
   background:
