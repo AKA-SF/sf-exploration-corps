@@ -33,6 +33,7 @@ function RouteLoader() {
 function App() {
   const location = useLocation();
   const [siteMode, setSiteMode] = useState(() => localStorage.getItem('sf-site-mode') || 'console');
+  const isAdminSurface = location.pathname.startsWith('/admin');
   const isDesktopSurface = location.pathname === '/'
     || location.pathname.startsWith('/works')
     || location.pathname.startsWith('/media')
@@ -53,9 +54,9 @@ function App() {
 
   return (
     <AuthProvider>
-      <div className={`${isDesktopSurface ? 'mobile-container desktop-home' : 'mobile-container'} ${isReadingMode ? 'reading-mode' : 'console-mode'} ${isLowPowerSurface ? 'low-power-surface' : ''}`}>
+      <div className={`${isAdminSurface ? 'mobile-container desktop-admin' : isDesktopSurface ? 'mobile-container desktop-home' : 'mobile-container'} ${isAdminSurface ? 'admin-mode' : isReadingMode ? 'reading-mode' : 'console-mode'} ${isLowPowerSurface ? 'low-power-surface' : ''}`}>
       <div className="app-wrapper">
-        <InteractiveBackground lowPower={isLowPowerSurface} />
+        {!isAdminSurface && <InteractiveBackground lowPower={isLowPowerSurface} />}
         {isDesktopSurface && (
           <button
             className="site-mode-toggle"
@@ -86,7 +87,7 @@ function App() {
             </Routes>
           </Suspense>
         </div>
-        <Navbar />
+        {!isAdminSurface && <Navbar />}
       </div>
       </div>
     </AuthProvider>

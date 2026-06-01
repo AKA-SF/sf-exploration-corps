@@ -101,6 +101,12 @@
   flex-direction: column;
 }
 
+.desktop-admin .page-container {
+  padding: 0;
+  padding-bottom: 0;
+  background: #f5f7fb;
+}
+
 .route-loader {
   display: grid;
   place-items: center;

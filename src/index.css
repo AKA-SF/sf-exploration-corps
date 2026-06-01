@@ -96,6 +96,14 @@ body {
   scrollbar-width: none;
 }
 
+.mobile-container.desktop-admin {
+  max-width: none;
+  max-height: none;
+  border: 0;
+  box-shadow: none;
+  background: #f5f7fb;
+}
+
 /* Typography Classes */
 h1, h2, h3, h4, h5, h6 {
   font-weight: 300;
