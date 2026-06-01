@@ -7,9 +7,15 @@ export default function ProfileIdentityCard({
   rank,
   user,
 }) {
+  const baseSeed = user?.id || user?.email || nickname;
+  const normalizedName = (nickname || '').trim().toLowerCase();
+  const avatarSeed = normalizedName === '아카' || normalizedName === 'aka'
+    ? `${baseSeed || 'aka'}:crew-avatar-v2`
+    : baseSeed;
+
   return (
     <section className="profile-card panel profile-identity-card">
-      <CrewAvatar seed={user?.id || user?.email || nickname} label={nickname || '탐사 대원'} />
+      <CrewAvatar seed={avatarSeed} label={nickname || '탐사 대원'} />
       <div className="agent-id">
         <span className="mono text-muted text-xs">EXPLORER_CALLSIGN</span>
         <h3 className="mono text-cyan">{nickname || '탐사 대원'}</h3>
