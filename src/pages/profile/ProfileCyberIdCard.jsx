@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Download } from 'lucide-react';
-import QRCode from 'qrcode';
 import './ProfileCyberIdCard.css';
 
 const CARD_WIDTH = 1600;
@@ -11,6 +10,13 @@ const CYAN_SOFT = '#00B8C8';
 const WHITE = '#F2FBFF';
 const MUTED = '#9FB8C0';
 const AMBER = '#FFBD4A';
+
+let qrCodeModulePromise;
+
+function loadQrCode() {
+  qrCodeModulePromise ??= import('qrcode').then(module => module.default ?? module);
+  return qrCodeModulePromise;
+}
 
 function hashString(value = 'sf-explorer') {
   return value.split('').reduce((hash, char) => {
@@ -388,6 +394,7 @@ async function drawContactQrPanel(context, contactUrl, x, y, width, height) {
   });
 
   const qrCanvas = document.createElement('canvas');
+  const QRCode = await loadQrCode();
   await QRCode.toCanvas(qrCanvas, contactUrl, {
     errorCorrectionLevel: 'M',
     margin: 3,
