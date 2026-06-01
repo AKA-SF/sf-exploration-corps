@@ -80,7 +80,7 @@ function getRootSecondaryNodes() {
     const parent = genreNodes.find(node => node.id === parentId);
     if (!parent) return;
 
-    submap.nodes.forEach((node, index) => {
+    submap.nodes.slice(0, 3).forEach((node, index) => {
       if (nodeMap.has(node.id)) return;
 
       const angle = index * 2.399 + getTextSeed(parentId) * 0.01;
@@ -106,12 +106,8 @@ function getRootSecondaryConnections() {
   const connectionSet = new Set();
 
   Object.entries(genreSubmaps).forEach(([parentId, submap]) => {
-    submap.nodes.forEach(node => {
+    submap.nodes.slice(0, 3).forEach(node => {
       connectionSet.add(`${parentId}::${node.id}`);
-    });
-
-    (submap.connections ?? []).forEach(([from, to]) => {
-      connectionSet.add(`${from}::${to}`);
     });
   });
 
@@ -180,7 +176,7 @@ export default function useCoordinateMap({ concepts, setDashboard, works }) {
     ? selectedCoordinate.questions
     : ['이 좌표는 어떤 인간 이후의 조건을 상상하게 만드는가?'];
   const mapDescription = activeSubmap?.description
-    ?? '탐사 좌표는 SF 문학을 중심으로 상위 계열과 2차 하위 노드를 하나의 구형 네트워크로 배치합니다. 큰 좌표는 장르권, 작은 위성 좌표는 세부 장르와 개념 신호입니다.';
+    ?? '탐사 좌표는 SF 문학을 중심으로 상위 계열과 대표 2차 하위 노드를 하나의 구형 네트워크로 배치합니다. 큰 좌표는 장르권, 작은 위성 좌표는 세부 장르와 개념 신호입니다.';
   const minimapViewportWidth = clamp(66 / mapView.zoom, 28, 72);
   const minimapViewportHeight = clamp(66 / mapView.zoom, 28, 72);
   const minimapViewport = {

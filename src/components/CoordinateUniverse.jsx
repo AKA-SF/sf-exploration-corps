@@ -160,7 +160,7 @@ function drawSignalCluster(context, planet, time) {
   const [light] = toneColors[planet.node.tone] ?? toneColors.cyan;
   const seed = getSeed(planet.node.id);
   const isSecondary = planet.node.secondary;
-  const count = isSecondary ? 4 : Math.min(18, 7 + (planet.node.signals ?? 8));
+  const count = isSecondary ? 2 : Math.min(12, 5 + (planet.node.signals ?? 8));
   const clusterRadius = planet.radius * (planet.selected ? 5.4 : isSecondary ? 2.8 : 4.1);
 
   context.save();
@@ -225,7 +225,7 @@ function drawConnection(context, start, end, active, hasFocus, time, index) {
   context.quadraticCurveTo(control.x, control.y, end.x, end.y);
   context.stroke();
 
-  const packetCount = active ? 3 : 2;
+  const packetCount = active ? 2 : secondaryLink ? 0 : 1;
   for (let packet = 0; packet < packetCount; packet += 1) {
     const progress = ((time * (active ? 0.00018 : 0.00011)) + packet / packetCount + index * 0.067) % 1;
     const point = quadraticPoint(start, control, end, progress);
@@ -305,6 +305,8 @@ export default function CoordinateUniverse({
   const animationRef = useRef(null);
   const hitPlanetsRef = useRef([]);
   const dragRef = useRef(null);
+  const seedsRef = useRef(null);
+  const lastFrameRef = useRef(0);
   const [view, setView] = useState({ yaw: -0.24, pitch: 0.18, zoom: 1 });
   const [isDragging, setIsDragging] = useState(false);
   const [isRenderable, setIsRenderable] = useState(true);
@@ -363,25 +365,37 @@ export default function CoordinateUniverse({
     const canvas = canvasRef.current;
     if (!canvas || !isRenderable) return undefined;
     const context = canvas.getContext('2d');
-    const starSeeds = Array.from({ length: 120 }, (_, index) => ({
-      x: ((index * 73) % 997) / 997,
-      y: ((index * 151) % 991) / 991,
-      r: 0.4 + (index % 5) * 0.18,
-      a: 0.2 + (index % 7) * 0.08,
-      tint: index % 13 === 0 ? '#f0b85a' : index % 5 === 0 ? '#7cc7ff' : '#ffffff',
-    }));
-    const dustSeeds = Array.from({ length: 160 }, (_, index) => ({
-      progress: ((index * 37) % 239) / 239,
-      angle: ((index * 83) % 360) * (Math.PI / 180),
-      scale: 0.7 + (index % 13) * 0.03,
-      tint: index % 7 === 0 ? '#f0b85a' : '#dffcff',
-      alpha: 0.025 + (index % 6) * 0.012,
-      size: 0.28 + (index % 4) * 0.16,
-    }));
+    if (!seedsRef.current) {
+      seedsRef.current = {
+        starSeeds: Array.from({ length: 72 }, (_, index) => ({
+          x: ((index * 73) % 997) / 997,
+          y: ((index * 151) % 991) / 991,
+          r: 0.4 + (index % 5) * 0.16,
+          a: 0.18 + (index % 7) * 0.07,
+          tint: index % 13 === 0 ? '#f0b85a' : index % 5 === 0 ? '#7cc7ff' : '#ffffff',
+        })),
+        dustSeeds: Array.from({ length: 72 }, (_, index) => ({
+          progress: ((index * 37) % 239) / 239,
+          angle: ((index * 83) % 360) * (Math.PI / 180),
+          scale: 0.7 + (index % 13) * 0.03,
+          tint: index % 7 === 0 ? '#f0b85a' : '#dffcff',
+          alpha: 0.02 + (index % 6) * 0.01,
+          size: 0.25 + (index % 4) * 0.14,
+        })),
+      };
+    }
+
+    const { dustSeeds, starSeeds } = seedsRef.current;
 
     const render = time => {
+      if (time - lastFrameRef.current < 32) {
+        animationRef.current = requestAnimationFrame(render);
+        return;
+      }
+      lastFrameRef.current = time;
+
       const rect = canvas.getBoundingClientRect();
-      const ratio = window.devicePixelRatio || 1;
+      const ratio = Math.min(window.devicePixelRatio || 1, 1.5);
       if (canvas.width !== Math.floor(rect.width * ratio) || canvas.height !== Math.floor(rect.height * ratio)) {
         canvas.width = Math.floor(rect.width * ratio);
         canvas.height = Math.floor(rect.height * ratio);
