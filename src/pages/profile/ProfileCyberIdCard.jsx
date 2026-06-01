@@ -612,7 +612,7 @@ export default function ProfileCyberIdCard({
   return (
     <button className="profile-cyber-id-tab" type="button" onClick={handleDownload} disabled={isExporting}>
       <span className="mono">CYBER ID</span>
-      <strong>{isExporting ? '생성 중' : 'ID카드 다운'}</strong>
+      <strong>{isExporting ? '발급 중' : 'ID 카드 발급'}</strong>
       <Download size={15} aria-hidden="true" />
     </button>
   );
