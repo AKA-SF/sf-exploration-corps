@@ -49,16 +49,6 @@ export default function QuestionDetailView({
             <span>제목</span>
             <input name="title" onChange={onEditChange} type="text" value={editForm.title} />
           </label>
-          <div className="question-form-row">
-            <label>
-              <span>작성자</span>
-              <input name="name" onChange={onEditChange} placeholder="익명 가능" type="text" value={editForm.name} />
-            </label>
-            <label>
-              <span>연락처</span>
-              <input name="contact" onChange={onEditChange} placeholder="선택 입력" type="text" value={editForm.contact} />
-            </label>
-          </div>
           <label>
             <span>내용</span>
             <textarea name="content" onChange={onEditChange} rows="12" value={editForm.content} />

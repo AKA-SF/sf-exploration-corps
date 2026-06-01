@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { recordUserActivity } from '../../lib/activityLogger';
+import { getCommunityAuthorName, getCommunityOwnerToken } from './communityIdentity';
 
 const fallbackQuestions = [];
 
@@ -15,12 +16,10 @@ export const normalizeQuestionCategory = category => {
 const emptyQuestionForm = {
   title: '',
   content: '',
-  name: '',
-  contact: '',
   category: '자유글',
 };
 
-const emptyCommentForm = { name: '', content: '' };
+const emptyCommentForm = { content: '' };
 const OWNER_TOKEN_STORAGE_KEY = 'sfa-community-owner-token';
 
 const createOwnerToken = () => {
@@ -30,7 +29,9 @@ const createOwnerToken = () => {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
 };
 
-const getOwnerToken = () => {
+const getOwnerToken = user => {
+  const userToken = getCommunityOwnerToken(user);
+  if (userToken) return userToken;
   if (typeof window === 'undefined') return '';
   const current = window.localStorage.getItem(OWNER_TOKEN_STORAGE_KEY);
   if (current) return current;
@@ -59,8 +60,9 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
   const [activeCategory, setActiveCategory] = useState('전체');
   const [isQuestionEditing, setIsQuestionEditing] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState('');
+  const authorName = getCommunityAuthorName(user);
 
-  const loadQuestions = () => {
+  const loadQuestions = useCallback(() => {
     fetch('/api/questions', { cache: 'no-store' })
       .then(response => {
         if (!response.ok) throw new Error('Question archive unavailable');
@@ -74,10 +76,10 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
         setQuestions(fallbackQuestions);
         setLoadStatus('error');
       });
-  };
+  }, []);
 
-  const loadQuestionDetail = id => {
-    const ownerToken = getOwnerToken();
+  const loadQuestionDetail = useCallback(id => {
+    const ownerToken = getOwnerToken(user);
     const query = new URLSearchParams({ id, ownerToken });
     fetch(`/api/questions?${query.toString()}`, { cache: 'no-store' })
       .then(response => {
@@ -94,7 +96,7 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
         setComments([]);
         setLoadStatus('error');
       });
-  };
+  }, [user]);
 
   useEffect(() => {
     if (questionId) {
@@ -102,7 +104,7 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     } else {
       loadQuestions();
     }
-  }, [questionId]);
+  }, [loadQuestionDetail, loadQuestions, questionId]);
 
   const categories = useMemo(() => BOARD_CATEGORIES, []);
 
@@ -132,6 +134,11 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
 
   const submitQuestion = async event => {
     event.preventDefault();
+    if (!user) {
+      setQuestionStatus('error');
+      setQuestionMessage('로그인 후 새 글을 저장할 수 있습니다.');
+      return;
+    }
     if (!questionForm.title.trim() || !questionForm.content.trim()) {
       setQuestionStatus('error');
       setQuestionMessage('글 제목과 글 내용을 입력해주세요.');
@@ -147,7 +154,8 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...questionForm,
-          ownerToken: getOwnerToken(),
+          name: authorName,
+          ownerToken: getOwnerToken(user),
         }),
       });
       if (!response.ok) {
@@ -166,7 +174,7 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
       });
       setQuestionForm(emptyQuestionForm);
       setQuestionStatus('success');
-      setQuestionMessage(user ? '새 글이 저장되었습니다. +20 MP가 반영됩니다.' : '새 글이 저장되어 게시판에 표시됩니다.');
+      setQuestionMessage('새 글이 저장되었습니다. +20 MP가 반영됩니다.');
       loadQuestions();
     } catch (error) {
       setQuestionStatus('error');
@@ -176,6 +184,11 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
 
   const submitComment = async event => {
     event.preventDefault();
+    if (!user) {
+      setCommentStatus('error');
+      setCommentMessage('로그인 후 댓글을 저장할 수 있습니다.');
+      return;
+    }
     if (!commentForm.content.trim()) {
       setCommentStatus('error');
       setCommentMessage('댓글 내용을 입력해주세요.');
@@ -192,7 +205,8 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
         body: JSON.stringify({
           mode: 'comment',
           questionId,
-          ownerToken: getOwnerToken(),
+          name: authorName,
+          ownerToken: getOwnerToken(user),
           ...commentForm,
         }),
       });
@@ -217,7 +231,7 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
         setComments(current => [...current, data.comment]);
       }
       setCommentStatus('success');
-      setCommentMessage(user ? '댓글이 저장되었습니다. +10 MP가 반영됩니다.' : '댓글이 저장되었습니다.');
+      setCommentMessage('댓글이 저장되었습니다. +10 MP가 반영됩니다.');
     } catch (error) {
       setCommentStatus('error');
       setCommentMessage(error.message);
@@ -229,8 +243,6 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     setQuestionEditForm({
       title: activeQuestion.title ?? '',
       content: activeQuestion.content ?? '',
-      name: activeQuestion.author === '익명' ? '' : activeQuestion.author ?? '',
-      contact: activeQuestion.contact ?? '',
       category: normalizeQuestionCategory(activeQuestion.category),
     });
     setQuestionEditMessage('');
@@ -262,7 +274,9 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
         body: JSON.stringify({
           mode: 'post',
           questionId,
-          ownerToken: getOwnerToken(),
+          name: activeQuestion.author,
+          contact: activeQuestion.contact,
+          ownerToken: getOwnerToken(user),
           ...questionEditForm,
         }),
       });
@@ -300,7 +314,7 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
         body: JSON.stringify({
           mode: 'post',
           questionId,
-          ownerToken: getOwnerToken(),
+          ownerToken: getOwnerToken(user),
         }),
       });
       if (!response.ok) {
@@ -320,7 +334,6 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     if (!comment?.canEdit) return;
     setEditingCommentId(comment.id);
     setCommentEditForm({
-      name: comment.name === '익명' ? '' : comment.name ?? '',
       content: comment.content ?? '',
     });
     setCommentEditStatus('idle');
@@ -352,7 +365,8 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
         body: JSON.stringify({
           mode: 'comment',
           commentId: editingCommentId,
-          ownerToken: getOwnerToken(),
+          name: comments.find(comment => comment.id === editingCommentId)?.name || authorName,
+          ownerToken: getOwnerToken(user),
           ...commentEditForm,
         }),
       });
@@ -392,7 +406,7 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
         body: JSON.stringify({
           mode: 'comment',
           commentId,
-          ownerToken: getOwnerToken(),
+          ownerToken: getOwnerToken(user),
         }),
       });
       if (!response.ok) {
@@ -411,6 +425,7 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
   return {
     activeCategory,
     activeQuestion,
+    authorName,
     beginCommentEdit,
     beginQuestionEdit,
     cancelCommentEdit,

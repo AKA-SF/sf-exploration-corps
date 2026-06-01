@@ -1,12 +1,14 @@
 import { Pencil, Save, Send, Trash2, X } from 'lucide-react';
 
 export default function CommentsPanel({
+  authorName,
   comments,
   editForm,
   editMessage,
   editingCommentId,
   editStatus,
   form,
+  isAuthenticated,
   message,
   onChange,
   onDeleteComment,
@@ -32,10 +34,6 @@ export default function CommentsPanel({
             </div>
             {editingCommentId === comment.id ? (
               <form className="question-form comment-edit-form" onSubmit={onEditSubmit}>
-                <label>
-                  <span>이름</span>
-                  <input name="name" onChange={onEditChange} placeholder="익명 가능" type="text" value={editForm.name} />
-                </label>
                 <label>
                   <span>댓글 내용</span>
                   <textarea name="content" onChange={onEditChange} rows="4" value={editForm.content} />
@@ -80,10 +78,9 @@ export default function CommentsPanel({
       </div>
 
       <form className="question-form comment-form" onSubmit={onSubmit}>
-        <label>
-          <span>이름</span>
-          <input name="name" onChange={onChange} placeholder="익명 가능" type="text" value={form.name} />
-        </label>
+        <p className="comment-author-note">
+          {isAuthenticated ? `${authorName} 대원 계정으로 댓글을 남깁니다.` : '로그인 후 댓글을 남길 수 있습니다.'}
+        </p>
         <label>
           <span>댓글 내용</span>
           <textarea name="content" onChange={onChange} placeholder="댓글을 입력해주세요." rows="5" value={form.content} />
@@ -93,9 +90,9 @@ export default function CommentsPanel({
             {status === 'success' && message}
             {status === 'error' && message}
             {status === 'submitting' && '댓글을 저장 중입니다.'}
-            {status === 'idle' && '댓글을 작성한 뒤 저장을 눌러주세요.'}
+            {status === 'idle' && (isAuthenticated ? '댓글을 작성한 뒤 저장을 눌러주세요.' : '로그인 후 댓글을 저장할 수 있습니다.')}
           </p>
-          <button type="submit" disabled={status === 'submitting'}>
+          <button type="submit" disabled={!isAuthenticated || status === 'submitting'}>
             <Send aria-hidden="true" />
             {status === 'submitting' ? '저장 중' : '댓글 저장'}
           </button>

@@ -1,7 +1,9 @@
 import { MessageSquare, Send } from 'lucide-react';
 
 export default function QuestionWritePanel({
+  authorName,
   form,
+  isAuthenticated,
   message,
   onChange,
   onSubmit,
@@ -13,7 +15,7 @@ export default function QuestionWritePanel({
         <MessageSquare aria-hidden="true" />
         <span>WRITE POST</span>
         <h2>새 글 쓰기</h2>
-        <p>저장하면 게시판 목록에 바로 올라갑니다.</p>
+        <p>{isAuthenticated ? `${authorName} 대원 계정으로 저장됩니다.` : '로그인한 대원만 글을 저장할 수 있습니다.'}</p>
       </div>
 
       <form className="question-form" onSubmit={onSubmit}>
@@ -39,17 +41,6 @@ export default function QuestionWritePanel({
           />
         </label>
 
-        <div className="question-form-row">
-          <label>
-            <span>이름</span>
-            <input name="name" onChange={onChange} placeholder="익명 가능" type="text" value={form.name} />
-          </label>
-          <label>
-            <span>연락처</span>
-            <input name="contact" onChange={onChange} placeholder="이메일 또는 인스타그램" type="text" value={form.contact} />
-          </label>
-        </div>
-
         <label>
           <span>말머리</span>
           <select name="category" onChange={onChange} value={form.category}>
@@ -65,9 +56,9 @@ export default function QuestionWritePanel({
             {status === 'success' && message}
             {status === 'error' && message}
             {status === 'submitting' && '새 글을 저장 중입니다.'}
-            {status === 'idle' && '글을 작성한 뒤 새글 저장을 눌러주세요.'}
+            {status === 'idle' && (isAuthenticated ? '글을 작성한 뒤 새글 저장을 눌러주세요.' : '로그인 후 새 글을 저장할 수 있습니다.')}
           </p>
-          <button type="submit" disabled={status === 'submitting'}>
+          <button type="submit" disabled={!isAuthenticated || status === 'submitting'}>
             <Send aria-hidden="true" />
             {status === 'submitting' ? '저장 중' : '새글 저장'}
           </button>

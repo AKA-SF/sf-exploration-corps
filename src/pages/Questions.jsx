@@ -20,6 +20,7 @@ export default function Questions() {
   const {
     activeCategory,
     activeQuestion,
+    authorName,
     beginCommentEdit,
     beginQuestionEdit,
     cancelCommentEdit,
@@ -88,12 +89,14 @@ export default function Questions() {
         />
 
         <CommentsPanel
+          authorName={authorName}
           editForm={commentEditForm}
           editMessage={commentEditMessage}
           editingCommentId={editingCommentId}
           editStatus={commentEditStatus}
           comments={comments}
           form={commentForm}
+          isAuthenticated={Boolean(user)}
           message={commentMessage}
           onChange={updateCommentForm}
           onDeleteComment={deleteComment}
@@ -140,7 +143,9 @@ export default function Questions() {
               닫기
             </button>
             <QuestionWritePanel
+              authorName={authorName}
               form={questionForm}
+              isAuthenticated={Boolean(user)}
               message={questionMessage}
               onChange={updateQuestionForm}
               onSubmit={submitQuestion}

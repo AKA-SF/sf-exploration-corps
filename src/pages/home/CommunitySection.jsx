@@ -1,6 +1,8 @@
 import { MessageSquare, Send } from 'lucide-react';
 
 export default function CommunitySection({
+  authorName,
+  isAuthenticated,
   onQuestionFormChange,
   onQuestionSubmit,
   questionForm,
@@ -15,7 +17,7 @@ export default function CommunitySection({
           <h2>커뮤니티 게시판</h2>
           <p>
             SF 작품을 읽고 남은 질문, 추천, 제안, 함께 나누고 싶은 이야기를
-            바로 남길 수 있습니다.
+              로그인한 대원 계정으로 바로 남길 수 있습니다.
           </p>
         </div>
 
@@ -35,7 +37,7 @@ export default function CommunitySection({
               </div>
               <div>
                 <dt>MODE</dt>
-                <dd>작성 후 바로 저장</dd>
+                <dd>{isAuthenticated ? `${authorName} 대원으로 저장` : '로그인 후 저장 가능'}</dd>
               </div>
             </dl>
           </aside>
@@ -63,29 +65,6 @@ export default function CommunitySection({
               />
             </label>
 
-            <div className="question-form-row">
-              <label>
-                <span>이름</span>
-                <input
-                  name="name"
-                  onChange={onQuestionFormChange}
-                  placeholder="익명 가능"
-                  type="text"
-                  value={questionForm.name}
-                />
-              </label>
-              <label>
-                <span>연락처</span>
-                <input
-                  name="contact"
-                  onChange={onQuestionFormChange}
-                  placeholder="이메일 또는 인스타그램"
-                  type="text"
-                  value={questionForm.contact}
-                />
-              </label>
-            </div>
-
             <label>
               <span>말머리</span>
               <select name="category" onChange={onQuestionFormChange} value={questionForm.category}>
@@ -101,9 +80,9 @@ export default function CommunitySection({
                 {questionStatus === 'success' && questionMessage}
                 {questionStatus === 'error' && questionMessage}
                 {questionStatus === 'submitting' && '새 글을 저장 중입니다.'}
-                {questionStatus === 'idle' && '글을 작성한 뒤 새글 저장을 눌러주세요.'}
+                {questionStatus === 'idle' && (isAuthenticated ? '글을 작성한 뒤 새글 저장을 눌러주세요.' : '로그인 후 새 글을 저장할 수 있습니다.')}
               </p>
-              <button type="submit" disabled={questionStatus === 'submitting'}>
+              <button type="submit" disabled={!isAuthenticated || questionStatus === 'submitting'}>
                 <Send aria-hidden="true" />
                 {questionStatus === 'submitting' ? '저장 중' : '새글 저장'}
               </button>

@@ -1,11 +1,10 @@
 import { useState } from 'react';
 import { recordUserActivity } from '../../lib/activityLogger';
+import { getCommunityAuthorName, getCommunityOwnerToken } from '../questions/communityIdentity';
 
 const initialQuestionForm = {
   title: '',
   content: '',
-  name: '',
-  contact: '',
   category: '자유글',
 };
 
@@ -21,6 +20,11 @@ export default function useCommunityComposer({ user }) {
 
   const submitQuestion = async event => {
     event.preventDefault();
+    if (!user) {
+      setQuestionStatus('error');
+      setQuestionMessage('로그인 후 새 글을 저장할 수 있습니다.');
+      return;
+    }
     if (!questionForm.title.trim() || !questionForm.content.trim()) {
       setQuestionStatus('error');
       setQuestionMessage('글 제목과 글 내용을 입력해주세요.');
@@ -34,7 +38,11 @@ export default function useCommunityComposer({ user }) {
       const response = await fetch('/api/questions', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(questionForm),
+        body: JSON.stringify({
+          ...questionForm,
+          name: getCommunityAuthorName(user),
+          ownerToken: getCommunityOwnerToken(user),
+        }),
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
@@ -54,7 +62,7 @@ export default function useCommunityComposer({ user }) {
 
       setQuestionForm(initialQuestionForm);
       setQuestionStatus('success');
-      setQuestionMessage(user ? '새 글이 저장되었습니다. +20 MP가 반영됩니다.' : '새 글이 저장되었습니다.');
+      setQuestionMessage('새 글이 저장되었습니다. +20 MP가 반영됩니다.');
     } catch (error) {
       setQuestionStatus('error');
       setQuestionMessage(error.message);
@@ -62,6 +70,8 @@ export default function useCommunityComposer({ user }) {
   };
 
   return {
+    authorName: getCommunityAuthorName(user),
+    isAuthenticated: Boolean(user),
     questionForm,
     questionMessage,
     questionStatus,

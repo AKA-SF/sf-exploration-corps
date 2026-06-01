@@ -71,6 +71,8 @@ export default function Home() {
     mergeWorksByCode,
   });
   const {
+    authorName: communityAuthorName,
+    isAuthenticated: isCommunityAuthenticated,
     questionForm,
     questionMessage,
     questionStatus,
@@ -296,6 +298,8 @@ export default function Home() {
 
       <div ref={communitySectionRef}>
         <CommunitySection
+          authorName={communityAuthorName}
+          isAuthenticated={isCommunityAuthenticated}
           onQuestionFormChange={updateQuestionForm}
           onQuestionSubmit={submitQuestion}
           questionForm={questionForm}

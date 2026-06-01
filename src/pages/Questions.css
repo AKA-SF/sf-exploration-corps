@@ -624,6 +624,16 @@
   margin: 14px 0 0;
 }
 
+.comment-author-note {
+  margin: 0;
+  border: 1px solid rgba(25, 247, 241, 0.16);
+  padding: 12px 14px;
+  color: #9eeff2;
+  background: rgba(0, 16, 22, 0.44);
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .question-write-brief {
   align-self: start;
 }
@@ -974,6 +984,12 @@
 
 .reading-mode .comment-edit-form {
   border-color: rgba(46, 72, 77, 0.16) !important;
+  background: rgba(255, 255, 255, 0.42) !important;
+}
+
+.reading-mode .comment-author-note {
+  border-color: rgba(46, 72, 77, 0.18) !important;
+  color: #2f6f78 !important;
   background: rgba(255, 255, 255, 0.42) !important;
 }
 
