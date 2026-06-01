@@ -4,7 +4,6 @@ import { pick, plainText } from './_notionProperties.js';
 import { findPropertyEntry, readJsonBody, richTextPayload } from './_notionWrite.js';
 
 const DEFAULT_QUESTIONS_DATABASE_ID = '36a98dbef69d803abd53c09b6ff7f2e3';
-const DEFAULT_BOARD_PASSWORD = 'sf';
 
 function findProperty(schema, preferredNames, type) {
   return findPropertyEntry(schema, preferredNames, type)
@@ -65,10 +64,6 @@ function getSelectName(property, preferredName) {
   return options.find(option => option.name === preferredName)?.name
     ?? options[0]?.name
     ?? '';
-}
-
-function normalizePassword(value) {
-  return String(value ?? '').trim().toLowerCase();
 }
 
 function buildProperty(property, value) {
@@ -253,17 +248,6 @@ export default async function handler(request, response) {
   const mode = String(body?.mode ?? 'post').trim();
 
   if (mode === 'comment') {
-    const password = String(body?.password ?? '').trim();
-    const boardPassword = process.env.COMMUNITY_BOARD_PASSWORD || DEFAULT_BOARD_PASSWORD;
-    const validPasswords = new Set([
-      normalizePassword(boardPassword),
-      normalizePassword(DEFAULT_BOARD_PASSWORD),
-    ]);
-
-    if (!validPasswords.has(normalizePassword(password))) {
-      return response.status(401).json({ error: 'Invalid board password' });
-    }
-
     const questionId = String(body?.questionId ?? '').trim();
     const name = String(body?.name ?? '').trim() || '익명';
     const content = String(body?.content ?? '').trim();

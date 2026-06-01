@@ -18,10 +18,6 @@ export default function QuestionDetailView({
 
   return (
     <article className={`question-detail ${localReadingMode ? 'is-reading-local' : ''}`}>
-      <div className="question-detail-top">
-        <span>{activeQuestion.category}</span>
-        <em>{activeQuestion.date || 'NO DATE'}</em>
-      </div>
       <button
         className="question-reading-toggle"
         onClick={onReadingModeToggle}
@@ -32,8 +28,12 @@ export default function QuestionDetailView({
       <h2>{activeQuestion.title}</h2>
       <div className="question-detail-meta">
         <span>작성자 {activeQuestion.author}</span>
+        <time>{activeQuestion.date || 'NO DATE'}</time>
+        <em>조회수 {activeQuestion.views ?? 0}</em>
       </div>
-      <p>{activeQuestion.content}</p>
+      <div className="question-detail-body">
+        <p>{activeQuestion.content}</p>
+      </div>
     </article>
   );
 }

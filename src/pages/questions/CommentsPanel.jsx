@@ -37,16 +37,12 @@ export default function CommentsPanel({
           <span>댓글 내용</span>
           <textarea name="content" onChange={onChange} placeholder="댓글을 입력해주세요." rows="5" value={form.content} />
         </label>
-        <label>
-          <span>게시판 비밀번호</span>
-          <input name="password" onChange={onChange} placeholder="비밀번호를 입력하세요" type="password" value={form.password} />
-        </label>
         <div className="question-form-actions">
           <p className={`question-status is-${status}`}>
             {status === 'success' && message}
             {status === 'error' && message}
             {status === 'submitting' && '댓글을 저장 중입니다.'}
-            {status === 'idle' && '비밀번호를 입력한 뒤 댓글 저장을 눌러주세요.'}
+            {status === 'idle' && '댓글을 작성한 뒤 저장을 눌러주세요.'}
           </p>
           <button type="submit" disabled={status === 'submitting'}>
             <Send aria-hidden="true" />

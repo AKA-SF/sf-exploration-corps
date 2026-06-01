@@ -20,7 +20,7 @@ const emptyQuestionForm = {
   category: '자유글',
 };
 
-const emptyCommentForm = { name: '', content: '', password: '' };
+const emptyCommentForm = { name: '', content: '' };
 
 export default function useQuestionsBoard({ questionId, user }) {
   const [questions, setQuestions] = useState(fallbackQuestions);
@@ -157,9 +157,9 @@ export default function useQuestionsBoard({ questionId, user }) {
       });
       if (!response.ok) {
         const data = await response.json().catch(() => ({}));
-        if (response.status === 401) throw new Error('비밀번호가 맞지 않습니다. 기본 비밀번호는 sf 입니다.');
         throw new Error(data?.notion?.message || data?.error || '댓글 저장에 실패했습니다.');
       }
+      const data = await response.json().catch(() => ({}));
       await recordUserActivity(user, {
         actionType: 'comment',
         points: 10,
@@ -172,9 +172,11 @@ export default function useQuestionsBoard({ questionId, user }) {
         },
       });
       setCommentForm(emptyCommentForm);
+      if (data.comment) {
+        setComments(current => [...current, data.comment]);
+      }
       setCommentStatus('success');
       setCommentMessage(user ? '댓글이 저장되었습니다. +10 MP가 반영됩니다.' : '댓글이 저장되었습니다.');
-      loadQuestionDetail(questionId);
     } catch (error) {
       setCommentStatus('error');
       setCommentMessage(error.message);
