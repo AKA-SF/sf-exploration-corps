@@ -14,10 +14,27 @@ function nodeToPoint(node, time = 0) {
   const seed = node.id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
   const driftA = time * (0.00036 + (seed % 5) * 0.000026) + seed;
   const driftB = time * (0.00028 + (seed % 7) * 0.000022) + seed * 0.37;
+
+  if (node.center) {
+    return {
+      x: Math.sin(driftA) * 20,
+      y: Math.cos(driftB) * 14,
+      z: Math.sin(driftA * 0.72) * 34,
+    };
+  }
+
+  const tier = node.tier ?? (node.secondary ? 2 : 1);
+  const longitude = ((node.x / 100) * Math.PI * 2) - Math.PI + Math.sin(driftA * 0.16) * 0.05;
+  const latitude = ((node.y / 100) - 0.5) * Math.PI * 0.92 + Math.cos(driftB * 0.14) * 0.035;
+  const radius = tier === 2
+    ? 430 + (node.orbit ?? 1) * 24 + (seed % 9) * 3
+    : 360 + (node.orbit ?? 3) * 34 + (seed % 11) * 4;
+  const breathing = Math.sin(driftA * 0.58) * (tier === 2 ? 20 : 28);
+
   return {
-    x: (node.x - 50) * 18 + Math.sin(driftA) * 42 + Math.cos(driftB * 0.7) * 14,
-    y: (node.y - 50) * 12 + Math.cos(driftB) * 30 + Math.sin(driftA * 0.52) * 10,
-    z: Math.sin(seed * 0.41) * 260 + Math.cos(seed * 0.17) * 110 + Math.sin(driftA * 0.78) * 88,
+    x: Math.cos(latitude) * Math.cos(longitude) * (radius + breathing) + Math.sin(driftA) * 18,
+    y: Math.sin(latitude) * (radius * 0.78 + breathing) + Math.cos(driftB) * 12,
+    z: Math.cos(latitude) * Math.sin(longitude) * (radius + breathing) + Math.sin(driftB * 0.86) * 36,
   };
 }
 
@@ -96,11 +113,55 @@ function drawAtlasBackground(context, width, height, time, starSeeds, dustSeeds)
   context.globalAlpha = 1;
 }
 
+function drawSphereGuide(context, width, height, time, view) {
+  const centerX = width / 2;
+  const centerY = height / 2;
+  const radius = Math.min(width, height) * 0.36 * view.zoom;
+
+  context.save();
+  context.translate(centerX, centerY);
+  context.globalCompositeOperation = 'lighter';
+
+  const glow = context.createRadialGradient(0, 0, radius * 0.05, 0, 0, radius * 1.18);
+  glow.addColorStop(0, 'rgba(25, 247, 241, 0.05)');
+  glow.addColorStop(0.55, 'rgba(25, 247, 241, 0.018)');
+  glow.addColorStop(1, 'rgba(25, 247, 241, 0)');
+  context.fillStyle = glow;
+  context.beginPath();
+  context.arc(0, 0, radius * 1.16, 0, Math.PI * 2);
+  context.fill();
+
+  context.strokeStyle = 'rgba(25, 247, 241, 0.13)';
+  context.lineWidth = 0.7;
+  for (let index = 0; index < 4; index += 1) {
+    const tilt = view.yaw * 0.35 + index * (Math.PI / 4) + time * 0.000015;
+    context.beginPath();
+    context.ellipse(0, 0, radius, radius * 0.28, tilt, 0, Math.PI * 2);
+    context.stroke();
+  }
+
+  for (let index = -2; index <= 2; index += 1) {
+    const lineRadius = radius * (1 - Math.abs(index) * 0.14);
+    context.globalAlpha = 0.5 - Math.abs(index) * 0.08;
+    context.beginPath();
+    context.ellipse(0, index * radius * 0.22, lineRadius, lineRadius * 0.18, view.yaw * 0.14, 0, Math.PI * 2);
+    context.stroke();
+  }
+
+  context.globalAlpha = 0.65;
+  context.strokeStyle = 'rgba(240, 184, 90, 0.1)';
+  context.beginPath();
+  context.arc(0, 0, radius * 1.02, 0, Math.PI * 2);
+  context.stroke();
+  context.restore();
+}
+
 function drawSignalCluster(context, planet, time) {
   const [light] = toneColors[planet.node.tone] ?? toneColors.cyan;
   const seed = getSeed(planet.node.id);
-  const count = Math.min(18, 7 + (planet.node.signals ?? 8));
-  const clusterRadius = planet.radius * (planet.selected ? 5.4 : 4.1);
+  const isSecondary = planet.node.secondary;
+  const count = isSecondary ? 4 : Math.min(18, 7 + (planet.node.signals ?? 8));
+  const clusterRadius = planet.radius * (planet.selected ? 5.4 : isSecondary ? 2.8 : 4.1);
 
   context.save();
   context.globalCompositeOperation = 'lighter';
@@ -109,7 +170,7 @@ function drawSignalCluster(context, planet, time) {
     const distance = clusterRadius * (0.34 + ((seed + index * 17) % 100) / 140);
     const x = planet.x + Math.cos(angle) * distance;
     const y = planet.y + Math.sin(angle) * distance * 0.46;
-    const alpha = planet.muted ? 0.08 : 0.2 + (index % 5) * 0.045;
+    const alpha = planet.muted ? 0.08 : isSecondary ? 0.12 : 0.2 + (index % 5) * 0.045;
     context.globalAlpha = alpha * planet.alpha;
     context.fillStyle = index % 4 === 0 ? light : '#dffcff';
     context.beginPath();
@@ -140,13 +201,14 @@ function drawConnection(context, start, end, active, hasFocus, time, index) {
     y: (start.y + end.y) / 2 - (end.x - start.x) * 0.055,
   };
   const dimmed = hasFocus && !active;
-  const alpha = dimmed ? 0.16 : active ? 0.92 : 0.54;
+  const secondaryLink = start.node.secondary || end.node.secondary;
+  const alpha = dimmed ? 0.12 : active ? 0.92 : secondaryLink ? 0.32 : 0.54;
   const stroke = active ? 'rgba(240, 184, 90, 0.9)' : 'rgba(25, 247, 241, 0.68)';
 
   context.save();
   context.globalCompositeOperation = 'lighter';
   context.strokeStyle = stroke;
-  context.lineWidth = active ? 2.2 : 1.15;
+  context.lineWidth = active ? 2.2 : secondaryLink ? 0.72 : 1.15;
   context.globalAlpha = alpha * 0.38;
   context.setLineDash([]);
   context.beginPath();
@@ -155,7 +217,7 @@ function drawConnection(context, start, end, active, hasFocus, time, index) {
   context.stroke();
 
   context.globalAlpha = alpha;
-  context.lineWidth = active ? 1.15 : 0.72;
+  context.lineWidth = active ? 1.15 : secondaryLink ? 0.48 : 0.72;
   context.setLineDash(active ? [12, 10] : [4, 9]);
   context.lineDashOffset = -time * 0.018 - index * 7;
   context.beginPath();
@@ -180,6 +242,7 @@ function drawConnection(context, start, end, active, hasFocus, time, index) {
 
 function drawPlanet(context, planet) {
   const [light, mid, dark] = toneColors[planet.node.tone] ?? toneColors.cyan;
+  const isSecondary = planet.node.secondary;
   const gradient = context.createRadialGradient(
     planet.x - planet.radius * 0.35,
     planet.y - planet.radius * 0.42,
@@ -203,18 +266,26 @@ function drawPlanet(context, planet) {
   context.fill();
 
   context.shadowBlur = 0;
-  context.strokeStyle = planet.selected ? 'rgba(240, 184, 90, 0.9)' : 'rgba(25, 247, 241, 0.28)';
-  context.lineWidth = planet.selected ? 1.6 : 0.8;
+  context.strokeStyle = planet.selected ? 'rgba(240, 184, 90, 0.9)' : isSecondary ? 'rgba(25, 247, 241, 0.16)' : 'rgba(25, 247, 241, 0.28)';
+  context.lineWidth = planet.selected ? 1.6 : isSecondary ? 0.55 : 0.8;
   context.beginPath();
-  context.ellipse(planet.x, planet.y, planet.radius * 2.25, planet.radius * 0.44, -0.2, 0, Math.PI * 2);
+  context.ellipse(planet.x, planet.y, planet.radius * (isSecondary ? 1.72 : 2.25), planet.radius * (isSecondary ? 0.34 : 0.44), -0.2, 0, Math.PI * 2);
   context.stroke();
 
+  const shouldLabel = planet.selected || planet.related || !isSecondary;
+  if (!shouldLabel) {
+    context.restore();
+    return;
+  }
+
   context.fillStyle = planet.selected ? '#ffffff' : 'rgba(232, 251, 255, 0.9)';
-  context.font = `${planet.selected ? 800 : 700} ${planet.selected ? 13 : 10}px system-ui, sans-serif`;
+  context.font = `${planet.selected ? 800 : 700} ${planet.selected ? 13 : isSecondary ? 9 : 10}px system-ui, sans-serif`;
   context.fillText(planet.node.label, planet.x + planet.radius + 10, planet.y - 3);
   context.fillStyle = planet.selected ? 'rgba(240, 184, 90, 0.86)' : 'rgba(136, 219, 225, 0.78)';
   context.font = '9px "Courier New", monospace';
-  context.fillText(planet.node.en, planet.x + planet.radius + 10, planet.y + 11);
+  if (!isSecondary || planet.selected) {
+    context.fillText(planet.node.en, planet.x + planet.radius + 10, planet.y + 11);
+  }
   context.restore();
 }
 
@@ -321,6 +392,7 @@ export default function CoordinateUniverse({
       const height = rect.height;
       context.clearRect(0, 0, width, height);
       drawAtlasBackground(context, width, height, time, starSeeds, dustSeeds);
+      drawSphereGuide(context, width, height, time, view);
 
       const projectedNodes = nodes.map(node => {
         const autoYaw = view.yaw + Math.sin(time * 0.0001) * 0.065;
@@ -330,6 +402,11 @@ export default function CoordinateUniverse({
         const selected = selectedId === node.id;
         const related = relatedIds?.has(node.id);
         const muted = hasFocus && !selected && !related;
+        const radius = selected
+          ? 15
+          : node.secondary
+            ? 3.8 + node.orbit * 0.7
+            : 7 + node.orbit * 1.55;
         return {
           node,
           selected,
@@ -338,7 +415,7 @@ export default function CoordinateUniverse({
           x: projected.x,
           y: projected.y,
           z: rotated.z,
-          radius: (selected ? 15 : 7 + node.orbit * 1.55) * projected.depth,
+          radius: radius * projected.depth,
           alpha: muted ? 0.18 : clamp(0.58 + projected.depth * 0.28, 0.5, 0.95),
         };
       });

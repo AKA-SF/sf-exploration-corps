@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import { genreNodes, genreSubmaps, mapConnections, sfCoreNode } from '../../data/sfCoordinateTaxonomy';
 
@@ -65,6 +65,59 @@ function findRelatedConceptsForNode(node, concepts) {
     .slice(0, 4);
 }
 
+function clampPosition(value) {
+  return clamp(value, 6, 94);
+}
+
+function getTextSeed(text) {
+  return text.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
+}
+
+function getRootSecondaryNodes() {
+  const nodeMap = new Map();
+
+  Object.entries(genreSubmaps).forEach(([parentId, submap]) => {
+    const parent = genreNodes.find(node => node.id === parentId);
+    if (!parent) return;
+
+    submap.nodes.forEach((node, index) => {
+      if (nodeMap.has(node.id)) return;
+
+      const angle = index * 2.399 + getTextSeed(parentId) * 0.01;
+      const spreadX = (node.x - 50) * 0.24 + Math.cos(angle) * 2.8;
+      const spreadY = (node.y - 50) * 0.2 + Math.sin(angle) * 2.3;
+
+      nodeMap.set(node.id, {
+        ...node,
+        x: clampPosition(parent.x + spreadX),
+        y: clampPosition(parent.y + spreadY),
+        orbit: 1 + (index % 2),
+        parentId,
+        secondary: true,
+        tier: 2,
+      });
+    });
+  });
+
+  return [...nodeMap.values()];
+}
+
+function getRootSecondaryConnections() {
+  const connectionSet = new Set();
+
+  Object.entries(genreSubmaps).forEach(([parentId, submap]) => {
+    submap.nodes.forEach(node => {
+      connectionSet.add(`${parentId}::${node.id}`);
+    });
+
+    (submap.connections ?? []).forEach(([from, to]) => {
+      connectionSet.add(`${from}::${to}`);
+    });
+  });
+
+  return [...connectionSet].map(item => item.split('::'));
+}
+
 export default function useCoordinateMap({ concepts, setDashboard, works }) {
   const [activeGenreId, setActiveGenreId] = useState(null);
   const [selectedCoordinateId, setSelectedCoordinateId] = useState('');
@@ -76,6 +129,8 @@ export default function useCoordinateMap({ concepts, setDashboard, works }) {
 
   const activeGenre = activeGenreId ? genreNodes.find(node => node.id === activeGenreId) : null;
   const activeSubmap = activeGenreId ? genreSubmaps[activeGenreId] : null;
+  const rootSecondaryNodes = useMemo(() => getRootSecondaryNodes(), []);
+  const rootSecondaryConnections = useMemo(() => getRootSecondaryConnections(), []);
   const activeSubmapNodeIds = new Set(activeSubmap?.nodes.map(node => node.id) ?? []);
   const submapExternalNodes = activeSubmap
     ? [...new Set((activeSubmap.connections ?? []).flat())]
@@ -93,13 +148,25 @@ export default function useCoordinateMap({ concepts, setDashboard, works }) {
       .filter(Boolean)
     : [];
   const visibleNodes = activeSubmap
-    ? [...activeSubmap.nodes, ...submapExternalNodes]
-    : [sfCoreNode, ...genreNodes];
+    ? [
+      ...activeSubmap.nodes.map(node => ({
+        ...node,
+        parentId: activeGenreId,
+        secondary: true,
+        tier: 2,
+      })),
+      ...submapExternalNodes.map(node => ({ ...node, tier: 1 })),
+    ]
+    : [
+      { ...sfCoreNode, center: true, tier: 0 },
+      ...genreNodes.map(node => ({ ...node, tier: 1 })),
+      ...rootSecondaryNodes,
+    ];
   const visibleConnections = activeSubmap
     ? activeSubmap.connections ?? activeSubmap.nodes.map(node => [activeGenreId, node.id])
-    : mapConnections;
+    : [...mapConnections, ...rootSecondaryConnections];
   const mapPositions = activeSubmap && activeGenre
-    ? [{ ...activeGenre, x: 50, y: 50, orbit: 5 }, ...visibleNodes]
+    ? [{ ...activeGenre, x: 50, y: 50, orbit: 5, center: true, tier: 1 }, ...visibleNodes]
     : visibleNodes;
   const selectedCoordinate = mapPositions.find(node => node.id === selectedCoordinateId) ?? activeGenre ?? sfCoreNode;
   const selectedCoordinateConnections = selectedCoordinateId
@@ -113,7 +180,7 @@ export default function useCoordinateMap({ concepts, setDashboard, works }) {
     ? selectedCoordinate.questions
     : ['이 좌표는 어떤 인간 이후의 조건을 상상하게 만드는가?'];
   const mapDescription = activeSubmap?.description
-    ?? '탐사 좌표는 SF 문학을 중심으로 A-L까지 12개의 상위 계열을 배치합니다. 각 계열을 선택하면 문서 기준의 1차 하위 노드가 가볍게 펼쳐집니다.';
+    ?? '탐사 좌표는 SF 문학을 중심으로 상위 계열과 2차 하위 노드를 하나의 구형 네트워크로 배치합니다. 큰 좌표는 장르권, 작은 위성 좌표는 세부 장르와 개념 신호입니다.';
   const minimapViewportWidth = clamp(66 / mapView.zoom, 28, 72);
   const minimapViewportHeight = clamp(66 / mapView.zoom, 28, 72);
   const minimapViewport = {
