@@ -7,7 +7,7 @@ const seeded = (seed) => {
   return x - Math.floor(x);
 };
 
-const InteractiveBackground = () => {
+const InteractiveBackground = ({ lowPower = false }) => {
   const { currentSystemState } = useLogs();
   const location = useLocation();
   const risk = currentSystemState.riskLevel || 0;
@@ -33,11 +33,11 @@ const InteractiveBackground = () => {
 
   return (
     <>
-      <div className="noise-bg"></div>
-      <div className="crt-overlay"></div>
-      <div className="scanline"></div>
+      <div className={`noise-bg ${lowPower ? 'is-static' : ''}`}></div>
+      <div className={`crt-overlay ${lowPower ? 'is-static' : ''}`}></div>
+      {!lowPower && <div className="scanline"></div>}
 
-      {isVisualSurface && (
+      {isVisualSurface && !lowPower && (
         <div className="bg-geometry" style={{ filter: isDanger ? 'hue-rotate(180deg) saturate(2)' : 'none' }}>
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="radar-svg">
           {/* Radar Grid and Sweep - Only on Home Page */}

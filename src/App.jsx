@@ -38,6 +38,7 @@ function App() {
     || location.pathname === '/exploration-log'
     || location.pathname.startsWith('/questions');
   const isReadingMode = siteMode === 'reading';
+  const isLowPowerSurface = location.pathname.startsWith('/profile') || location.pathname.startsWith('/badges');
 
   useEffect(() => {
     localStorage.setItem('sf-site-mode', siteMode);
@@ -49,9 +50,9 @@ function App() {
 
   return (
     <AuthProvider>
-      <div className={`${isDesktopSurface ? 'mobile-container desktop-home' : 'mobile-container'} ${isReadingMode ? 'reading-mode' : 'console-mode'}`}>
+      <div className={`${isDesktopSurface ? 'mobile-container desktop-home' : 'mobile-container'} ${isReadingMode ? 'reading-mode' : 'console-mode'} ${isLowPowerSurface ? 'low-power-surface' : ''}`}>
       <div className="app-wrapper">
-        <InteractiveBackground />
+        <InteractiveBackground lowPower={isLowPowerSurface} />
         {isDesktopSurface && (
           <button
             className="site-mode-toggle"

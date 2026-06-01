@@ -42,6 +42,14 @@
   animation: geo-typing-pulse var(--duration, 0.6s) ease-in-out infinite;
 }
 
+.low-power-surface .geo-spin,
+.low-power-surface .geo-spin-reverse,
+.low-power-surface .geo-pulse,
+.low-power-surface .geo-typing-pulse,
+.low-power-surface .pulse-slow {
+  animation: none !important;
+}
+
 @keyframes geo-spin {
   to {
     transform: rotate(360deg);
