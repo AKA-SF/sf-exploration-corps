@@ -187,7 +187,7 @@
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 18px;
+  gap: 14px;
 }
 
 .crew-avatar {
@@ -816,7 +816,6 @@
   }
 
   .profile-page-header,
-  .profile-identity-card,
   .profile-nickname-form,
   .profile-launch-panel,
   .profile-hub-panel,
@@ -858,6 +857,11 @@
 
   .crew-avatar {
     width: 104px;
+  }
+
+  .profile-identity-card,
+  .profile-card.profile-identity-card {
+    grid-template-columns: auto minmax(0, 1fr);
   }
 
 }
@@ -928,29 +932,44 @@
 }
 
 .agent-id {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: grid;
+  align-content: center;
+  gap: 7px;
   min-width: 0;
 }
 
 .agent-id h3 {
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 24px;
+  margin: 0;
+  font-size: clamp(22px, 5vw, 30px);
+  line-height: 1.05;
   white-space: nowrap;
+}
+
+.agent-mini-actions {
+  display: grid;
+  grid-template-columns: minmax(82px, auto) minmax(0, 1fr);
+  gap: 8px;
+  align-items: stretch;
+  max-width: 100%;
 }
 
 .agent-role {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  min-height: 38px;
   color: var(--accent-amber);
   border: 1px solid rgba(255, 176, 0, 0.22);
   background: rgba(255, 176, 0, 0.06);
-  width: fit-content;
-  padding: 4px 7px;
-  font-size: 9px;
+  width: 100%;
+  min-width: 0;
+  padding: 0 9px;
+  font-size: 10px;
+  font-weight: 900;
+  white-space: nowrap;
 }
 
 .agent-lock-note {
@@ -1439,9 +1458,9 @@
 
 .profile-card.profile-identity-card {
   display: grid;
-  grid-template-columns: auto 1fr minmax(240px, 0.52fr);
+  grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
-  gap: 18px;
+  gap: 14px;
 }
 
 @media (max-height: 760px) {
@@ -1454,7 +1473,7 @@
   }
 
   .agent-id h3 {
-    font-size: 20px;
+    font-size: 22px;
   }
 
   .radar-display {
@@ -1486,7 +1505,12 @@
   }
 
   .profile-card.profile-identity-card {
-    gap: 14px;
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 12px;
+  }
+
+  .agent-mini-actions {
+    grid-template-columns: 1fr;
   }
 
   .profile-nickname-form {
