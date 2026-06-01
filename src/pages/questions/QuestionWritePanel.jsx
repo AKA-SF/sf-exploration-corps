@@ -53,11 +53,10 @@ export default function QuestionWritePanel({
         <label>
           <span>분류</span>
           <select name="category" onChange={onChange} value={form.category}>
-            <option>커뮤니티</option>
-            <option>토론 질문</option>
-            <option>작품 추천</option>
-            <option>강의/워크숍 주제</option>
-            <option>아카이브 제안</option>
+            <option>자유글</option>
+            <option>작품추천</option>
+            <option>질문</option>
+            <option>토론</option>
           </select>
         </label>
 

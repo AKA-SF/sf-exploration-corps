@@ -1,5 +1,6 @@
 import { MessageSquare } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { normalizeQuestionCategory } from './useQuestionsBoard';
 
 export default function QuestionsBoard({
   activeCategory,
@@ -10,9 +11,7 @@ export default function QuestionsBoard({
   visibleQuestions,
 }) {
   const getCategoryCount = category => (
-    category === '전체'
-      ? questions.length
-      : questions.filter(question => question.category === category).length
+    questions.filter(question => normalizeQuestionCategory(question.category) === category).length
   );
 
   return (

@@ -3,12 +3,21 @@ import { recordUserActivity } from '../../lib/activityLogger';
 
 const fallbackQuestions = [];
 
+export const BOARD_CATEGORIES = ['자유글', '작품추천', '질문', '토론'];
+
+export const normalizeQuestionCategory = category => {
+  if (category === '작품 추천') return '작품추천';
+  if (category === '토론 질문') return '질문';
+  if (category === '강의/워크숍 주제' || category === '아카이브 제안' || category === '커뮤니티') return '자유글';
+  return BOARD_CATEGORIES.includes(category) ? category : '자유글';
+};
+
 const emptyQuestionForm = {
   title: '',
   content: '',
   name: '',
   contact: '',
-  category: '커뮤니티',
+  category: '자유글',
   password: '',
 };
 
@@ -25,7 +34,7 @@ export default function useQuestionsBoard({ questionId, user }) {
   const [commentStatus, setCommentStatus] = useState('idle');
   const [commentMessage, setCommentMessage] = useState('');
   const [loadStatus, setLoadStatus] = useState('loading');
-  const [activeCategory, setActiveCategory] = useState('전체');
+  const [activeCategory, setActiveCategory] = useState('자유글');
 
   const loadQuestions = () => {
     fetch('/api/questions', { cache: 'no-store' })
@@ -69,13 +78,9 @@ export default function useQuestionsBoard({ questionId, user }) {
     }
   }, [questionId]);
 
-  const categories = useMemo(() => (
-    ['전체', ...new Set(questions.map(question => question.category).filter(Boolean))]
-  ), [questions]);
+  const categories = useMemo(() => BOARD_CATEGORIES, []);
 
-  const visibleQuestions = activeCategory === '전체'
-    ? questions
-    : questions.filter(question => question.category === activeCategory);
+  const visibleQuestions = questions.filter(question => normalizeQuestionCategory(question.category) === activeCategory);
 
   const updateQuestionForm = event => {
     const { name, value } = event.target;
