@@ -7,6 +7,7 @@ import { ZoomableMap } from '../components/ZoomableMap';
 import { useAuth } from '../context/authContextValue';
 import { recordUserActivity } from '../lib/activityLogger';
 import { supabase } from '../lib/supabaseClient';
+import { getUserNickname } from '../lib/userIdentity';
 import './Network.css';
 import '../styles/MobileExperience.css';
 
@@ -33,10 +34,6 @@ function getNetworkMotionProfile() {
     compact: window.matchMedia('(max-width: 760px)').matches,
     reduced: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
   };
-}
-
-function getUserNickname(user) {
-  return user?.user_metadata?.nickname || user?.email?.split('@')[0] || '탐사자';
 }
 
 function formatSignalTime(value) {

@@ -4,6 +4,7 @@ import { KeyRound, LogIn, Mail } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
 import { supabase } from '../lib/supabaseClient';
+import { ensureUserProfile, normalizeEmail, normalizeNickname } from '../lib/userIdentity';
 import './Login.css';
 import '../styles/MobileExperience.css';
 
@@ -29,25 +30,31 @@ export default function Login() {
 
     try {
       if (!isConfigured || !supabase) throw new Error('Supabase 환경 변수가 아직 연결되지 않았습니다.');
+      const email = normalizeEmail(form.email);
+      const password = form.password;
+      if (!email) throw new Error('이메일을 입력해주세요.');
+      if (password.length < 6) throw new Error('비밀번호는 6자 이상이어야 합니다.');
+
       if (mode === 'signup') {
-        const nickname = form.nickname.trim();
+        const nickname = normalizeNickname(form.nickname);
         if (!nickname) throw new Error('탐사 프로필에 남길 닉네임을 입력해주세요.');
+        if (nickname.length < 2) throw new Error('닉네임은 2자 이상으로 입력해주세요.');
 
         const { data, error } = await supabase.auth.signUp({
-          email: form.email,
-          password: form.password,
+          email,
+          password,
           options: {
             data: {
+              display_name: nickname,
+              name: nickname,
               nickname,
+              onboarding_version: 'sf-crew-v1',
             },
           },
         });
         if (error) throw error;
         if (data.user && data.session) {
-          await supabase.from('profiles').upsert({
-            id: data.user.id,
-            nickname,
-          }, { onConflict: 'id', ignoreDuplicates: true });
+          await ensureUserProfile(data.user, supabase, nickname);
         }
         if (data.session) {
           navigate('/profile');
@@ -59,8 +66,8 @@ export default function Login() {
       }
 
       const { error } = await supabase.auth.signInWithPassword({
-        email: form.email,
-        password: form.password,
+        email,
+        password,
       });
       if (error) throw error;
       navigate('/profile');
@@ -92,7 +99,10 @@ export default function Login() {
                 onChange={updateForm}
                 placeholder="예: 오비터"
                 required
+                maxLength={24}
+                minLength={2}
                 type="text"
+                autoComplete="nickname"
                 value={form.nickname}
               />
             </label>
@@ -107,6 +117,7 @@ export default function Login() {
                 placeholder="crew@example.com"
                 required
                 type="email"
+                autoComplete="email"
                 value={form.email}
               />
             </div>
@@ -122,6 +133,7 @@ export default function Login() {
                 placeholder="6자 이상"
                 required
                 type="password"
+                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
                 value={form.password}
               />
             </div>

@@ -1,20 +1,18 @@
 import { getSupabaseClient } from './getSupabaseClient';
+import { ensureUserProfile, getUserNickname } from './userIdentity';
 
 export async function recordUserActivity(user, activity) {
   const supabase = await getSupabaseClient();
   if (!user || !supabase) return { ok: false, skipped: true };
 
-  const nickname = user.user_metadata?.nickname || user.email?.split('@')[0] || '탐사자';
+  const nickname = getUserNickname(user, '탐사자');
   const dedupeKey = activity.dedupeKey || activity.metadata?.dedupe_key || '';
   const metadata = {
     ...(activity.metadata ?? {}),
     ...(dedupeKey ? { dedupe_key: dedupeKey } : {}),
   };
 
-  await supabase.from('profiles').upsert({
-    id: user.id,
-    nickname,
-  }, { onConflict: 'id', ignoreDuplicates: true });
+  await ensureUserProfile(user, supabase, nickname);
 
   if (dedupeKey) {
     const { data: existing, error: lookupError } = await supabase

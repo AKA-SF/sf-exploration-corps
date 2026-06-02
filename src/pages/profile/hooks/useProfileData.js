@@ -3,6 +3,7 @@ import { supabase } from '../../../lib/supabaseClient';
 import {
   buildProfileViewModel,
   getFallbackNickname,
+  getProfileNickname,
   getSelectedMissionRoute,
   mapLocalWorkStatuses,
   setSelectedMissionRoute as persistSelectedMissionRoute,
@@ -89,7 +90,7 @@ export function useProfileData(user) {
           .limit(200),
       ]);
 
-      const lockedNickname = user.user_metadata?.nickname || nextProfile?.nickname || fallbackNickname;
+      const lockedNickname = getProfileNickname(user, nextProfile, fallbackNickname);
 
       if (nextProfile && !nextProfile.nickname) {
         const { data: repairedProfile } = await supabase

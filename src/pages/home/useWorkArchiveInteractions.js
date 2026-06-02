@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { recordUserActivity } from '../../lib/activityLogger';
 import { setJsonStorageItem } from '../../lib/browserStorage';
 import { getSupabaseClient } from '../../lib/getSupabaseClient';
+import { getUserNickname } from '../../lib/userIdentity';
 
 const emptyWorkSubmitForm = {
   title: '',
@@ -238,7 +239,7 @@ export default function useWorkArchiveInteractions({
       return;
     }
 
-    const authorName = user.user_metadata?.nickname || user.email?.split('@')[0] || '탐사자';
+    const authorName = getUserNickname(user, '탐사자');
     const { data, error } = await supabase
       .from('work_comments')
       .insert({

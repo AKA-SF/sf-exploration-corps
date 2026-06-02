@@ -1,10 +1,13 @@
 import { getActivityStats, getBadges, getMissionTree, getRank, mergeManualBadges } from '../../data/profileProgress';
 import { tasteProfiles } from '../../data/tasteTest';
 import { getJsonStorageItem, getStorageItem, setStorageItem } from '../../lib/browserStorage';
+import { getProfileNickname, getUserNickname } from '../../lib/userIdentity';
 
 export function getFallbackNickname(user) {
-  return user?.user_metadata?.nickname || user?.email?.split('@')[0] || '탐사 대원';
+  return getUserNickname(user);
 }
+
+export { getProfileNickname };
 
 export function activityTitle(activity) {
   return activity.metadata?.title

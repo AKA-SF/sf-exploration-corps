@@ -3,6 +3,7 @@ import { AuthContext } from './authContextValue';
 import { isSupabaseConfigured } from '../lib/supabaseConfig';
 import { recordDailyLoginBonus } from '../lib/activityLogger';
 import { getStorageItem, setStorageItem } from '../lib/browserStorage';
+import { ensureUserProfile } from '../lib/userIdentity';
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
@@ -28,11 +29,13 @@ export function AuthProvider({ children }) {
       supabase.auth.getSession().then(({ data }) => {
         if (!isMounted) return;
         setSession(data.session ?? null);
+        if (data.session?.user) void ensureUserProfile(data.session.user, supabase);
         setLoading(false);
       });
 
       const { data: listener } = supabase.auth.onAuthStateChange((_event, nextSession) => {
         setSession(nextSession);
+        if (nextSession?.user) void ensureUserProfile(nextSession.user, supabase);
         setLoading(false);
       });
       authSubscription = listener.subscription;
