@@ -23,14 +23,27 @@ export function findPropertyName(schema, preferredNames, type, options) {
     ?? '';
 }
 
-export async function readJsonBody(request) {
+export async function readJsonBody(request, { maxBytes = 64 * 1024 } = {}) {
   if (request.body && typeof request.body === 'object') return request.body;
-  if (typeof request.body === 'string') return JSON.parse(request.body || '{}');
+  if (typeof request.body === 'string') {
+    if (Buffer.byteLength(request.body, 'utf8') > maxBytes) {
+      const error = new Error('Request body is too large');
+      error.status = 413;
+      throw error;
+    }
+    return JSON.parse(request.body || '{}');
+  }
 
   return new Promise((resolve, reject) => {
     let raw = '';
     request.on('data', chunk => {
       raw += chunk;
+      if (Buffer.byteLength(raw, 'utf8') > maxBytes) {
+        const error = new Error('Request body is too large');
+        error.status = 413;
+        reject(error);
+        request.destroy?.();
+      }
     });
     request.on('end', () => {
       try {

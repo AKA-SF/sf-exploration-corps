@@ -82,6 +82,22 @@ export async function queryNotionDatabaseAll(token, databaseId, query = {}) {
   return results;
 }
 
+export async function queryNotionDatabasePage(token, databaseId, {
+  pageSize = NOTION_PAGE_SIZE,
+  startCursor = '',
+  ...query
+} = {}) {
+  return notionRequest(`/databases/${databaseId}/query`, {
+    token,
+    method: 'POST',
+    body: {
+      page_size: Math.min(Math.max(Number(pageSize) || NOTION_PAGE_SIZE, 1), NOTION_PAGE_SIZE),
+      ...query,
+      ...(startCursor ? { start_cursor: startCursor } : {}),
+    },
+  });
+}
+
 export function sendNotionError(response, {
   error,
   fallbackMessage = 'Notion request failed',

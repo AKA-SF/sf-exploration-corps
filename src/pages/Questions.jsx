@@ -37,8 +37,10 @@ export default function Questions() {
     deleteComment,
     deleteQuestion,
     editingCommentId,
+    hasMoreQuestions,
     isQuestionEditing,
     loadStatus,
+    loadMoreQuestions,
     questionEditForm,
     questionEditMessage,
     questionEditStatus,
@@ -124,8 +126,10 @@ export default function Questions() {
       <QuestionsBoard
         activeCategory={activeCategory}
         categories={categories}
+        hasMoreQuestions={hasMoreQuestions}
         loadStatus={loadStatus}
         onCategoryChange={setActiveCategory}
+        onLoadMore={loadMoreQuestions}
         questions={questions}
         visibleQuestions={visibleQuestions}
       />

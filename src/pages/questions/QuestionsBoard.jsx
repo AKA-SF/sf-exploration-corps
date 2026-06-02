@@ -5,8 +5,10 @@ import { normalizeQuestionCategory } from './useQuestionsBoard';
 export default function QuestionsBoard({
   activeCategory,
   categories,
+  hasMoreQuestions,
   loadStatus,
   onCategoryChange,
+  onLoadMore,
   questions,
   visibleQuestions,
 }) {
@@ -58,6 +60,14 @@ export default function QuestionsBoard({
           </div>
         )}
       </section>
+
+      {hasMoreQuestions && (
+        <div className="questions-more-wrap">
+          <button className="questions-more-button" onClick={onLoadMore} type="button">
+            더 보기
+          </button>
+        </div>
+      )}
     </>
   );
 }

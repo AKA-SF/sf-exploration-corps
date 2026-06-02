@@ -111,8 +111,8 @@ export default async function handler(request, response) {
     let body;
     try {
       body = await readJsonBody(request);
-    } catch {
-      return response.status(400).json({ error: 'Invalid JSON body' });
+    } catch (error) {
+      return response.status(error.status || 400).json({ error: error.message || 'Invalid JSON body' });
     }
 
     if (!String(body.title ?? '').trim()) {

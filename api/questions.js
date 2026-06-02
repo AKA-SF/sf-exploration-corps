@@ -1,11 +1,12 @@
-import { getNotionConfig, notionRequest, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
-import { requireAdminUser } from './_adminAuth.js';
+import { getNotionConfig, notionRequest, queryNotionDatabasePage, sendNotionError } from './_notion.js';
+import { getOptionalUser, requireAdminUser, requireAuthenticatedUser } from './_adminAuth.js';
 import { pick, plainText } from './_notionProperties.js';
 import { findPropertyEntry, readJsonBody, richTextPayload } from './_notionWrite.js';
 
 const DEFAULT_QUESTIONS_DATABASE_ID = '36a98dbef69d803abd53c09b6ff7f2e3';
 const OWNER_PREFIX = 'SFA_OWNER:';
 const COMMENT_PREFIX = 'SFA_COMMENT:';
+const DEFAULT_QUESTIONS_PAGE_SIZE = 40;
 
 function findProperty(schema, preferredNames, type) {
   return findPropertyEntry(schema, preferredNames, type)
@@ -60,6 +61,27 @@ function parseOwnerBlock(block) {
 
 function sanitizeOwnerToken(value) {
   return String(value ?? '').trim().slice(0, 96);
+}
+
+function getUserOwnerToken(user) {
+  return user?.id ? `user:${user.id}` : '';
+}
+
+function getUserAuthorName(user) {
+  return (
+    user?.user_metadata?.nickname
+    || user?.user_metadata?.display_name
+    || user?.user_metadata?.name
+    || user?.email?.split('@')[0]
+    || '탐사자'
+  );
+}
+
+function getPaginationParams(query) {
+  return {
+    pageSize: Math.min(Math.max(Number(query?.pageSize) || DEFAULT_QUESTIONS_PAGE_SIZE, 1), 80),
+    startCursor: String(query?.cursor ?? '').trim(),
+  };
 }
 
 function sanitizeComment(comment, ownerToken) {
@@ -213,6 +235,7 @@ export default async function handler(request, response) {
     const questionId = String(request.query?.id ?? '').trim();
 
     if (questionId) {
+      const authenticatedUser = await getOptionalUser(request);
       let page;
       try {
         page = await notionRequest(`/pages/${questionId}`, { token });
@@ -226,7 +249,7 @@ export default async function handler(request, response) {
 
       page = await incrementViewCount({ page, schema, token });
 
-      const ownerToken = sanitizeOwnerToken(request.query?.ownerToken);
+      const ownerToken = getUserOwnerToken(authenticatedUser) || sanitizeOwnerToken(request.query?.ownerToken);
       const blocks = await loadPageBlocks({ pageId: questionId, token });
       const comments = (blocks.results ?? [])
         .map(parseCommentBlock)
@@ -242,9 +265,9 @@ export default async function handler(request, response) {
       });
     }
 
-    let results;
+    let data;
     try {
-      results = await queryNotionDatabaseAll(token, databaseId);
+      data = await queryNotionDatabasePage(token, databaseId, getPaginationParams(request.query));
     } catch (error) {
       return sendNotionError(response, {
         error,
@@ -253,28 +276,37 @@ export default async function handler(request, response) {
       });
     }
 
-    const questions = results
+    const questions = (data.results ?? [])
       .map(mapPageToQuestion)
       .filter(question => question.title);
 
-    return response.status(200).json({ questions });
+    return response.status(200).json({
+      hasMore: Boolean(data.has_more),
+      nextCursor: data.next_cursor ?? '',
+      questions,
+    });
   }
 
   let body;
   try {
     body = await readJsonBody(request);
-  } catch {
-    return response.status(400).json({ error: 'Invalid JSON body' });
+  } catch (error) {
+    return response.status(error.status || 400).json({ error: error.message || 'Invalid JSON body' });
   }
+
+  const authenticatedUser = await requireAuthenticatedUser(request, response);
+  if (!authenticatedUser) return null;
+  const authenticatedOwnerToken = getUserOwnerToken(authenticatedUser);
+  const authenticatedAuthorName = getUserAuthorName(authenticatedUser);
 
   if (request.method === 'PATCH') {
     const mode = String(body?.mode ?? 'post').trim();
-    const ownerToken = sanitizeOwnerToken(body?.ownerToken);
+    const ownerToken = authenticatedOwnerToken;
 
     try {
       if (mode === 'comment') {
         const commentId = String(body?.commentId ?? '').trim();
-        const name = String(body?.name ?? '').trim() || '익명';
+        const name = authenticatedAuthorName;
         const content = String(body?.content ?? '').trim();
         if (!commentId || !content) {
           return response.status(400).json({ error: 'Comment ID and content are required' });
@@ -311,7 +343,7 @@ export default async function handler(request, response) {
       const questionId = String(body?.questionId ?? '').trim();
       const title = String(body?.title ?? '').trim();
       const content = String(body?.content ?? '').trim();
-      const name = String(body?.name ?? '').trim();
+      const name = authenticatedAuthorName;
       const contact = String(body?.contact ?? '').trim();
       const category = String(body?.category ?? '').trim() || '자유글';
 
@@ -357,7 +389,7 @@ export default async function handler(request, response) {
 
   if (request.method === 'DELETE') {
     const mode = String(body?.mode ?? 'post').trim();
-    const ownerToken = sanitizeOwnerToken(body?.ownerToken);
+    const ownerToken = authenticatedOwnerToken;
 
     try {
       if (mode === 'comment') {
@@ -424,9 +456,9 @@ export default async function handler(request, response) {
 
   if (mode === 'comment') {
     const questionId = String(body?.questionId ?? '').trim();
-    const name = String(body?.name ?? '').trim() || '익명';
+    const name = authenticatedAuthorName;
     const content = String(body?.content ?? '').trim();
-    const ownerToken = sanitizeOwnerToken(body?.ownerToken);
+    const ownerToken = authenticatedOwnerToken;
 
     if (!questionId || !content) {
       return response.status(400).json({ error: 'Question ID and comment content are required' });
@@ -468,10 +500,10 @@ export default async function handler(request, response) {
 
   const title = String(body?.title ?? '').trim();
   const content = String(body?.content ?? '').trim();
-  const name = String(body?.name ?? '').trim();
+  const name = authenticatedAuthorName;
   const contact = String(body?.contact ?? '').trim();
   const category = String(body?.category ?? '').trim() || '자유글';
-  const ownerToken = sanitizeOwnerToken(body?.ownerToken);
+  const ownerToken = authenticatedOwnerToken;
 
   if (!title || !content) {
     return response.status(400).json({ error: 'Title and content are required' });

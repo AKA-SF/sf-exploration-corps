@@ -4,28 +4,25 @@ function getSupabaseApiConfig() {
   return { anonKey, url };
 }
 
-function extractBearerToken(request) {
+export function extractBearerToken(request) {
   const header = request.headers.authorization || request.headers.Authorization || '';
   return header.startsWith('Bearer ') ? header.slice(7).trim() : '';
 }
 
-export function hasAdminRole(user) {
-  const appMetadata = user?.app_metadata ?? {};
-  return appMetadata.role === 'admin' || appMetadata.roles?.includes?.('admin');
-}
-
-export async function requireAdminUser(request, response) {
+async function getRequestUser(request) {
   const { anonKey, url } = getSupabaseApiConfig();
   const token = extractBearerToken(request);
 
   if (!url || !anonKey) {
-    response.status(503).json({ error: 'Supabase admin auth is not configured' });
-    return null;
+    const error = new Error('Supabase auth is not configured');
+    error.status = 503;
+    throw error;
   }
 
   if (!token) {
-    response.status(401).json({ error: 'Admin session is required' });
-    return null;
+    const error = new Error('Login session is required');
+    error.status = 401;
+    throw error;
   }
 
   const authResponse = await fetch(`${url}/auth/v1/user`, {
@@ -36,11 +33,40 @@ export async function requireAdminUser(request, response) {
   });
 
   if (!authResponse.ok) {
-    response.status(401).json({ error: 'Invalid admin session' });
-    return null;
+    const error = new Error('Invalid login session');
+    error.status = 401;
+    throw error;
   }
 
-  const user = await authResponse.json();
+  return authResponse.json();
+}
+
+export function hasAdminRole(user) {
+  const appMetadata = user?.app_metadata ?? {};
+  return appMetadata.role === 'admin' || appMetadata.roles?.includes?.('admin');
+}
+
+export async function getOptionalUser(request) {
+  try {
+    return await getRequestUser(request);
+  } catch {
+    return null;
+  }
+}
+
+export async function requireAuthenticatedUser(request, response) {
+  try {
+    return await getRequestUser(request);
+  } catch (error) {
+    response.status(error.status || 401).json({ error: error.message || 'Login session is required' });
+    return null;
+  }
+}
+
+export async function requireAdminUser(request, response) {
+  const user = await requireAuthenticatedUser(request, response);
+  if (!user) return null;
+
   if (!hasAdminRole(user)) {
     response.status(403).json({ error: 'Admin role is required' });
     return null;

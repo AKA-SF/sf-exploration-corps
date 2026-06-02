@@ -297,8 +297,6 @@
     font-size: 10px;
   }
 
-  .featured-work-grid .work-card:nth-child(n+3),
-  .media-grid .media-card:nth-child(n+2),
   .concept-grid .concept-card:nth-child(n+5) {
     display: none;
   }

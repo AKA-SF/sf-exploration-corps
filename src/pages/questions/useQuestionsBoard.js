@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { recordUserActivity } from '../../lib/activityLogger';
-import { getStorageItem, setStorageItem } from '../../lib/browserStorage';
+import { getCommunityAuthHeaders } from './communityApi';
 import { getCommunityAuthorName, getCommunityOwnerToken } from './communityIdentity';
 
 const fallbackQuestions = [];
@@ -21,23 +21,12 @@ const emptyQuestionForm = {
 };
 
 const emptyCommentForm = { content: '' };
-const OWNER_TOKEN_STORAGE_KEY = 'sfa-community-owner-token';
-
-const createOwnerToken = () => {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return crypto.randomUUID();
-  }
-  return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
-};
+const QUESTIONS_PAGE_SIZE = 40;
 
 const getOwnerToken = user => {
   const userToken = getCommunityOwnerToken(user);
   if (userToken) return userToken;
-  const current = getStorageItem(OWNER_TOKEN_STORAGE_KEY, '');
-  if (current) return current;
-  const next = createOwnerToken();
-  setStorageItem(OWNER_TOKEN_STORAGE_KEY, next);
-  return next;
+  return '';
 };
 
 export default function useQuestionsBoard({ onQuestionDeleted, questionId, user }) {
@@ -57,31 +46,45 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
   const [commentEditStatus, setCommentEditStatus] = useState('idle');
   const [commentEditMessage, setCommentEditMessage] = useState('');
   const [loadStatus, setLoadStatus] = useState('loading');
+  const [nextCursor, setNextCursor] = useState('');
+  const [hasMoreQuestions, setHasMoreQuestions] = useState(false);
   const [activeCategory, setActiveCategory] = useState('전체');
   const [isQuestionEditing, setIsQuestionEditing] = useState(false);
   const [editingCommentId, setEditingCommentId] = useState('');
   const authorName = getCommunityAuthorName(user);
 
-  const loadQuestions = useCallback(() => {
-    fetch('/api/questions', { cache: 'no-store' })
+  const loadQuestions = useCallback(({ cursor = '', append = false } = {}) => {
+    const query = new URLSearchParams({ pageSize: String(QUESTIONS_PAGE_SIZE) });
+    if (cursor) query.set('cursor', cursor);
+
+    fetch(`/api/questions?${query.toString()}`, { cache: 'no-store' })
       .then(response => {
         if (!response.ok) throw new Error('Question archive unavailable');
         return response.json();
       })
       .then(data => {
-        setQuestions(Array.isArray(data.questions) ? data.questions : fallbackQuestions);
+        const nextQuestions = Array.isArray(data.questions) ? data.questions : fallbackQuestions;
+        setQuestions(current => (append ? [...current, ...nextQuestions] : nextQuestions));
+        setNextCursor(data.nextCursor || '');
+        setHasMoreQuestions(Boolean(data.hasMore));
         setLoadStatus('ready');
       })
       .catch(() => {
-        setQuestions(fallbackQuestions);
+        if (!append) setQuestions(fallbackQuestions);
         setLoadStatus('error');
       });
   }, []);
 
-  const loadQuestionDetail = useCallback(id => {
+  const loadMoreQuestions = useCallback(() => {
+    if (!hasMoreQuestions || !nextCursor) return;
+    loadQuestions({ cursor: nextCursor, append: true });
+  }, [hasMoreQuestions, loadQuestions, nextCursor]);
+
+  const loadQuestionDetail = useCallback(async id => {
     const ownerToken = getOwnerToken(user);
     const query = new URLSearchParams({ id, ownerToken });
-    fetch(`/api/questions?${query.toString()}`, { cache: 'no-store' })
+    const authHeaders = await getCommunityAuthHeaders();
+    fetch(`/api/questions?${query.toString()}`, { cache: 'no-store', headers: authHeaders })
       .then(response => {
         if (!response.ok) throw new Error('Question detail unavailable');
         return response.json();
@@ -149,9 +152,10 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     setQuestionMessage('');
 
     try {
+      const authHeaders = await getCommunityAuthHeaders();
       const response = await fetch('/api/questions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
           ...questionForm,
           name: authorName,
@@ -199,9 +203,10 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     setCommentMessage('');
 
     try {
+      const authHeaders = await getCommunityAuthHeaders();
       const response = await fetch('/api/questions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
           mode: 'comment',
           questionId,
@@ -268,9 +273,10 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     setQuestionEditMessage('');
 
     try {
+      const authHeaders = await getCommunityAuthHeaders();
       const response = await fetch('/api/questions', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
           mode: 'post',
           questionId,
@@ -308,9 +314,10 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     setQuestionEditMessage('');
 
     try {
+      const authHeaders = await getCommunityAuthHeaders();
       const response = await fetch('/api/questions', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
           mode: 'post',
           questionId,
@@ -359,9 +366,10 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     setCommentEditMessage('');
 
     try {
+      const authHeaders = await getCommunityAuthHeaders();
       const response = await fetch('/api/questions', {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
           mode: 'comment',
           commentId: editingCommentId,
@@ -400,9 +408,10 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     setCommentEditMessage('');
 
     try {
+      const authHeaders = await getCommunityAuthHeaders();
       const response = await fetch('/api/questions', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
           mode: 'comment',
           commentId,
@@ -442,7 +451,9 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     deleteQuestion,
     editingCommentId,
     isQuestionEditing,
+    hasMoreQuestions,
     loadStatus,
+    loadMoreQuestions,
     questionEditForm,
     questionEditMessage,
     questionEditStatus,

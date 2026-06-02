@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { recordUserActivity } from '../../lib/activityLogger';
+import { getCommunityAuthHeaders } from '../questions/communityApi';
 import { getCommunityAuthorName, getCommunityOwnerToken } from '../questions/communityIdentity';
 
 const initialQuestionForm = {
@@ -35,9 +36,10 @@ export default function useCommunityComposer({ user }) {
     setQuestionMessage('');
 
     try {
+      const authHeaders = await getCommunityAuthHeaders();
       const response = await fetch('/api/questions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...authHeaders },
         body: JSON.stringify({
           ...questionForm,
           name: getCommunityAuthorName(user),
