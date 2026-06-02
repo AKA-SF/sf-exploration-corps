@@ -1,4 +1,5 @@
 import { getNotionConfig, notionRequest, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
+import { clearApiCache, getCachedJson } from './_apiCache.js';
 import { multiSelect, pick, plainText } from './_notionProperties.js';
 import {
   findPropertyName,
@@ -10,6 +11,7 @@ import {
 } from './_notionWrite.js';
 
 const DEFAULT_LOG_DATABASE_ID = '36998dbef69d80dfa4afc27813f25b11';
+const LOG_CACHE_TTL_MS = 5 * 60 * 1000;
 
 function mapPageToLog(page, index) {
   const properties = page.properties ?? {};
@@ -34,7 +36,9 @@ function mapPageToLog(page, index) {
 }
 
 export default async function handler(request, response) {
-  response.setHeader('Cache-Control', 'no-store');
+  response.setHeader('Cache-Control', request.method === 'GET'
+    ? 'public, s-maxage=300, stale-while-revalidate=1200'
+    : 'no-store');
 
   if (!['GET', 'POST'].includes(request.method)) {
     response.setHeader('Allow', 'GET, POST');
@@ -55,8 +59,8 @@ export default async function handler(request, response) {
     let payload;
     try {
       payload = await readJsonBody(request);
-    } catch {
-      return response.status(400).json({ error: 'Invalid JSON body' });
+    } catch (error) {
+      return response.status(error.status || 400).json({ error: error.message || 'Invalid JSON body' });
     }
 
     const instagramUrl = String(payload.instagramUrl ?? payload.url ?? '').trim();
@@ -120,6 +124,7 @@ export default async function handler(request, response) {
       });
     }
 
+    clearApiCache(`logs:${databaseId}`);
     return response.status(201).json({
       ok: true,
       id: createdPage.id,
@@ -133,9 +138,19 @@ export default async function handler(request, response) {
     });
   }
 
-  let results;
+  const requestUrl = new URL(request.url ?? '/api/exploration-log', `https://${request.headers.host ?? 'localhost'}`);
+  const shouldRefresh = requestUrl.searchParams.get('refresh') === '1';
+  let cache;
+  let logs;
   try {
-    results = await queryNotionDatabaseAll(token, databaseId);
+    const cached = await getCachedJson(`logs:${databaseId}`, LOG_CACHE_TTL_MS, async () => {
+      const results = await queryNotionDatabaseAll(token, databaseId);
+      return results
+        .map(mapPageToLog)
+        .filter(log => log.workTitle && log.instagramUrl && (log.status === '' || log.status === '공개'));
+    }, { refresh: shouldRefresh });
+    cache = cached.cache;
+    logs = cached.value;
   } catch (error) {
     return sendNotionError(response, {
       error,
@@ -144,9 +159,6 @@ export default async function handler(request, response) {
     });
   }
 
-  const logs = results
-    .map(mapPageToLog)
-    .filter(log => log.workTitle && log.instagramUrl && (log.status === '' || log.status === '공개'));
-
+  response.setHeader('X-SF-Archive-Cache', cache);
   return response.status(200).json({ logs });
 }

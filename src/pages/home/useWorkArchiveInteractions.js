@@ -199,6 +199,7 @@ export default function useWorkArchiveInteractions({
 
     await recordUserActivity(user, {
       actionType: 'work_status',
+      dedupeKey: `work_status:${selectedWork.code}:${nextStatus}`,
       points: nextStatus === 'done' ? 15 : 5,
       genre: selectedWork.medium,
       metadata: {

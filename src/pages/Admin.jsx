@@ -83,6 +83,7 @@ export default function Admin() {
     setMessage('');
 
     try {
+      const adminToken = await getAdminAccessToken(supabase);
       const [
         memberCount,
         activityCount,
@@ -145,7 +146,10 @@ export default function Admin() {
           .select('user_id,note,updated_by,updated_at')
           .order('updated_at', { ascending: false })
           .limit(200),
-        fetch('/api/questions', { cache: 'no-store' }).then(response => (response.ok ? response.json() : { questions: [] })),
+        fetch('/api/questions?admin=1', {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${adminToken}` },
+        }).then(response => (response.ok ? response.json() : { questions: [], totalCount: 0 })),
         Promise.allSettled(endpointChecks.map(checkEndpoint)),
       ]);
 
@@ -159,6 +163,7 @@ export default function Admin() {
       setCounts({
         activityLogs: activityCount,
         adminActions: adminActionCount,
+        communityQuestions: questionResult.totalCount ?? questionResult.questions?.length ?? 0,
         memberNotes: memberNoteCount,
         members: memberCount,
         radioMessages: radioCount,
@@ -173,12 +178,17 @@ export default function Admin() {
       setUserBadges(userBadgeResult.data ?? []);
       setAdminLogs(adminLogResult.error ? [] : adminLogResult.data ?? []);
       setMemberNotes(memberNoteResult.error ? [] : memberNoteResult.data ?? []);
-      setQuestions((questionResult.questions ?? []).slice(0, 12));
-      setChecks(endpointResults.map((result, index) => (
-        result.status === 'fulfilled'
+      setQuestions((questionResult.questions ?? []).slice(0, 24));
+      setChecks(endpointResults.map((result, index) => {
+        const check = result.status === 'fulfilled'
           ? result.value
-          : { ...endpointChecks[index], count: 0, ok: false }
-      )));
+          : { ...endpointChecks[index], count: 0, ok: false };
+        if (check.key !== 'questions') return check;
+        return {
+          ...check,
+          count: questionResult.totalCount ?? questionResult.questions?.length ?? check.count,
+        };
+      }));
       setStatus('ready');
     } catch (error) {
       setStatus('error');
@@ -193,6 +203,7 @@ export default function Admin() {
   const dashboardCards = useMemo(() => ([
     { icon: Users, label: '회원', value: counts.members, note: '등록된 탐사 대원' },
     { icon: Activity, label: '활동 기록', value: counts.activityLogs, note: 'MP와 배지 기반 데이터' },
+    { icon: NotebookPen, label: '커뮤니티 글', value: counts.communityQuestions, note: '노션 게시판 전체 글' },
     { icon: MessageSquareText, label: '작품 댓글', value: counts.workComments, note: '작품 카드 교신' },
     { icon: BadgeCheck, label: '독서 상태', value: counts.workStatuses, note: '읽고 싶어요/읽고 있어요/완료' },
     { icon: Gift, label: '지급 배지', value: counts.userBadges, note: '수동/히든 배지 포함' },

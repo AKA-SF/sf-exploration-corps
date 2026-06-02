@@ -5,18 +5,36 @@ export async function recordUserActivity(user, activity) {
   if (!user || !supabase) return { ok: false, skipped: true };
 
   const nickname = user.user_metadata?.nickname || user.email?.split('@')[0] || '탐사자';
+  const dedupeKey = activity.dedupeKey || activity.metadata?.dedupe_key || '';
+  const metadata = {
+    ...(activity.metadata ?? {}),
+    ...(dedupeKey ? { dedupe_key: dedupeKey } : {}),
+  };
 
   await supabase.from('profiles').upsert({
     id: user.id,
     nickname,
   }, { onConflict: 'id', ignoreDuplicates: true });
 
+  if (dedupeKey) {
+    const { data: existing, error: lookupError } = await supabase
+      .from('activity_logs')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('action_type', activity.actionType)
+      .contains('metadata', { dedupe_key: dedupeKey })
+      .limit(1);
+
+    if (lookupError) return { ok: false, error: lookupError };
+    if (existing?.length) return { ok: true, skipped: true };
+  }
+
   const { error } = await supabase.from('activity_logs').insert({
     user_id: user.id,
     action_type: activity.actionType,
     points: activity.points,
     genre: activity.genre ?? null,
-    metadata: activity.metadata ?? {},
+    metadata,
   });
 
   if (error) return { ok: false, error };

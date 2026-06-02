@@ -1,5 +1,8 @@
 import { getNotionConfig, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
+import { getCachedJson } from './_apiCache.js';
 import { multiSelect, pick, plainText, textList } from './_notionProperties.js';
+
+const CONCEPTS_CACHE_TTL_MS = 10 * 60 * 1000;
 
 function mapPageToConcept(page, index) {
   const properties = page.properties ?? {};
@@ -25,7 +28,7 @@ function mapPageToConcept(page, index) {
 }
 
 export default async function handler(request, response) {
-  response.setHeader('Cache-Control', 'no-store');
+  response.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=1800');
 
   if (request.method !== 'GET') {
     response.setHeader('Allow', 'GET');
@@ -42,9 +45,19 @@ export default async function handler(request, response) {
     });
   }
 
-  let results;
+  const requestUrl = new URL(request.url ?? '/api/concepts', `https://${request.headers.host ?? 'localhost'}`);
+  const shouldRefresh = requestUrl.searchParams.get('refresh') === '1';
+  let cache;
+  let concepts;
   try {
-    results = await queryNotionDatabaseAll(token, databaseId);
+    const cached = await getCachedJson(`concepts:${databaseId}`, CONCEPTS_CACHE_TTL_MS, async () => {
+      const results = await queryNotionDatabaseAll(token, databaseId);
+      return results
+        .map(mapPageToConcept)
+        .filter(concept => concept.term);
+    }, { refresh: shouldRefresh });
+    cache = cached.cache;
+    concepts = cached.value;
   } catch (error) {
     return sendNotionError(response, {
       error,
@@ -53,9 +66,6 @@ export default async function handler(request, response) {
     });
   }
 
-  const concepts = results
-    .map(mapPageToConcept)
-    .filter(concept => concept.term);
-
+  response.setHeader('X-SF-Archive-Cache', cache);
   return response.status(200).json({ concepts });
 }

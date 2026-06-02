@@ -1,7 +1,9 @@
 import { getNotionConfig, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
+import { getCachedJson } from './_apiCache.js';
 import { multiSelect, pick, plainText } from './_notionProperties.js';
 
 const DEFAULT_MEDIA_DATABASE_ID = '36898dbef69d80fc98caf262593fc53b';
+const MEDIA_CACHE_TTL_MS = 10 * 60 * 1000;
 
 function getYouTubeId(link) {
   if (!link) return '';
@@ -73,7 +75,7 @@ function mapPageToMedia(page, index) {
 }
 
 export default async function handler(request, response) {
-  response.setHeader('Cache-Control', 'no-store');
+  response.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=1800');
 
   if (request.method !== 'GET') {
     response.setHeader('Allow', 'GET');
@@ -90,9 +92,21 @@ export default async function handler(request, response) {
     });
   }
 
-  let results;
+  const requestUrl = new URL(request.url ?? '/api/media', `https://${request.headers.host ?? 'localhost'}`);
+  const shouldRefresh = requestUrl.searchParams.get('refresh') === '1';
+
+  let cache;
+  let media;
   try {
-    results = await queryNotionDatabaseAll(token, databaseId);
+    const cached = await getCachedJson(`media:${databaseId}`, MEDIA_CACHE_TTL_MS, async () => {
+      const results = await queryNotionDatabaseAll(token, databaseId);
+      return results
+        .map(mapPageToMedia)
+        .filter(item => item.title && item.link)
+        .sort((a, b) => getMediaSortTime(b) - getMediaSortTime(a));
+    }, { refresh: shouldRefresh });
+    cache = cached.cache;
+    media = cached.value;
   } catch (error) {
     return sendNotionError(response, {
       error,
@@ -101,10 +115,6 @@ export default async function handler(request, response) {
     });
   }
 
-  const media = results
-    .map(mapPageToMedia)
-    .filter(item => item.title && item.link)
-    .sort((a, b) => getMediaSortTime(b) - getMediaSortTime(a));
-
+  response.setHeader('X-SF-Archive-Cache', cache);
   return response.status(200).json({ media });
 }

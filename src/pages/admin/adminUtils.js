@@ -1,6 +1,7 @@
 export const initialCounts = {
   activityLogs: 0,
   adminActions: 0,
+  communityQuestions: 0,
   memberNotes: 0,
   members: 0,
   radioMessages: 0,
@@ -30,7 +31,7 @@ export const endpointChecks = [
   { key: 'works', label: '작품 아카이브', path: '/api/works?covers=0', pick: data => data.works?.length ?? 0 },
   { key: 'media', label: '미디어 아카이브', path: '/api/media', pick: data => data.media?.length ?? 0 },
   { key: 'concepts', label: 'SF 개념 사전', path: '/api/concepts', pick: data => data.concepts?.length ?? 0 },
-  { key: 'questions', label: '커뮤니티 게시판', path: '/api/questions', pick: data => data.questions?.length ?? 0 },
+  { key: 'questions', label: '커뮤니티 게시판', path: '/api/questions?pageSize=1', pick: data => data.totalCount ?? data.questions?.length ?? 0 },
 ];
 
 export function hasAdminRole(user) {

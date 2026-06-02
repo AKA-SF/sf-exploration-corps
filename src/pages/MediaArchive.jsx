@@ -51,6 +51,7 @@ export default function MediaArchive() {
     if (getStorageItem(storageKey, '')) return;
     const result = await recordUserActivity(user, {
       actionType: 'media_visit',
+      dedupeKey: `media:${item.code}`,
       points: 3,
       genre: item.category || activeCategory.label,
       metadata: {

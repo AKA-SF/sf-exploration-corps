@@ -97,7 +97,10 @@ export default function Home() {
     if (!user) return;
     const storageKey = `sf-mission-signal:${user.id}:${signalKey}`;
     if (getStorageItem(storageKey, '')) return;
-    const result = await recordUserActivity(user, activity);
+    const result = await recordUserActivity(user, {
+      ...activity,
+      dedupeKey: activity.dedupeKey || signalKey,
+    });
     if (result?.ok) setStorageItem(storageKey, '1');
   }, [user]);
 

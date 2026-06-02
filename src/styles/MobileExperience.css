@@ -236,17 +236,37 @@
 
   .works-archive-section,
   .taste-test-section,
+  .media-section,
   .media-archive-section,
   .coordinates-section,
+  .concept-section,
   .concept-dictionary-section,
   .question-section,
   .contact-section {
     padding: 38px var(--mobile-pad) 52px;
   }
 
+  .works-archive-section,
+  .media-section,
+  .coordinates-section,
+  .concept-section,
+  .question-section {
+    overflow-x: hidden;
+  }
+
+  .section-heading {
+    gap: 12px;
+    margin-bottom: 18px;
+  }
+
   .section-heading h2 {
-    font-size: clamp(34px, 12vw, 54px);
+    font-size: clamp(30px, 10vw, 46px);
     line-height: 1.02;
+  }
+
+  .section-heading p {
+    font-size: 14px;
+    line-height: 1.65;
   }
 
   .archive-category-grid,
@@ -257,6 +277,20 @@
   .contact-grid,
   .question-layout {
     grid-template-columns: 1fr;
+  }
+
+  .archive-category-grid {
+    gap: 0;
+    margin-bottom: 16px;
+  }
+
+  .category-tile {
+    min-height: 76px;
+    padding: 13px 14px;
+  }
+
+  .category-tile strong {
+    font-size: 18px;
   }
 
   .work-card,

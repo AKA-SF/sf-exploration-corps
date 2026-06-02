@@ -1,4 +1,10 @@
-import { getNotionConfig, notionRequest, queryNotionDatabasePage, sendNotionError } from './_notion.js';
+import {
+  getNotionConfig,
+  notionRequest,
+  queryNotionDatabaseAll,
+  queryNotionDatabasePage,
+  sendNotionError,
+} from './_notion.js';
 import { getOptionalUser, requireAdminUser, requireAuthenticatedUser } from './_adminAuth.js';
 import { pick, plainText } from './_notionProperties.js';
 import { findPropertyEntry, readJsonBody, richTextPayload } from './_notionWrite.js';
@@ -262,6 +268,34 @@ export default async function handler(request, response) {
           canEdit: pageCanEdit(blocks, ownerToken),
         },
         comments,
+      });
+    }
+
+    if (String(request.query?.admin ?? '') === '1') {
+      const adminUser = await requireAdminUser(request, response);
+      if (!adminUser) return null;
+
+      let results;
+      try {
+        results = await queryNotionDatabaseAll(token, databaseId);
+      } catch (error) {
+        return sendNotionError(response, {
+          error,
+          fallbackMessage: 'Question list request failed',
+          payload: { questions: [], totalCount: 0 },
+        });
+      }
+
+      const questions = results
+        .map(mapPageToQuestion)
+        .filter(question => question.title);
+
+      return response.status(200).json({
+        admin: true,
+        hasMore: false,
+        nextCursor: '',
+        questions,
+        totalCount: questions.length,
       });
     }
 

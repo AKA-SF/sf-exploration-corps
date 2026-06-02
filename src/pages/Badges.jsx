@@ -38,19 +38,22 @@ export default function Badges() {
       ] = await Promise.all([
         supabase
           .from('activity_logs')
-          .select('*')
+          .select('id,action_type,points,genre,metadata,created_at')
           .eq('user_id', user.id)
-          .order('created_at', { ascending: false }),
+          .order('created_at', { ascending: false })
+          .limit(500),
         supabase
           .from('work_statuses')
-          .select('*')
+          .select('work_code,work_title,status,updated_at')
           .eq('user_id', user.id)
-          .order('updated_at', { ascending: false }),
+          .order('updated_at', { ascending: false })
+          .limit(500),
         supabase
           .from('user_badges')
           .select('badge_id,awarded_at,badges(title,description)')
           .eq('user_id', user.id)
-          .order('awarded_at', { ascending: false }),
+          .order('awarded_at', { ascending: false })
+          .limit(200),
       ]);
 
       if (!isMounted) return;
