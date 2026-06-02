@@ -1,5 +1,15 @@
+import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Send } from 'lucide-react';
-import CoordinateUniverse from '../../components/CoordinateUniverse';
+
+const CoordinateUniverse = lazy(() => import('../../components/CoordinateUniverse'));
+
+function CoordinateUniverseFallback() {
+  return (
+    <div className="coordinate-universe coordinate-universe-loading" role="status" aria-live="polite">
+      <span>COORDINATE ATLAS LOADING</span>
+    </div>
+  );
+}
 
 export default function CoordinatesSection({
   activeGenre,
@@ -20,8 +30,30 @@ export default function CoordinatesSection({
   selectedCoordinateWorks,
   visibleConnections,
 }) {
+  const sectionRef = useRef(null);
+  const [shouldLoadMap, setShouldLoadMap] = useState(() => (
+    typeof window !== 'undefined' && !('IntersectionObserver' in window)
+  ));
+
+  useEffect(() => {
+    if (shouldLoadMap) return undefined;
+    if (typeof window === 'undefined' || !('IntersectionObserver' in window)) return undefined;
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (!entry?.isIntersecting) return;
+      setShouldLoadMap(true);
+      observer.disconnect();
+    }, {
+      rootMargin: '720px 0px',
+      threshold: 0.01,
+    });
+
+    if (sectionRef.current) observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, [shouldLoadMap]);
+
   return (
-    <section className="coordinates-section" id="coordinates">
+    <section className="coordinates-section" id="coordinates" ref={sectionRef}>
       <div className="section-shell">
         <div className="section-heading">
           <span>EXPLORATION NODE MAP</span>
@@ -33,18 +65,24 @@ export default function CoordinatesSection({
         </div>
 
         <div className="coordinate-map-layout">
-          <CoordinateUniverse
-            activeGenre={activeGenre}
-            className={hasCoordinateFocus ? 'is-focused' : ''}
-            connections={visibleConnections}
-            hasFocus={hasCoordinateFocus}
-            nodes={mapPositions}
-            onNodeSelect={onNodeSelect}
-            onReset={onReset}
-            onViewChange={onViewChange}
-            relatedIds={relatedCoordinateIds}
-            selectedId={selectedCoordinateId}
-          />
+          {shouldLoadMap ? (
+            <Suspense fallback={<CoordinateUniverseFallback />}>
+              <CoordinateUniverse
+                activeGenre={activeGenre}
+                className={hasCoordinateFocus ? 'is-focused' : ''}
+                connections={visibleConnections}
+                hasFocus={hasCoordinateFocus}
+                nodes={mapPositions}
+                onNodeSelect={onNodeSelect}
+                onReset={onReset}
+                onViewChange={onViewChange}
+                relatedIds={relatedCoordinateIds}
+                selectedId={selectedCoordinateId}
+              />
+            </Suspense>
+          ) : (
+            <CoordinateUniverseFallback />
+          )}
 
           <aside className="coordinate-brief">
             <span>MAP PROTOCOL</span>

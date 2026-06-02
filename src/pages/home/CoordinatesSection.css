@@ -177,6 +177,23 @@
   height: 100%;
 }
 
+.coordinate-universe-loading {
+  display: grid;
+  place-items: center;
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+}
+
+.coordinate-universe-loading::before {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border: 1px dashed rgba(25, 247, 241, 0.28);
+  border-radius: 50%;
+}
+
 .genre-map {
   position: relative;
   height: 690px;

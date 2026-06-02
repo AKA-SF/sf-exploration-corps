@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { recordUserActivity } from '../../lib/activityLogger';
 import { setJsonStorageItem } from '../../lib/browserStorage';
-import { supabase } from '../../lib/supabaseClient';
+import { getSupabaseClient } from '../../lib/getSupabaseClient';
 
 const emptyWorkSubmitForm = {
   title: '',
@@ -35,19 +35,21 @@ export default function useWorkArchiveInteractions({
     if (!user) return undefined;
 
     const localKey = `sf-work-statuses:${user.id}`;
-    if (!supabase) return undefined;
     let isMounted = true;
 
-    supabase
-      .from('work_statuses')
-      .select('*')
-      .eq('user_id', user.id)
-      .then(({ data, error }) => {
-        if (!isMounted || error) return;
-        const nextStatuses = Object.fromEntries((data ?? []).map(item => [item.work_code, item.status]));
-        setWorkStatuses(nextStatuses);
-        setJsonStorageItem(localKey, nextStatuses);
-      });
+    getSupabaseClient().then(supabase => {
+      if (!isMounted || !supabase) return;
+      supabase
+        .from('work_statuses')
+        .select('*')
+        .eq('user_id', user.id)
+        .then(({ data, error }) => {
+          if (!isMounted || error) return;
+          const nextStatuses = Object.fromEntries((data ?? []).map(item => [item.work_code, item.status]));
+          setWorkStatuses(nextStatuses);
+          setJsonStorageItem(localKey, nextStatuses);
+        });
+    }).catch(() => {});
 
     return () => {
       isMounted = false;
@@ -55,28 +57,39 @@ export default function useWorkArchiveInteractions({
   }, [user]);
 
   useEffect(() => {
-    if (!selectedWork || !supabase) {
+    if (!selectedWork) {
       return undefined;
     }
 
     let isMounted = true;
 
-    supabase
-      .from('work_comments')
-      .select('*')
-      .eq('work_code', selectedWork.code)
-      .order('created_at', { ascending: true })
-      .then(({ data, error }) => {
-        if (!isMounted) return;
-        if (error) {
-          setWorkComments([]);
-          setCommentStatus('error');
-          setCommentMessage('댓글 테이블 연결이 필요합니다. Supabase SQL 스키마를 다시 실행해주세요.');
-          return;
-        }
-        setWorkComments(data ?? []);
+    getSupabaseClient().then(supabase => {
+      if (!isMounted) return;
+      if (!supabase) {
         setCommentStatus('idle');
-      });
+        return;
+      }
+      supabase
+        .from('work_comments')
+        .select('*')
+        .eq('work_code', selectedWork.code)
+        .order('created_at', { ascending: true })
+        .then(({ data, error }) => {
+          if (!isMounted) return;
+          if (error) {
+            setWorkComments([]);
+            setCommentStatus('error');
+            setCommentMessage('댓글 테이블 연결이 필요합니다. Supabase SQL 스키마를 다시 실행해주세요.');
+            return;
+          }
+          setWorkComments(data ?? []);
+          setCommentStatus('idle');
+        });
+    }).catch(() => {
+      if (!isMounted) return;
+      setCommentStatus('error');
+      setCommentMessage('댓글 신호를 불러오지 못했습니다.');
+    });
 
     return () => {
       isMounted = false;
@@ -161,6 +174,7 @@ export default function useWorkArchiveInteractions({
     setJsonStorageItem(localKey, nextStatuses);
     setWorkStatusSaving(true);
 
+    const supabase = await getSupabaseClient();
     if (!supabase) {
       setWorkStatusSaving(false);
       return;
@@ -203,7 +217,7 @@ export default function useWorkArchiveInteractions({
 
   const submitWorkComment = async event => {
     event.preventDefault();
-    if (!selectedWork || !supabase) return;
+    if (!selectedWork) return;
     if (!user) {
       setCommentStatus('error');
       setCommentMessage('댓글을 남기려면 먼저 로그인해주세요.');
@@ -215,6 +229,13 @@ export default function useWorkArchiveInteractions({
 
     setCommentStatus('saving');
     setCommentMessage('');
+
+    const supabase = await getSupabaseClient();
+    if (!supabase) {
+      setCommentStatus('error');
+      setCommentMessage('댓글 저장을 위해 Supabase 연결이 필요합니다.');
+      return;
+    }
 
     const authorName = user.user_metadata?.nickname || user.email?.split('@')[0] || '탐사자';
     const { data, error } = await supabase
