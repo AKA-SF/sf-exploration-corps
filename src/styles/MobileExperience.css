@@ -1,8 +1,7 @@
 @media (max-width: 760px) {
-  :root {
+  body.mobile-compact-active {
     --mobile-pad: 14px;
     --mobile-panel: rgba(0, 13, 19, 0.82);
-  }
 
   .mobile-container,
   .mobile-container.desktop-home {
@@ -19,11 +18,37 @@
 
   .site-mode-toggle {
     right: 10px;
-    bottom: 72px;
+    bottom: 118px;
     min-height: 34px;
     padding: 0 10px;
     border-radius: 0;
     font-size: 10px;
+  }
+
+  .viewport-mode-toggle {
+    position: fixed;
+    right: 10px;
+    bottom: 72px;
+    z-index: 130;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 36px;
+    padding: 0 12px;
+    border: 1px solid rgba(240, 184, 90, 0.5);
+    color: #ffdca0;
+    background: rgba(18, 12, 2, 0.88);
+    font-family: var(--font-mono);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 0.4px;
+    box-shadow: 0 0 22px rgba(240, 184, 90, 0.12);
+  }
+
+  .viewport-mode-toggle svg {
+    width: 14px;
+    height: 14px;
   }
 
   .home-topbar {
@@ -86,9 +111,9 @@
   .hero-panel {
     display: flex;
     flex-direction: column;
-    gap: 18px;
+    gap: 14px;
     min-height: auto;
-    padding: 26px 0 18px;
+    padding: 22px 0 14px;
     border-bottom-color: rgba(25, 247, 241, 0.18);
   }
 
@@ -143,6 +168,10 @@
   .hero-description {
     font-size: 14px;
     line-height: 1.72;
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
   }
 
   .hero-actions {
@@ -172,8 +201,8 @@
   .radar-shell {
     order: 2;
     width: 100%;
-    height: min(92vw, 390px);
-    min-height: 300px;
+    height: min(82vw, 330px);
+    min-height: 260px;
     aspect-ratio: auto;
   }
 
@@ -184,8 +213,8 @@
   .archive-dock {
     display: flex;
     gap: 12px;
-    margin: 16px calc(var(--mobile-pad) * -1) 0;
-    padding: 14px var(--mobile-pad) 16px;
+    margin: 10px calc(var(--mobile-pad) * -1) 0;
+    padding: 10px var(--mobile-pad) 14px;
     overflow-x: auto;
     border-inline: 0;
     scroll-snap-type: x mandatory;
@@ -197,9 +226,9 @@
   }
 
   .dock-card {
-    flex: 0 0 min(78vw, 300px);
-    min-height: 112px;
-    padding: 14px;
+    flex: 0 0 min(72vw, 260px);
+    min-height: 92px;
+    padding: 12px;
     border: 1px solid rgba(25, 247, 241, 0.18);
     background: rgba(0, 14, 20, 0.68);
     scroll-snap-align: start;
@@ -212,7 +241,7 @@
   .concept-dictionary-section,
   .question-section,
   .contact-section {
-    padding: 54px var(--mobile-pad) 68px;
+    padding: 38px var(--mobile-pad) 52px;
   }
 
   .section-heading h2 {
@@ -238,7 +267,67 @@
   .contact-card,
   .contact-signal {
     min-height: auto;
-    padding: 18px;
+    padding: 14px;
+  }
+
+  .works-brief {
+    padding: 16px;
+  }
+
+  .works-brief p,
+  .works-brief dl,
+  .media-card p,
+  .media-meta,
+  .media-tags,
+  .concept-feature-card p,
+  .concept-meta-list,
+  .contact-card em,
+  .question-brief p {
+    display: none;
+  }
+
+  .archive-view-status {
+    padding-top: 0;
+  }
+
+  .archive-view-status > strong {
+    font-size: 10px;
+  }
+
+  .featured-work-grid .work-card:nth-child(n+4),
+  .media-grid .media-card:nth-child(n+3),
+  .concept-grid .concept-card:nth-child(n+5) {
+    display: none;
+  }
+
+  .work-card {
+    min-height: 156px;
+  }
+
+  .work-card h3,
+  .media-card h3 {
+    font-size: 21px;
+    line-height: 1.18;
+  }
+
+  .work-card p {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 13px;
+  }
+
+  .work-cover {
+    width: 78px;
+  }
+
+  .media-thumb {
+    aspect-ratio: 16 / 9;
+  }
+
+  .media-card-body {
+    padding: 13px;
   }
 
   .coordinate-map-layout {
@@ -249,8 +338,8 @@
 
   .coordinate-universe,
   .genre-map {
-    height: min(112vw, 430px);
-    min-height: 330px;
+    height: min(96vw, 360px);
+    min-height: 300px;
   }
 
   .coordinate-brief {
@@ -550,12 +639,12 @@
     max-width: none;
     margin-bottom: 12px;
   }
+  }
 }
 
 @media (max-width: 420px) {
-  :root {
+  body.mobile-compact-active {
     --mobile-pad: 10px;
-  }
 
   .brand-mark em,
   .system-status span {
@@ -580,5 +669,108 @@
 
   .crew-avatar {
     width: 82px;
+  }
+  }
+}
+
+@media (max-width: 760px) {
+  body.desktop-view-requested {
+    width: 1280px;
+    min-width: 1280px;
+    height: auto;
+    min-height: 100vh;
+    overflow: auto;
+    background: #02080d;
+  }
+
+  body.desktop-view-requested #root {
+    display: block;
+    align-items: initial;
+    justify-content: initial;
+    width: 1280px;
+    height: auto;
+    min-height: 100vh;
+  }
+
+  body.desktop-view-requested .mobile-container,
+  body.desktop-view-requested .mobile-container.desktop-home {
+    width: 1280px;
+    max-width: none;
+    height: auto;
+    min-height: 100vh;
+    max-height: none;
+    border: 0;
+    box-shadow: none;
+  }
+
+  body.desktop-view-requested .page-container {
+    height: auto;
+    min-height: 100vh;
+    overflow: visible;
+    padding: 0;
+  }
+
+  body.desktop-view-requested .home-topbar {
+    display: grid;
+    grid-template-columns: minmax(220px, 330px) minmax(0, 1fr) 188px;
+    min-height: 86px;
+    padding: 22px 24px 10px;
+  }
+
+  body.desktop-view-requested .top-nav {
+    justify-content: center;
+    overflow: visible;
+  }
+
+  body.desktop-view-requested .top-nav a {
+    min-height: auto;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    font-size: 14px;
+  }
+
+  body.desktop-view-requested .home-stage {
+    padding: 0 22px 32px;
+  }
+
+  body.desktop-view-requested .hero-panel {
+    display: grid;
+    grid-template-columns: minmax(390px, 0.82fr) minmax(560px, 1.18fr) 190px;
+    gap: clamp(18px, 2.6vw, 34px);
+    min-height: calc(100vh - 224px);
+    padding: 44px 0 34px 98px;
+  }
+
+  body.desktop-view-requested .home-side {
+    display: grid;
+  }
+
+  body.desktop-view-requested .radar-shell {
+    order: initial;
+    width: auto;
+    height: auto;
+    min-height: 520px;
+  }
+
+  body.desktop-view-requested .archive-dock {
+    display: grid;
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    margin: 0 44px 0 112px;
+    padding: 20px 0 8px 36px;
+    overflow: visible;
+  }
+
+  body.desktop-view-requested .dock-card {
+    flex: initial;
+    min-height: 96px;
+    padding: 10px 16px;
+  }
+
+  body.desktop-view-requested .viewport-mode-toggle {
+    position: fixed;
+    left: 16px;
+    right: auto;
+    bottom: 16px;
   }
 }

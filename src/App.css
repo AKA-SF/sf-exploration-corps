@@ -167,6 +167,10 @@
   height: 16px;
 }
 
+.viewport-mode-toggle {
+  display: none;
+}
+
 .reading-mode .site-mode-toggle {
   border-color: rgba(55, 65, 81, 0.24);
   background: rgba(255, 252, 244, 0.92);

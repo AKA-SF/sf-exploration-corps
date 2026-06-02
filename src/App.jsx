@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
-import { BookOpen, TerminalSquare } from 'lucide-react';
+import { BookOpen, Monitor, Smartphone, TerminalSquare } from 'lucide-react';
 import './App.css';
 
 import Navbar from './components/Navbar';
@@ -34,6 +34,7 @@ function RouteLoader() {
 function App() {
   const location = useLocation();
   const [siteMode, setSiteMode] = useState(() => getStorageItem('sf-site-mode', 'console'));
+  const [viewMode, setViewMode] = useState(() => getStorageItem('sf-view-mode', 'mobile'));
   const isAdminSurface = location.pathname.startsWith('/admin');
   const isDesktopSurface = location.pathname === '/'
     || location.pathname.startsWith('/works')
@@ -44,6 +45,7 @@ function App() {
   const isLowPowerSurface = location.pathname.startsWith('/profile')
     || location.pathname.startsWith('/badges')
     || location.pathname.startsWith('/admin');
+  const isDesktopRequested = viewMode === 'desktop';
 
   useEffect(() => {
     setStorageItem('sf-site-mode', siteMode);
@@ -52,6 +54,16 @@ function App() {
       document.body.classList.remove('reading-mode-active');
     };
   }, [siteMode]);
+
+  useEffect(() => {
+    setStorageItem('sf-view-mode', viewMode);
+    document.body.classList.toggle('desktop-view-requested', isDesktopRequested);
+    document.body.classList.toggle('mobile-compact-active', !isDesktopRequested);
+    return () => {
+      document.body.classList.remove('desktop-view-requested');
+      document.body.classList.remove('mobile-compact-active');
+    };
+  }, [isDesktopRequested, viewMode]);
 
   return (
     <AuthProvider>
@@ -66,6 +78,16 @@ function App() {
           >
             {isReadingMode ? <TerminalSquare aria-hidden="true" /> : <BookOpen aria-hidden="true" />}
             <span>{isReadingMode ? 'Console Mode' : 'Reading Mode'}</span>
+          </button>
+        )}
+        {!isAdminSurface && (
+          <button
+            className="viewport-mode-toggle"
+            onClick={() => setViewMode(isDesktopRequested ? 'mobile' : 'desktop')}
+            type="button"
+          >
+            {isDesktopRequested ? <Smartphone aria-hidden="true" /> : <Monitor aria-hidden="true" />}
+            <span>{isDesktopRequested ? '모바일 버전으로 전환' : 'PC 버전으로 전환'}</span>
           </button>
         )}
         <div className="page-container">
