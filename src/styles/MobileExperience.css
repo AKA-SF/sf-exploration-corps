@@ -276,6 +276,9 @@
 
   .works-brief p,
   .works-brief dl,
+  .taste-test-section .section-heading > span,
+  .taste-test-section .section-heading p,
+  .taste-test-section .section-shell > .taste-test-layout,
   .media-card p,
   .media-meta,
   .media-tags,
@@ -294,10 +297,138 @@
     font-size: 10px;
   }
 
-  .featured-work-grid .work-card:nth-child(n+4),
-  .media-grid .media-card:nth-child(n+3),
+  .featured-work-grid .work-card:nth-child(n+3),
+  .media-grid .media-card:nth-child(n+2),
   .concept-grid .concept-card:nth-child(n+5) {
     display: none;
+  }
+
+  .taste-test-section {
+    padding-block: 28px 34px;
+  }
+
+  .taste-test-section .section-heading {
+    margin-bottom: 0;
+  }
+
+  .taste-test-section .section-heading h2 {
+    margin: 0;
+  }
+
+  .taste-mobile-title-trigger {
+    width: 100%;
+    min-height: 82px;
+    border: 1px solid rgba(25, 247, 241, 0.28);
+    padding: 16px 18px;
+    color: #ffffff;
+    background:
+      linear-gradient(135deg, rgba(25, 247, 241, 0.12), transparent 52%),
+      rgba(0, 14, 20, 0.78);
+    font: inherit;
+    line-height: 1.02;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .taste-mobile-title-trigger::after {
+    content: "질문 열기";
+    display: block;
+    margin-top: 10px;
+    color: var(--cyan);
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 1.2px;
+  }
+
+  .taste-mobile-window {
+    position: fixed;
+    z-index: 220;
+    inset: 0;
+    display: grid;
+    align-items: end;
+    padding: 12px;
+    background: rgba(0, 3, 6, 0.72);
+    backdrop-filter: blur(10px);
+  }
+
+  .taste-mobile-window-panel {
+    width: 100%;
+    max-height: calc(100vh - 24px);
+    overflow-y: auto;
+    border: 1px solid rgba(25, 247, 241, 0.32);
+    background: #020b10;
+    box-shadow: 0 -18px 70px rgba(0, 0, 0, 0.44);
+  }
+
+  .taste-mobile-window-top {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    min-height: 46px;
+    padding: 0 14px;
+    border-bottom: 1px solid rgba(25, 247, 241, 0.2);
+    background: rgba(0, 10, 15, 0.96);
+  }
+
+  .taste-mobile-window-top span,
+  .taste-mobile-window-top button {
+    color: var(--cyan);
+    font-family: "Courier New", monospace;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: 1.2px;
+  }
+
+  .taste-mobile-window-top button {
+    border: 1px solid rgba(25, 247, 241, 0.24);
+    padding: 7px 10px;
+    background: rgba(0, 18, 24, 0.82);
+  }
+
+  .taste-mobile-window .taste-test-layout {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .taste-mobile-window .taste-questions {
+    grid-template-columns: 1fr;
+  }
+
+  .taste-mobile-window .taste-question-card,
+  .taste-mobile-window .taste-result-panel {
+    min-height: auto;
+    padding: 16px;
+  }
+
+  .taste-mobile-window .taste-question-card h3 {
+    font-size: 18px;
+    line-height: 1.4;
+  }
+
+  .taste-mobile-window .taste-options {
+    gap: 8px;
+  }
+
+  .taste-mobile-window .taste-options button {
+    min-height: 42px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+
+  .taste-mobile-window .taste-result-panel h3 {
+    font-size: 24px;
+  }
+
+  .taste-mobile-window .taste-result-panel p {
+    font-size: 14px;
+    line-height: 1.65;
   }
 
   .work-card {

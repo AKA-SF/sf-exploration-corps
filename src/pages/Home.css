@@ -180,6 +180,26 @@
     linear-gradient(180deg, rgba(1, 4, 7, 0.98), rgba(2, 10, 15, 0.96));
 }
 
+.taste-mobile-title-trigger {
+  display: inline;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  text-align: inherit;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.taste-mobile-title-trigger:hover,
+.taste-mobile-title-trigger:focus-visible {
+  color: var(--cyan);
+}
+
 .taste-test-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(320px, 0.42fr);
