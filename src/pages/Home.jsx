@@ -45,6 +45,7 @@ import './home/CoordinatesSection.css';
 import './home/ConceptDictionarySection.css';
 import './home/CommunitySection.css';
 import './home/HomeResponsive.css';
+import '../styles/MobileExperience.css';
 
 export default function Home() {
   const { user } = useAuth();

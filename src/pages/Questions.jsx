@@ -10,6 +10,7 @@ import QuestionsHeader from './questions/QuestionsHeader';
 import QuestionWritePanel from './questions/QuestionWritePanel';
 import useQuestionsBoard from './questions/useQuestionsBoard';
 import './Questions.css';
+import '../styles/MobileExperience.css';
 
 export default function Questions() {
   const { questionId } = useParams();

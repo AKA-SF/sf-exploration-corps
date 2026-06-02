@@ -6,6 +6,7 @@ import { useAuth } from '../context/authContextValue';
 import { recordUserActivity } from '../lib/activityLogger';
 import { getStorageItem, setStorageItem } from '../lib/browserStorage';
 import './MediaArchive.css';
+import '../styles/MobileExperience.css';
 
 const mediaCategories = [
   { label: 'SF 작가 인터뷰', slug: 'interviews' },

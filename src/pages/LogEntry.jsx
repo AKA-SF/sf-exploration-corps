@@ -4,6 +4,7 @@ import { FilePlus, Target, Brain, Activity, Save, Lightbulb, HeartPulse, RadioTo
 import { useLogs } from '../context/LogContext';
 import PageTransition from '../components/PageTransition';
 import './LogEntry.css';
+import '../styles/MobileExperience.css';
 
 const EMOTION_TAGS = ['우울함', '압도감', '외로움', '희망', '공포감', '기괴함'];
 const IDEA_TAGS = ['아이디어 충격', '미래 상상력', '기술 공포', '인간성 질문', '여운'];

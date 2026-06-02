@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import { useLogs } from '../context/LogContext';
 import PageTransition from '../components/PageTransition';
 import './LogResult.css';
+import '../styles/MobileExperience.css';
 
 const LogResult = () => {
   const { id } = useParams();

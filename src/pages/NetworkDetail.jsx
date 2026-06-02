@@ -5,6 +5,7 @@ import { ChevronLeft, Send, Activity, BarChart2, RadioReceiver } from 'lucide-re
 import PageTransition from '../components/PageTransition';
 import { motion } from 'framer-motion';
 import './NetworkDetail.css';
+import '../styles/MobileExperience.css';
 
 const NetworkDetail = () => {
   const { id } = useParams();

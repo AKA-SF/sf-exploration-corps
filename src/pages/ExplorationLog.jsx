@@ -3,6 +3,7 @@ import { ArrowLeft, ExternalLink, Radio, Search, Sparkles } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
 import './ExplorationLog.css';
+import '../styles/MobileExperience.css';
 
 const fallbackLogs = [
   {

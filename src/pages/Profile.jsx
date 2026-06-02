@@ -18,6 +18,7 @@ import {
 import ProfileReadingPanel from './profile/ProfileReadingPanel';
 import { useProfileData } from './profile/hooks/useProfileData';
 import './Profile.css';
+import '../styles/MobileExperience.css';
 
 export default function Profile() {
   const { isConfigured, loading, user, signOut } = useAuth();

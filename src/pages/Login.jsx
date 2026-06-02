@@ -5,6 +5,7 @@ import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
 import { supabase } from '../lib/supabaseClient';
 import './Login.css';
+import '../styles/MobileExperience.css';
 
 export default function Login() {
   const navigate = useNavigate();

@@ -12,6 +12,7 @@ import WorksArchiveTabs from './works/WorksArchiveTabs';
 import useWorksArchivePage from './works/useWorksArchivePage';
 import './WorksArchive.css';
 import './home/WorksArchiveSection.css';
+import '../styles/MobileExperience.css';
 
 export default function WorksArchive() {
   const { user } = useAuth();

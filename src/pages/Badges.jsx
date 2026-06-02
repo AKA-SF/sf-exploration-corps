@@ -6,6 +6,7 @@ import { useAuth } from '../context/authContextValue';
 import { getActivityStats, getBadges, mergeManualBadges } from '../data/profileProgress';
 import { supabase } from '../lib/supabaseClient';
 import './Profile.css';
+import '../styles/MobileExperience.css';
 
 const iconMap = {
   award: Award,

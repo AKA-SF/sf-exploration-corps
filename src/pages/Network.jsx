@@ -8,6 +8,7 @@ import { useAuth } from '../context/authContextValue';
 import { recordUserActivity } from '../lib/activityLogger';
 import { supabase } from '../lib/supabaseClient';
 import './Network.css';
+import '../styles/MobileExperience.css';
 
 const LOG_TYPES = {
   WARNING: { color: 'var(--accent-amber)', icon: AlertTriangle },

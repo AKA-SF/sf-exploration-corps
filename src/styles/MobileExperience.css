@@ -1,0 +1,584 @@
+@media (max-width: 760px) {
+  :root {
+    --mobile-pad: 14px;
+    --mobile-panel: rgba(0, 13, 19, 0.82);
+  }
+
+  .mobile-container,
+  .mobile-container.desktop-home {
+    width: 100vw;
+    max-width: none;
+    max-height: none;
+    border: 0;
+    box-shadow: none;
+  }
+
+  .page-container {
+    padding: 0 0 84px;
+  }
+
+  .site-mode-toggle {
+    right: 10px;
+    bottom: 72px;
+    min-height: 34px;
+    padding: 0 10px;
+    border-radius: 0;
+    font-size: 10px;
+  }
+
+  .home-topbar {
+    position: sticky;
+    top: 0;
+    z-index: 80;
+    gap: 12px;
+    padding: 12px var(--mobile-pad) 10px;
+    border-bottom-color: rgba(25, 247, 241, 0.2);
+    background: rgba(1, 8, 12, 0.92);
+    backdrop-filter: blur(12px);
+  }
+
+  .brand-mark {
+    flex-wrap: nowrap;
+  }
+
+  .brand-mark span {
+    font-size: 19px;
+  }
+
+  .brand-mark em {
+    flex-basis: auto;
+    margin-left: 0;
+    max-width: 160px;
+  }
+
+  .system-status {
+    width: 100%;
+    padding: 9px 11px;
+  }
+
+  .top-nav {
+    justify-content: flex-start;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 0 0 5px;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+
+  .top-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .top-nav a {
+    flex: 0 0 auto;
+    min-height: 34px;
+    padding: 9px 12px 0;
+    border: 1px solid rgba(25, 247, 241, 0.16);
+    background: rgba(0, 16, 23, 0.52);
+    font-size: 12px;
+    scroll-snap-align: start;
+  }
+
+  .home-stage {
+    padding: 0 var(--mobile-pad) 18px;
+  }
+
+  .hero-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    min-height: auto;
+    padding: 26px 0 18px;
+    border-bottom-color: rgba(25, 247, 241, 0.18);
+  }
+
+  .hero-panel::before {
+    top: 78px;
+    left: -28vw;
+    width: min(620px, 116vw);
+    opacity: 0.42;
+  }
+
+  .hero-panel::after {
+    top: 66px;
+    left: -32vw;
+    width: min(650px, 120vw);
+    opacity: 0.22;
+  }
+
+  .hero-copy {
+    align-self: stretch;
+    max-width: none;
+  }
+
+  .signal-label {
+    margin-bottom: 16px;
+    font-size: 10px;
+    letter-spacing: 2.2px;
+  }
+
+  .hero-copy h1 {
+    max-width: 100%;
+    font-size: clamp(48px, 17vw, 76px);
+    line-height: 0.96;
+  }
+
+  .hero-kicker {
+    margin: 18px 0 20px;
+    font-size: clamp(12px, 3.6vw, 15px);
+    letter-spacing: 2.6px;
+    overflow-wrap: anywhere;
+  }
+
+  .hero-description,
+  .section-heading p,
+  .works-full-header p,
+  .media-archive-header p,
+  .questions-header p {
+    word-break: keep-all;
+    overflow-wrap: break-word;
+    line-break: auto;
+  }
+
+  .hero-description {
+    font-size: 14px;
+    line-height: 1.72;
+  }
+
+  .hero-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin: 22px 0 18px;
+  }
+
+  .hero-actions a {
+    width: 100%;
+    min-height: 50px;
+    padding: 0 18px;
+    font-size: 15px;
+  }
+
+  .hero-signal-banner,
+  .mission-card {
+    width: 100%;
+    max-width: none;
+  }
+
+  .mission-card {
+    padding: 14px;
+  }
+
+  .radar-shell {
+    order: 2;
+    width: 100%;
+    height: min(92vw, 390px);
+    min-height: 300px;
+    aspect-ratio: auto;
+  }
+
+  .home-side {
+    display: none;
+  }
+
+  .archive-dock {
+    display: flex;
+    gap: 12px;
+    margin: 16px calc(var(--mobile-pad) * -1) 0;
+    padding: 14px var(--mobile-pad) 16px;
+    overflow-x: auto;
+    border-inline: 0;
+    scroll-snap-type: x mandatory;
+    scrollbar-width: none;
+  }
+
+  .archive-dock::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dock-card {
+    flex: 0 0 min(78vw, 300px);
+    min-height: 112px;
+    padding: 14px;
+    border: 1px solid rgba(25, 247, 241, 0.18);
+    background: rgba(0, 14, 20, 0.68);
+    scroll-snap-align: start;
+  }
+
+  .works-archive-section,
+  .taste-test-section,
+  .media-archive-section,
+  .coordinates-section,
+  .concept-dictionary-section,
+  .question-section,
+  .contact-section {
+    padding: 54px var(--mobile-pad) 68px;
+  }
+
+  .section-heading h2 {
+    font-size: clamp(34px, 12vw, 54px);
+    line-height: 1.02;
+  }
+
+  .archive-category-grid,
+  .featured-work-grid,
+  .taste-questions,
+  .media-grid,
+  .concept-grid,
+  .contact-grid,
+  .question-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .work-card,
+  .media-card,
+  .concept-card,
+  .question-brief,
+  .question-form,
+  .contact-card,
+  .contact-signal {
+    min-height: auto;
+    padding: 18px;
+  }
+
+  .coordinate-map-layout {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+  }
+
+  .coordinate-universe,
+  .genre-map {
+    height: min(112vw, 430px);
+    min-height: 330px;
+  }
+
+  .coordinate-brief {
+    padding: 16px;
+    max-height: none;
+  }
+
+  .coordinate-minimap,
+  .map-hud {
+    display: none;
+  }
+
+  .works-full-page,
+  .media-archive-page,
+  .questions-page {
+    width: 100%;
+    max-width: 100vw;
+    padding: 16px var(--mobile-pad) 88px;
+    overflow-x: hidden;
+  }
+
+  .works-full-header,
+  .media-archive-header,
+  .questions-header {
+    width: 100%;
+    max-width: none;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 17px;
+  }
+
+  .works-full-header h1,
+  .media-archive-header h1,
+  .questions-header h1 {
+    font-size: clamp(34px, 11vw, 50px);
+    line-height: 1.02;
+  }
+
+  .works-back-link,
+  .media-back-link,
+  .questions-back-link,
+  .works-full-status,
+  .media-archive-status,
+  .questions-status {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .works-full-tabs,
+  .media-archive-tabs,
+  .questions-filter {
+    width: 100%;
+    max-width: none;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: none;
+    scroll-snap-type: x proximity;
+  }
+
+  .works-full-tabs::-webkit-scrollbar,
+  .media-archive-tabs::-webkit-scrollbar,
+  .questions-filter::-webkit-scrollbar {
+    display: none;
+  }
+
+  .works-full-tabs a,
+  .media-archive-tabs a,
+  .questions-filter button {
+    flex: 0 0 auto;
+    min-width: max-content;
+    scroll-snap-align: start;
+  }
+
+  .works-full-search,
+  .media-archive-search {
+    width: 100%;
+    max-width: none;
+  }
+
+  .works-full-search span,
+  .media-archive-search span {
+    display: none;
+  }
+
+  .works-full-grid,
+  .media-archive-grid {
+    width: 100%;
+    max-width: none;
+    grid-template-columns: 1fr;
+  }
+
+  .works-full-card {
+    min-height: auto;
+    padding: 16px;
+  }
+
+  .works-full-cover,
+  .works-full-placeholder {
+    max-width: 120px;
+    margin: 14px 0 14px;
+  }
+
+  .works-full-card h2 {
+    font-size: clamp(24px, 8vw, 34px);
+  }
+
+  .media-archive-card {
+    min-height: auto;
+  }
+
+  .media-archive-thumb {
+    aspect-ratio: 16 / 9;
+  }
+
+  .questions-board,
+  .questions-empty,
+  .question-write-panel,
+  .question-write-dialog,
+  .question-detail,
+  .comments-panel {
+    width: 100%;
+    max-width: none;
+  }
+
+  .questions-board {
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .questions-board-head {
+    display: none;
+  }
+
+  .question-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-areas:
+      "code category views"
+      "title title title"
+      "author date date";
+    gap: 9px 10px;
+    min-height: auto;
+    margin-bottom: 10px;
+    padding: 14px;
+    border: 1px solid rgba(25, 247, 241, 0.18);
+    background: var(--mobile-panel);
+  }
+
+  .question-row .question-code {
+    grid-area: code;
+  }
+
+  .question-row .question-category {
+    grid-area: category;
+  }
+
+  .question-row strong {
+    grid-area: title;
+    white-space: normal;
+    line-height: 1.35;
+  }
+
+  .question-row span:nth-of-type(3) {
+    grid-area: author;
+  }
+
+  .question-row time {
+    grid-area: date;
+    justify-self: end;
+  }
+
+  .question-row .question-views {
+    grid-area: views;
+    justify-self: end;
+  }
+
+  .question-detail {
+    padding: 18px;
+  }
+
+  .question-detail h2 {
+    font-size: clamp(28px, 9vw, 40px);
+  }
+
+  .question-detail-meta,
+  .comments-panel,
+  .question-form-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .question-write-fab {
+    right: var(--mobile-pad);
+    bottom: 18px;
+    left: var(--mobile-pad);
+    width: auto;
+  }
+
+  .question-write-modal {
+    align-items: end;
+    padding: 12px;
+  }
+
+  .profile-container {
+    padding: 12px 10px 96px !important;
+  }
+
+  .personal-terminal {
+    width: 100%;
+    max-width: none;
+    padding: 7px;
+  }
+
+  .terminal-screen {
+    padding: 9px;
+  }
+
+  .profile-page-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .profile-page-title {
+    font-size: 17px;
+  }
+
+  .profile-signout {
+    width: 100%;
+  }
+
+  .profile-card.profile-identity-card {
+    grid-template-columns: 92px minmax(0, 1fr);
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .crew-avatar {
+    width: 92px;
+  }
+
+  .agent-id h3 {
+    font-size: clamp(20px, 6.5vw, 28px);
+    line-height: 1.15;
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
+  .agent-mini-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .profile-stat-grid,
+  .profile-hub-grid,
+  .profile-activity-summary,
+  .profile-reading-grid,
+  .mission-training-grid,
+  .mission-route-grid,
+  .profile-badge-grid,
+  .profile-badge-grid.is-vault,
+  .profile-activity-row {
+    grid-template-columns: 1fr;
+  }
+
+  .network-container,
+  .network-detail-container,
+  .log-entry-container,
+  .log-result-container,
+  .exploration-log-page,
+  .login-page {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+
+  .network-device-readout,
+  .reaction-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .network-primer,
+  .network-content-grid,
+  .log-entry-grid,
+  .result-grid,
+  .exploration-log-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .network-canvas-area {
+    min-height: 420px;
+  }
+
+  .community-relay {
+    position: static;
+    width: 100%;
+    max-width: none;
+    margin-bottom: 12px;
+  }
+}
+
+@media (max-width: 420px) {
+  :root {
+    --mobile-pad: 10px;
+  }
+
+  .brand-mark em,
+  .system-status span {
+    display: none;
+  }
+
+  .hero-copy h1 {
+    font-size: clamp(44px, 16vw, 64px);
+  }
+
+  .hero-kicker {
+    letter-spacing: 1.8px;
+  }
+
+  .dock-card {
+    flex-basis: 82vw;
+  }
+
+  .profile-card.profile-identity-card {
+    grid-template-columns: 82px minmax(0, 1fr);
+  }
+
+  .crew-avatar {
+    width: 82px;
+  }
+}
