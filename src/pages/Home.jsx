@@ -2,6 +2,7 @@ import { useCallback } from 'react';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
 import { recordUserActivity } from '../lib/activityLogger';
+import { getStorageItem, setStorageItem } from '../lib/browserStorage';
 import ArchiveDock from './home/ArchiveDock';
 import CommunitySection from './home/CommunitySection';
 import ConceptDictionarySection from './home/ConceptDictionarySection';
@@ -94,9 +95,9 @@ export default function Home() {
   const recordMissionSignal = useCallback(async (signalKey, activity) => {
     if (!user) return;
     const storageKey = `sf-mission-signal:${user.id}:${signalKey}`;
-    if (localStorage.getItem(storageKey)) return;
+    if (getStorageItem(storageKey, '')) return;
     const result = await recordUserActivity(user, activity);
-    if (result?.ok) localStorage.setItem(storageKey, '1');
+    if (result?.ok) setStorageItem(storageKey, '1');
   }, [user]);
 
   const coordinateControls = useCoordinateMap({

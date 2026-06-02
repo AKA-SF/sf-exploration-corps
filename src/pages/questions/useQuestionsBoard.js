@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { recordUserActivity } from '../../lib/activityLogger';
+import { getStorageItem, setStorageItem } from '../../lib/browserStorage';
 import { getCommunityAuthorName, getCommunityOwnerToken } from './communityIdentity';
 
 const fallbackQuestions = [];
@@ -32,11 +33,10 @@ const createOwnerToken = () => {
 const getOwnerToken = user => {
   const userToken = getCommunityOwnerToken(user);
   if (userToken) return userToken;
-  if (typeof window === 'undefined') return '';
-  const current = window.localStorage.getItem(OWNER_TOKEN_STORAGE_KEY);
+  const current = getStorageItem(OWNER_TOKEN_STORAGE_KEY, '');
   if (current) return current;
   const next = createOwnerToken();
-  window.localStorage.setItem(OWNER_TOKEN_STORAGE_KEY, next);
+  setStorageItem(OWNER_TOKEN_STORAGE_KEY, next);
   return next;
 };
 

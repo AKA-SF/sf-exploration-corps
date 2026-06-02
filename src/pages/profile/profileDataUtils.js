@@ -1,5 +1,6 @@
 import { getActivityStats, getBadges, getMissionTree, getRank, mergeManualBadges } from '../../data/profileProgress';
 import { tasteProfiles } from '../../data/tasteTest';
+import { getJsonStorageItem, getStorageItem, setStorageItem } from '../../lib/browserStorage';
 
 export function getFallbackNickname(user) {
   return user?.user_metadata?.nickname || user?.email?.split('@')[0] || '탐사 대원';
@@ -15,7 +16,7 @@ export function activityTitle(activity) {
 
 export function mapLocalWorkStatuses(userId) {
   if (!userId) return [];
-  const localWorkStatuses = JSON.parse(localStorage.getItem(`sf-work-statuses:${userId}`) || '{}');
+  const localWorkStatuses = getJsonStorageItem(`sf-work-statuses:${userId}`, {});
   return Object.entries(localWorkStatuses).map(([workCode, readStatus]) => ({
     work_code: workCode,
     work_title: workCode,
@@ -24,11 +25,11 @@ export function mapLocalWorkStatuses(userId) {
 }
 
 export function getSelectedMissionRoute(userId) {
-  return userId ? localStorage.getItem(`sf-selected-mission-route:${userId}`) || '' : '';
+  return userId ? getStorageItem(`sf-selected-mission-route:${userId}`, '') : '';
 }
 
 export function setSelectedMissionRoute(userId, routeId) {
-  if (userId) localStorage.setItem(`sf-selected-mission-route:${userId}`, routeId);
+  if (userId) setStorageItem(`sf-selected-mission-route:${userId}`, routeId);
 }
 
 function getLatestTasteProfile(activities) {

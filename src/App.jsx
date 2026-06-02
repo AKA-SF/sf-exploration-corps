@@ -6,6 +6,7 @@ import './App.css';
 import Navbar from './components/Navbar';
 import InteractiveBackground from './components/InteractiveBackground';
 import { AuthProvider } from './context/AuthContext';
+import { getStorageItem, setStorageItem } from './lib/browserStorage';
 
 const Home = lazy(() => import('./pages/Home'));
 const ExplorationLog = lazy(() => import('./pages/ExplorationLog'));
@@ -32,7 +33,7 @@ function RouteLoader() {
 
 function App() {
   const location = useLocation();
-  const [siteMode, setSiteMode] = useState(() => localStorage.getItem('sf-site-mode') || 'console');
+  const [siteMode, setSiteMode] = useState(() => getStorageItem('sf-site-mode', 'console'));
   const isAdminSurface = location.pathname.startsWith('/admin');
   const isDesktopSurface = location.pathname === '/'
     || location.pathname.startsWith('/works')
@@ -45,7 +46,7 @@ function App() {
     || location.pathname.startsWith('/admin');
 
   useEffect(() => {
-    localStorage.setItem('sf-site-mode', siteMode);
+    setStorageItem('sf-site-mode', siteMode);
     document.body.classList.toggle('reading-mode-active', siteMode === 'reading');
     return () => {
       document.body.classList.remove('reading-mode-active');

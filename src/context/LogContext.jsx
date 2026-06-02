@@ -1,16 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useState, useContext, useEffect } from 'react';
+import { getJsonStorageItem, setJsonStorageItem } from '../lib/browserStorage';
 
 const LogContext = createContext();
 
 export const LogProvider = ({ children }) => {
   // 로컬 스토리지에서 기존 로그를 불러오거나 기본값 사용
   const [logs, setLogs] = useState(() => {
-    const saved = localStorage.getItem('sf_exploration_logs_v3');
-    if (saved) {
-      return JSON.parse(saved);
-    }
-    return [
+    return getJsonStorageItem('sf_exploration_logs_v3', [
       { 
         id: "LOG-A92", 
         title: "Blade Runner 2049", 
@@ -29,15 +26,11 @@ export const LogProvider = ({ children }) => {
         ideas: ["미래 상상력", "기술 공포"],
         memo: "도구의 발견과 진화"
       },
-    ];
+    ]);
   });
 
   const [networkLogs, setNetworkLogs] = useState(() => {
-    const saved = localStorage.getItem('sf_network_logs_v1');
-    if (saved) {
-      return JSON.parse(saved);
-    }
-    return [
+    return getJsonStorageItem('sf_network_logs_v1', [
       {
         id: "NET-X01",
         explorerId: "USR-109B",
@@ -79,7 +72,7 @@ export const LogProvider = ({ children }) => {
         encryptionLevel: 4, // Needs at least 4 personal logs to unlock
         responseSignals: []
       }
-    ];
+    ]);
   });
 
   const [currentSystemState, setCurrentSystemState] = useState({
@@ -89,11 +82,11 @@ export const LogProvider = ({ children }) => {
   });
 
   useEffect(() => {
-    localStorage.setItem('sf_exploration_logs_v3', JSON.stringify(logs));
+    setJsonStorageItem('sf_exploration_logs_v3', logs);
   }, [logs]);
 
   useEffect(() => {
-    localStorage.setItem('sf_network_logs_v1', JSON.stringify(networkLogs));
+    setJsonStorageItem('sf_network_logs_v1', networkLogs);
   }, [networkLogs]);
 
   const addLog = (log) => {

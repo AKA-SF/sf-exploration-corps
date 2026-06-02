@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { AuthContext } from './authContextValue';
 import { isSupabaseConfigured } from '../lib/supabaseConfig';
 import { recordDailyLoginBonus } from '../lib/activityLogger';
+import { getStorageItem, setStorageItem } from '../lib/browserStorage';
 
 export function AuthProvider({ children }) {
   const [session, setSession] = useState(null);
@@ -51,10 +52,10 @@ export function AuthProvider({ children }) {
 
     const todayKey = new Date().toLocaleDateString('sv-SE');
     const storageKey = `sf-daily-login-bonus:${user.id}:${todayKey}`;
-    if (localStorage.getItem(storageKey)) return;
+    if (getStorageItem(storageKey, '')) return;
 
     recordDailyLoginBonus(user).then(result => {
-      if (result?.ok) localStorage.setItem(storageKey, '1');
+      if (result?.ok) setStorageItem(storageKey, '1');
     });
   }, [session]);
 

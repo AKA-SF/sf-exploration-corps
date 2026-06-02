@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { recordUserActivity } from '../../lib/activityLogger';
+import { setJsonStorageItem } from '../../lib/browserStorage';
 import { supabase } from '../../lib/supabaseClient';
 
 const emptyWorkSubmitForm = {
@@ -45,7 +46,7 @@ export default function useWorkArchiveInteractions({
         if (!isMounted || error) return;
         const nextStatuses = Object.fromEntries((data ?? []).map(item => [item.work_code, item.status]));
         setWorkStatuses(nextStatuses);
-        localStorage.setItem(localKey, JSON.stringify(nextStatuses));
+        setJsonStorageItem(localKey, nextStatuses);
       });
 
     return () => {
@@ -157,7 +158,7 @@ export default function useWorkArchiveInteractions({
     const localKey = `sf-work-statuses:${user.id}`;
     const nextStatuses = { ...workStatuses, [selectedWork.code]: nextStatus };
     setWorkStatuses(nextStatuses);
-    localStorage.setItem(localKey, JSON.stringify(nextStatuses));
+    setJsonStorageItem(localKey, nextStatuses);
     setWorkStatusSaving(true);
 
     if (!supabase) {

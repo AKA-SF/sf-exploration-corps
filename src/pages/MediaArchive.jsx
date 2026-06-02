@@ -4,6 +4,7 @@ import { Link, useParams } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
 import { recordUserActivity } from '../lib/activityLogger';
+import { getStorageItem, setStorageItem } from '../lib/browserStorage';
 import './MediaArchive.css';
 
 const mediaCategories = [
@@ -46,7 +47,7 @@ export default function MediaArchive() {
   const recordMissionSignal = useCallback(async item => {
     if (!user) return;
     const storageKey = `sf-mission-signal:${user.id}:media:${item.code}`;
-    if (localStorage.getItem(storageKey)) return;
+    if (getStorageItem(storageKey, '')) return;
     const result = await recordUserActivity(user, {
       actionType: 'media_visit',
       points: 3,
@@ -57,7 +58,7 @@ export default function MediaArchive() {
         node: 'media-archive',
       },
     });
-    if (result?.ok) localStorage.setItem(storageKey, '1');
+    if (result?.ok) setStorageItem(storageKey, '1');
   }, [activeCategory.label, user]);
 
   useEffect(() => {
