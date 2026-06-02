@@ -1,4 +1,5 @@
 import { useParams } from 'react-router-dom';
+import { useMemo } from 'react';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
 import { getRandomWorks } from './home/homeUtils';
@@ -13,6 +14,38 @@ import useWorksArchivePage from './works/useWorksArchivePage';
 import './WorksArchive.css';
 import './home/WorksArchiveSection.css';
 import '../styles/MobileExperience.css';
+
+function getWorkSearchText(work) {
+  return [
+    work.title,
+    work.subtitle,
+    work.medium,
+    work.category,
+    ...(work.tags ?? []),
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+
+function getRelatedWorks(work, works) {
+  if (!work) return [];
+  const keywords = [work.medium, ...(work.tags ?? []), ...String(work.subtitle ?? '').split(/[,\s/]+/)]
+    .filter(Boolean)
+    .map(keyword => String(keyword).trim().toLowerCase())
+    .filter(keyword => keyword.length > 1);
+
+  return works
+    .filter(item => item.code !== work.code)
+    .map(item => {
+      const text = getWorkSearchText(item);
+      const score = keywords.reduce((total, keyword) => (
+        text.includes(keyword.replace(/\s/g, '')) || text.includes(keyword) ? total + 1 : total
+      ), 0);
+      return { item, score };
+    })
+    .filter(entry => entry.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map(entry => entry.item)
+    .slice(0, 3);
+}
 
 export default function WorksArchive() {
   const { user } = useAuth();
@@ -54,6 +87,7 @@ export default function WorksArchive() {
     setWorks,
     user,
   });
+  const relatedWorks = useMemo(() => getRelatedWorks(selectedWork, visibleWorks), [selectedWork, visibleWorks]);
 
   return (
     <PageTransition className="works-full-page">
@@ -99,7 +133,9 @@ export default function WorksArchive() {
         onClose={closeWorkDetail}
         onCommentSubmit={submitWorkComment}
         onCommentTextChange={setCommentText}
+        onRelatedWorkOpen={openWorkDetail}
         onWorkStatusChange={updateWorkStatus}
+        relatedWorks={relatedWorks}
         user={user}
         work={selectedWork}
         workStatus={selectedWork ? workStatuses[selectedWork.code] : ''}

@@ -509,6 +509,53 @@
   color: var(--text-muted);
 }
 
+.profile-reading-shelves {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.profile-reading-shelves article {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+  border: 1px solid rgba(0, 255, 255, 0.13);
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.26);
+}
+
+.profile-reading-shelves span {
+  color: var(--primary-cyan);
+  font-size: 8px;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+}
+
+.profile-reading-shelves strong {
+  color: var(--text-main);
+  font-size: 14px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.profile-reading-shelves p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.profile-reading-shelves a {
+  width: fit-content;
+  margin-top: 4px;
+  color: var(--primary-cyan);
+  font-size: 10px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
 .profile-activity-summary {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -941,6 +988,7 @@
 
 .reading-mode .profile-onboarding-step,
 .reading-mode .profile-hub-grid article,
+.reading-mode .profile-reading-shelves article,
 .reading-mode .profile-dashboard-actions a,
 .reading-mode .profile-dashboard-actions span {
   border-color: rgba(47, 111, 120, 0.18);
@@ -987,6 +1035,7 @@
   .profile-hub-grid,
   .profile-activity-summary,
   .profile-reading-grid,
+  .profile-reading-shelves,
   .mission-training-grid,
   .mission-route-grid,
   .profile-badge-grid,

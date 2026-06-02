@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import PageTransition from '../components/PageTransition';
 import { useActivityToast } from '../context/activityToastContextValue';
 import { useAuth } from '../context/authContextValue';
@@ -47,6 +47,46 @@ import './home/ConceptDictionarySection.css';
 import './home/CommunitySection.css';
 import './home/HomeResponsive.css';
 import '../styles/MobileExperience.css';
+
+function getSignalSearchText(item) {
+  return [
+    item?.title,
+    item?.term,
+    item?.english,
+    item?.subtitle,
+    item?.medium,
+    item?.category,
+    item?.summary,
+    item?.content,
+    item?.author,
+    ...(item?.tags ?? []),
+    ...(item?.keywords ?? []),
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+
+function getRelatedItemsForWork(work, items, limit = 4) {
+  if (!work) return [];
+  const keywords = [
+    work.title,
+    work.medium,
+    ...(work.tags ?? []),
+    ...String(work.subtitle ?? '').split(/[,\s/]+/),
+  ].filter(Boolean).map(keyword => String(keyword).trim().toLowerCase()).filter(keyword => keyword.length > 1);
+
+  return items
+    .filter(item => item && item.code !== work.code)
+    .map(item => {
+      const text = getSignalSearchText(item);
+      const score = keywords.reduce((total, keyword) => (
+        text.includes(keyword.replace(/\s/g, '')) || text.includes(keyword) ? total + 1 : total
+      ), 0);
+      return { item, score };
+    })
+    .filter(entry => entry.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map(entry => entry.item)
+    .slice(0, limit);
+}
 
 export default function Home() {
   const { user } = useAuth();
@@ -130,6 +170,7 @@ export default function Home() {
     minimapViewport,
     openCoordinateLogModal,
     relatedCoordinateIds,
+    recommendedRoutes,
     resetCoordinateMap,
     selectedCoordinate,
     selectedCoordinateConcepts,
@@ -151,6 +192,11 @@ export default function Home() {
       closeWorkSubmit: () => workArchiveControls.setIsWorkSubmitOpen(false),
     },
   });
+  const workDetailRecommendations = useMemo(() => ({
+    concepts: getRelatedItemsForWork(selectedWork, concepts, 3),
+    questions: getRelatedItemsForWork(selectedWork, dashboard.questions, 3),
+    works: getRelatedItemsForWork(selectedWork, works, 3),
+  }), [concepts, dashboard.questions, selectedWork, works]);
   const recordTasteComplete = useCallback((tasteProfileResult) => recordMissionSignal(`taste:${tasteProfileResult.code}`, {
     actionType: 'taste_test',
     points: 10,
@@ -235,9 +281,10 @@ export default function Home() {
         metrics={metrics}
         onResetCoordinateMap={resetCoordinateMap}
         recentSignals={recentSignals}
+        todaySignal={metrics.todaySignal}
       />
 
-      <ArchiveDock archiveCards={archiveCards} onResetCoordinateMap={resetCoordinateMap} />
+      <ArchiveDock archiveCards={archiveCards} metrics={metrics} onResetCoordinateMap={resetCoordinateMap} />
 
       <TasteTestSection
         onAnswer={updateTasteAnswer}
@@ -292,6 +339,7 @@ export default function Home() {
         onReset={resetCoordinateMap}
         onViewChange={setMapView}
         relatedCoordinateIds={relatedCoordinateIds}
+        recommendedRoutes={recommendedRoutes}
         selectedCoordinate={selectedCoordinate}
         selectedCoordinateConcepts={selectedCoordinateConcepts}
         selectedCoordinateId={selectedCoordinateId}
@@ -331,7 +379,11 @@ export default function Home() {
 
       <ContactSection contactChannels={contactChannels} />
 
-      <HomeModals user={user} {...modalProps} />
+      <HomeModals
+        user={user}
+        workDetailRecommendations={workDetailRecommendations}
+        {...modalProps}
+      />
     </PageTransition>
   );
 }

@@ -24,6 +24,7 @@ export default function CoordinatesSection({
   onReset,
   onViewChange,
   relatedCoordinateIds,
+  recommendedRoutes,
   selectedCoordinate,
   selectedCoordinateBoardQuestions,
   selectedCoordinateConcepts,
@@ -114,6 +115,24 @@ export default function CoordinatesSection({
               <Send size={16} />
               탐사 로그 작성
             </button>
+            <div className="coordinate-panel-section">
+              <span>RECOMMENDED ROUTES</span>
+              <div className="coordinate-recommend-route-list">
+                {recommendedRoutes.map(route => (
+                  <article key={route.id}>
+                    <strong>{route.title}</strong>
+                    <p>{route.description}</p>
+                    <div>
+                      {route.nodes.map(node => (
+                        <button key={node.id} onClick={() => onNodeSelect(node)} type="button">
+                          {node.label}
+                        </button>
+                      ))}
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </div>
             <div className="coordinate-panel-section">
               <span>CONNECTED ROUTES</span>
               {selectedCoordinateRoutes.length > 0 ? (

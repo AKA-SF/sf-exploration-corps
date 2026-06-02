@@ -155,6 +155,7 @@ export default function HeroSection({
   metrics,
   onResetCoordinateMap,
   recentSignals,
+  todaySignal,
 }) {
   return (
     <main className="home-stage" id="top">
@@ -183,11 +184,11 @@ export default function HeroSection({
           </div>
           <aside className="hero-signal-banner" aria-label="추천 신호 배너">
             <div>
-              <span className="mono">SPONSORED SIGNAL / BOOK PICK</span>
-              <strong>이번 주 탐사 추천 좌표</strong>
-              <p>고전 SF와 최신 한국 SF를 연결하는 큐레이션 슬롯</p>
+              <span className="mono">TODAY'S SIGNAL</span>
+              <strong>{todaySignal?.title ?? '오늘의 탐사 신호 대기 중'}</strong>
+              <p>{todaySignal ? `${todaySignal.label} / ${todaySignal.meta}` : '작품, 개념, 미디어, 커뮤니티 신호가 연결되면 자동으로 표시됩니다.'}</p>
             </div>
-            <a href="#works-archive">
+            <a href={todaySignal?.href ?? '#works-archive'}>
               신호 확인 <ChevronRight aria-hidden="true" />
             </a>
           </aside>
@@ -214,6 +215,7 @@ export default function HeroSection({
         <Database aria-hidden="true" />
         <span>ARCHIVE STATUS</span>
         <strong>WORKS 111&nbsp;&nbsp;NODES 08&nbsp;&nbsp;SIGNAL READY</strong>
+        <em>{metrics.works} WORKS / {metrics.media} MEDIA / {metrics.questions} POSTS</em>
       </div>
     </main>
   );

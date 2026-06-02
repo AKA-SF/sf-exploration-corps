@@ -42,7 +42,8 @@
 
 .dock-card span,
 .dock-card strong,
-.dock-card em {
+.dock-card em,
+.dock-card small {
   display: block;
 }
 
@@ -52,12 +53,25 @@
   font-weight: 900;
 }
 
-.dock-card em {
+.dock-card em,
+.dock-card small {
   color: #a9bcc3;
   font-size: 12px;
   font-style: normal;
   font-weight: 700;
   line-height: 1.55;
+}
+
+.dock-card small {
+  width: fit-content;
+  margin-top: 8px;
+  border: 1px solid rgba(25, 247, 241, 0.18);
+  padding: 4px 6px;
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.6px;
 }
 
 .dock-card > svg:last-child {

@@ -22,6 +22,7 @@ export default function useHomeModalProps({
       onCommentSubmit: workArchive.submitWorkComment,
       onCommentTextChange: workArchive.setCommentText,
       onDetailClose: workArchive.closeWorkDetail,
+      onDetailOpen: workArchive.openWorkDetail,
       onSubmit: workArchive.submitWorkArchive,
       onSubmitClose: workArchive.closeWorkSubmit,
       onSubmitFormChange: workArchive.updateWorkSubmitForm,

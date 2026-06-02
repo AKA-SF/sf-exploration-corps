@@ -6,6 +6,7 @@ export default function HomeModals({
   coordinateLog,
   user,
   workArchive,
+  workDetailRecommendations,
 }) {
   return (
     <>
@@ -40,7 +41,11 @@ export default function HomeModals({
         onClose={workArchive.onDetailClose}
         onCommentSubmit={workArchive.onCommentSubmit}
         onCommentTextChange={workArchive.onCommentTextChange}
+        onRelatedWorkOpen={workArchive.onDetailOpen}
         onWorkStatusChange={workArchive.onWorkStatusChange}
+        relatedConcepts={workDetailRecommendations?.concepts}
+        relatedQuestions={workDetailRecommendations?.questions}
+        relatedWorks={workDetailRecommendations?.works}
         user={user}
         work={workArchive.selectedWork}
         workStatus={workArchive.selectedWork ? workArchive.statuses[workArchive.selectedWork.code] : ''}

@@ -10,6 +10,27 @@ const externalNodeSlots = [
   { x: 50, y: 92 },
 ];
 
+const coordinateRoutePresets = [
+  {
+    id: 'starter-route',
+    title: '입문자 경로',
+    description: '사회적 상상력에서 시간과 타자성으로 이어지는 가장 읽기 쉬운 루트입니다.',
+    nodeIds: ['society-politics', 'time-history', 'alien-other'],
+  },
+  {
+    id: 'deep-reading-route',
+    title: '깊게 읽기 경로',
+    description: '과학성, 신체 변화, 기술 미학을 따라 SF의 개념 밀도를 높입니다.',
+    nodeIds: ['science-epistemology', 'life-body', 'tech-punk'],
+  },
+  {
+    id: 'cosmic-route',
+    title: '우주 감각 경로',
+    description: '스케일, 재난, 기괴함을 따라 우주적 거리감을 탐사합니다.',
+    nodeIds: ['space-scale', 'disaster-environment', 'horror-fantasy-weird'],
+  },
+];
+
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
 }
@@ -223,6 +244,12 @@ export default function useCoordinateMap({ concepts, questions = [], setDashboar
     x: clamp(50 + (mapView.yaw * 5) - minimapViewportWidth / 2, 4, 96 - minimapViewportWidth),
     y: clamp(50 + (mapView.pitch * 14) - minimapViewportHeight / 2, 4, 96 - minimapViewportHeight),
   };
+  const recommendedRoutes = coordinateRoutePresets.map(route => ({
+    ...route,
+    nodes: route.nodeIds
+      .map(id => genreNodes.find(node => node.id === id))
+      .filter(Boolean),
+  }));
 
   const resetCoordinateMap = () => {
     setActiveGenreId(null);
@@ -311,6 +338,7 @@ export default function useCoordinateMap({ concepts, questions = [], setDashboar
     minimapViewport,
     openCoordinateLogModal,
     relatedCoordinateIds,
+    recommendedRoutes,
     resetCoordinateMap,
     selectedCoordinate,
     selectedCoordinateBoardQuestions,

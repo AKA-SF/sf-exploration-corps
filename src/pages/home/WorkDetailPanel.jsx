@@ -1,4 +1,5 @@
-import { ChevronRight, Send } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ChevronRight, Compass, MessageSquareText, Send } from 'lucide-react';
 import ModalShell from '../../components/ModalShell';
 
 export default function WorkDetailPanel({
@@ -9,7 +10,11 @@ export default function WorkDetailPanel({
   onClose,
   onCommentSubmit,
   onCommentTextChange,
+  onRelatedWorkOpen,
   onWorkStatusChange,
+  relatedConcepts = [],
+  relatedQuestions = [],
+  relatedWorks = [],
   user,
   work,
   workStatus,
@@ -77,10 +82,49 @@ export default function WorkDetailPanel({
                   </button>
                 ))}
               </div>
-              {!user && <em>로그인하면 독서 상태를 저장할 수 있습니다.</em>}
+              {!user && (
+                <em>
+                  로그인하면 독서 상태를 저장하고 내 탐사 프로필에 모을 수 있습니다.
+                  <Link to="/login"> 로그인하기</Link>
+                </em>
+              )}
             </div>
           </div>
         </div>
+
+        <section className="work-related-section">
+          <div className="work-comment-head">
+            <span>NEXT SIGNAL ROUTES</span>
+            <strong>이어지는 탐사</strong>
+          </div>
+          <div className="work-related-grid">
+            <article>
+              <span><Compass aria-hidden="true" /> 비슷한 작품</span>
+              {relatedWorks.length > 0 ? relatedWorks.map(item => (
+                <button key={item.code} onClick={() => onRelatedWorkOpen?.(item)} type="button">
+                  <strong>{item.title}</strong>
+                  <em>{item.medium}</em>
+                </button>
+              )) : <p>같은 태그의 작품 신호가 아직 부족합니다.</p>}
+              <a href="#coordinates" onClick={onClose}>이 작품과 비슷한 좌표 보기</a>
+            </article>
+            <article>
+              <span><MessageSquareText aria-hidden="true" /> 관련 개념/토론</span>
+              {relatedConcepts.length > 0 ? relatedConcepts.map(concept => (
+                <a href="#concept-dictionary" key={concept.code} onClick={onClose}>
+                  <strong>{concept.term}</strong>
+                  <em>{concept.english || concept.category}</em>
+                </a>
+              )) : <p>연결된 개념 신호가 더 쌓이면 표시됩니다.</p>}
+              {relatedQuestions.length > 0 ? relatedQuestions.map(question => (
+                <Link key={question.id || question.title} to={question.id ? `/questions/${question.id}` : '/questions'}>
+                  <strong>{question.title}</strong>
+                  <em>{question.category || '커뮤니티'}</em>
+                </Link>
+              )) : <Link to="/questions">이 작품으로 토론 열기</Link>}
+            </article>
+          </div>
+        </section>
 
         <section className="work-comment-section">
           <div className="work-comment-head">
@@ -113,6 +157,7 @@ export default function WorkDetailPanel({
               댓글 저장
             </button>
           </form>
+          {!user && <Link className="work-login-cta" to="/login">로그인하고 댓글 남기기</Link>}
           {commentMessage && <p className={`work-comment-message is-${commentStatus}`}>{commentMessage}</p>}
         </section>
       </article>

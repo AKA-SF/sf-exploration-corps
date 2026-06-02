@@ -121,6 +121,7 @@ export default function Profile() {
           <ProfileReadingPanel
             latestWorkStatus={latestWorkStatus}
             statusCounts={statusCounts}
+            workStatuses={workStatuses}
             workStatusLabels={workStatusLabels}
           />
           <ProfileBadgeSummary badges={badges} />
