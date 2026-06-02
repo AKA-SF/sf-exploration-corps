@@ -122,7 +122,14 @@ export default function Home() {
     questionStatus,
     submitQuestion,
     updateQuestionForm,
-  } = useCommunityComposer({ user });
+  } = useCommunityComposer({
+    onQuestionCreated: question => setDashboard(state => ({
+      ...state,
+      questions: [question, ...state.questions],
+      status: { ...state.status, questions: true },
+    })),
+    user,
+  });
   const workArchiveControls = useWorkArchiveInteractions({
     getRandomWorks,
     setRandomWorkCodes,
@@ -374,6 +381,7 @@ export default function Home() {
           questionForm={questionForm}
           questionMessage={questionMessage}
           questionStatus={questionStatus}
+          questions={dashboard.questions}
         />
       </div>
 

@@ -10,7 +10,7 @@ const initialQuestionForm = {
   category: '자유글',
 };
 
-export default function useCommunityComposer({ user }) {
+export default function useCommunityComposer({ onQuestionCreated, user }) {
   const { showActivityToast } = useActivityToast();
   const [questionForm, setQuestionForm] = useState(initialQuestionForm);
   const [questionStatus, setQuestionStatus] = useState('idle');
@@ -67,6 +67,14 @@ export default function useCommunityComposer({ user }) {
       setQuestionForm(initialQuestionForm);
       setQuestionStatus('success');
       setQuestionMessage('새 글이 저장되었습니다. +20 MP가 반영됩니다.');
+      onQuestionCreated?.({
+        author: getCommunityAuthorName(user),
+        category: questionForm.category,
+        content: questionForm.content,
+        createdAt: new Date().toISOString(),
+        id: '',
+        title: questionForm.title,
+      });
       showActivityToast({
         detail: `${questionForm.category} 게시글 신호가 커뮤니티에 저장되었습니다.`,
         points: 20,
