@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Send } from 'lucide-react';
 
 const CoordinateUniverse = lazy(() => import('../../components/CoordinateUniverse'));
@@ -24,9 +25,11 @@ export default function CoordinatesSection({
   onViewChange,
   relatedCoordinateIds,
   selectedCoordinate,
+  selectedCoordinateBoardQuestions,
   selectedCoordinateConcepts,
   selectedCoordinateId,
   selectedCoordinateQuestions,
+  selectedCoordinateRoutes,
   selectedCoordinateWorks,
   visibleConnections,
 }) {
@@ -112,6 +115,26 @@ export default function CoordinatesSection({
               탐사 로그 작성
             </button>
             <div className="coordinate-panel-section">
+              <span>CONNECTED ROUTES</span>
+              {selectedCoordinateRoutes.length > 0 ? (
+                <div className="coordinate-route-list">
+                  {selectedCoordinateRoutes.map(node => (
+                    <button
+                      className="coordinate-route-item"
+                      key={node.id}
+                      onClick={() => onNodeSelect(node)}
+                      type="button"
+                    >
+                      <strong>{node.label}</strong>
+                      <em>{node.en}</em>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <p className="coordinate-empty-note">중심 좌표를 선택하면 연결 항로가 표시됩니다.</p>
+              )}
+            </div>
+            <div className="coordinate-panel-section">
               <span>RELATED WORKS</span>
               {selectedCoordinateWorks.length > 0 ? (
                 <div className="coordinate-work-list">
@@ -140,6 +163,25 @@ export default function CoordinatesSection({
               <ul className="coordinate-question-list">
                 {selectedCoordinateQuestions.map(question => <li key={question}>{question}</li>)}
               </ul>
+            </div>
+            <div className="coordinate-panel-section">
+              <span>BOARD SIGNALS</span>
+              {selectedCoordinateBoardQuestions.length > 0 ? (
+                <div className="coordinate-board-list">
+                  {selectedCoordinateBoardQuestions.map(question => (
+                    <Link
+                      className="coordinate-board-item"
+                      key={question.id || question.title}
+                      to={question.id ? `/questions/${question.id}` : '/questions'}
+                    >
+                      <strong>{question.title}</strong>
+                      <em>{question.category || '커뮤니티'}</em>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="coordinate-empty-note">이 좌표와 연결된 커뮤니티 글이 아직 없습니다.</p>
+              )}
             </div>
             <div className="coordinate-panel-section">
               <span>RELATED CONCEPTS</span>

@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import PageTransition from '../components/PageTransition';
+import { useActivityToast } from '../context/activityToastContextValue';
 import { useAuth } from '../context/authContextValue';
 import { recordUserActivity } from '../lib/activityLogger';
 import { getStorageItem, setStorageItem } from '../lib/browserStorage';
@@ -49,6 +50,7 @@ import '../styles/MobileExperience.css';
 
 export default function Home() {
   const { user } = useAuth();
+  const { showActivityToast } = useActivityToast();
   const archiveMode = 'random';
   const {
     activeConceptCode,
@@ -101,11 +103,21 @@ export default function Home() {
       ...activity,
       dedupeKey: activity.dedupeKey || signalKey,
     });
-    if (result?.ok) setStorageItem(storageKey, '1');
-  }, [user]);
+    if (result?.ok) {
+      setStorageItem(storageKey, '1');
+      if (!result.skipped) {
+        showActivityToast({
+          detail: `${activity.metadata?.title || activity.genre || '탐사 활동'} 신호가 기록되었습니다.`,
+          points: activity.points ?? 0,
+          title: '탐사 기록 갱신',
+        });
+      }
+    }
+  }, [showActivityToast, user]);
 
   const coordinateControls = useCoordinateMap({
     concepts,
+    questions: dashboard.questions,
     setDashboard,
     works,
   });
@@ -122,6 +134,8 @@ export default function Home() {
     selectedCoordinate,
     selectedCoordinateConcepts,
     selectedCoordinateId,
+    selectedCoordinateRoutes,
+    selectedCoordinateBoardQuestions,
     selectedCoordinateQuestions,
     selectedCoordinateWorks,
     setMapView,
@@ -281,6 +295,8 @@ export default function Home() {
         selectedCoordinate={selectedCoordinate}
         selectedCoordinateConcepts={selectedCoordinateConcepts}
         selectedCoordinateId={selectedCoordinateId}
+        selectedCoordinateRoutes={selectedCoordinateRoutes}
+        selectedCoordinateBoardQuestions={selectedCoordinateBoardQuestions}
         selectedCoordinateQuestions={selectedCoordinateQuestions}
         selectedCoordinateWorks={selectedCoordinateWorks}
         visibleConnections={visibleConnections}

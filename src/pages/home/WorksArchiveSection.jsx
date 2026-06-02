@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { ChevronRight, Database } from 'lucide-react';
+import { ChevronRight, Database, ExternalLink, MessageSquareText } from 'lucide-react';
 
 export default function WorksArchiveSection({
   displayedWorks,
@@ -74,15 +74,6 @@ export default function WorksArchiveSection({
                 <article
                   className={`work-card ${selectedWork?.code === work.code ? 'is-expanded' : ''} ${work.cover ? 'has-cover' : ''}`}
                   key={work.code}
-                  onClick={() => onOpenWorkDetail(work)}
-                  onKeyDown={event => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      onOpenWorkDetail(work);
-                    }
-                  }}
-                  role="button"
-                  tabIndex={0}
                 >
                   <div className="work-card-top">
                     <span>{work.code}</span>
@@ -100,18 +91,29 @@ export default function WorksArchiveSection({
                     {work.tags.map(tag => <span key={tag}>{tag}</span>)}
                   </div>
                   <div className="work-card-footer">
-                    <span>DETAIL / COMMENTS</span>
-                    <button
-                      className="work-detail-open"
-                      onClick={event => {
-                        event.stopPropagation();
-                        onOpenWorkDetail(work);
-                      }}
-                      type="button"
-                    >
-                      상세 보기
-                    </button>
-                    <ChevronRight aria-hidden="true" />
+                    <span>ARCHIVE ACTIONS</span>
+                    <div className="work-card-actions">
+                      <button
+                        className="work-detail-open"
+                        onClick={() => onOpenWorkDetail(work)}
+                        type="button"
+                      >
+                        <MessageSquareText aria-hidden="true" />
+                        상세/댓글
+                      </button>
+                      {work.link && (
+                        <a
+                          className="work-card-link"
+                          href={work.link}
+                          rel="noreferrer"
+                          target="_blank"
+                        >
+                          <ExternalLink aria-hidden="true" />
+                          링크
+                        </a>
+                      )}
+                    </div>
+                    <ChevronRight aria-hidden="true" className="work-card-cue" />
                   </div>
                 </article>
               ))}

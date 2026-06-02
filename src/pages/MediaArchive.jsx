@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ExternalLink, Play, Search, Sparkles } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
+import { useActivityToast } from '../context/activityToastContextValue';
 import { useAuth } from '../context/authContextValue';
 import { recordUserActivity } from '../lib/activityLogger';
 import { getStorageItem, setStorageItem } from '../lib/browserStorage';
@@ -39,6 +40,7 @@ function sortMediaByLatest(items) {
 
 export default function MediaArchive() {
   const { user } = useAuth();
+  const { showActivityToast } = useActivityToast();
   const { categorySlug = 'interviews' } = useParams();
   const [items, setItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -60,8 +62,17 @@ export default function MediaArchive() {
         node: 'media-archive',
       },
     });
-    if (result?.ok) setStorageItem(storageKey, '1');
-  }, [activeCategory.label, user]);
+    if (result?.ok) {
+      setStorageItem(storageKey, '1');
+      if (!result.skipped) {
+        showActivityToast({
+          detail: `${item.title} 미디어 신호를 열람했습니다.`,
+          points: 3,
+          title: '미디어 아카이브 접속',
+        });
+      }
+    }
+  }, [activeCategory.label, showActivityToast, user]);
 
   useEffect(() => {
     let isMounted = true;

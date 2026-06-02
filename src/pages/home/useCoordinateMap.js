@@ -65,6 +65,37 @@ function findRelatedConceptsForNode(node, concepts) {
     .slice(0, 4);
 }
 
+function getQuestionSearchText(question) {
+  return [
+    question.title,
+    question.content,
+    question.summary,
+    question.category,
+    question.author,
+  ].filter(Boolean).join(' ').toLowerCase();
+}
+
+function findRelatedBoardQuestionsForNode(node, questions = []) {
+  const keywords = [node.label, node.en, ...(node.keywords ?? []), ...(node.concepts ?? [])]
+    .filter(Boolean)
+    .map(keyword => keyword.toLowerCase());
+
+  return questions
+    .map(question => {
+      const searchText = getQuestionSearchText(question);
+      const score = keywords.reduce((total, keyword) => (
+        searchText.includes(keyword.replace(/\s/g, '').toLowerCase()) || searchText.includes(keyword)
+          ? total + 1
+          : total
+      ), 0);
+      return { question, score };
+    })
+    .filter(item => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map(item => item.question)
+    .slice(0, 3);
+}
+
 function clampPosition(value) {
   return clamp(value, 6, 94);
 }
@@ -114,7 +145,7 @@ function getRootSecondaryConnections() {
   return [...connectionSet].map(item => item.split('::'));
 }
 
-export default function useCoordinateMap({ concepts, setDashboard, works }) {
+export default function useCoordinateMap({ concepts, questions = [], setDashboard, works }) {
   const [activeGenreId, setActiveGenreId] = useState(null);
   const [selectedCoordinateId, setSelectedCoordinateId] = useState('');
   const [mapView, setMapView] = useState({ yaw: -0.24, pitch: 0.18, zoom: 1 });
@@ -172,6 +203,13 @@ export default function useCoordinateMap({ concepts, setDashboard, works }) {
   const hasCoordinateFocus = Boolean(selectedCoordinateId);
   const selectedCoordinateWorks = findRelatedWorksForNode(selectedCoordinate, works);
   const selectedCoordinateConcepts = findRelatedConceptsForNode(selectedCoordinate, concepts);
+  const selectedCoordinateBoardQuestions = findRelatedBoardQuestionsForNode(selectedCoordinate, questions);
+  const selectedCoordinateRoutes = selectedCoordinateConnections
+    .map(([from, to]) => (from === selectedCoordinate.id ? to : from))
+    .filter(id => id !== selectedCoordinate.id)
+    .map(id => mapPositions.find(node => node.id === id))
+    .filter(Boolean)
+    .slice(0, 5);
   const selectedCoordinateQuestions = selectedCoordinate.questions?.length
     ? selectedCoordinate.questions
     : ['이 좌표는 어떤 인간 이후의 조건을 상상하게 만드는가?'];
@@ -275,9 +313,11 @@ export default function useCoordinateMap({ concepts, setDashboard, works }) {
     relatedCoordinateIds,
     resetCoordinateMap,
     selectedCoordinate,
+    selectedCoordinateBoardQuestions,
     selectedCoordinateConcepts,
     selectedCoordinateId,
     selectedCoordinateQuestions,
+    selectedCoordinateRoutes,
     selectedCoordinateWorks,
     setCoordinateLogUrl,
     setIsLogModalOpen,

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useActivityToast } from '../../context/activityToastContextValue';
 import { recordUserActivity } from '../../lib/activityLogger';
 import { getCommunityAuthHeaders } from './communityApi';
 import { getCommunityAuthorName, getCommunityOwnerToken } from './communityIdentity';
@@ -30,6 +31,7 @@ const getOwnerToken = user => {
 };
 
 export default function useQuestionsBoard({ onQuestionDeleted, questionId, user }) {
+  const { showActivityToast } = useActivityToast();
   const [questions, setQuestions] = useState(fallbackQuestions);
   const [activeQuestion, setActiveQuestion] = useState(null);
   const [comments, setComments] = useState([]);
@@ -179,6 +181,11 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
       setQuestionForm(emptyQuestionForm);
       setQuestionStatus('success');
       setQuestionMessage('새 글이 저장되었습니다. +20 MP가 반영됩니다.');
+      showActivityToast({
+        detail: `${questionForm.category} 게시글이 커뮤니티에 저장되었습니다.`,
+        points: 20,
+        title: '커뮤니티 교신 기록',
+      });
       loadQuestions();
     } catch (error) {
       setQuestionStatus('error');
@@ -237,6 +244,11 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
       }
       setCommentStatus('success');
       setCommentMessage('댓글이 저장되었습니다. +10 MP가 반영됩니다.');
+      showActivityToast({
+        detail: `${activeQuestion?.title ?? '커뮤니티 글'}에 댓글 신호를 남겼습니다.`,
+        points: 10,
+        title: '댓글 교신 수신',
+      });
     } catch (error) {
       setCommentStatus('error');
       setCommentMessage(error.message);

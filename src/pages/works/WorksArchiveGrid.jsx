@@ -1,4 +1,4 @@
-import { BookOpen, ExternalLink } from 'lucide-react';
+import { BookOpen, ExternalLink, MessageSquareText } from 'lucide-react';
 
 export default function WorksArchiveGrid({
   activeCategory,
@@ -13,15 +13,6 @@ export default function WorksArchiveGrid({
         <article
           className="works-full-card"
           key={work.code}
-          onClick={() => onOpenWorkDetail(work)}
-          onKeyDown={event => {
-            if (event.key === 'Enter' || event.key === ' ') {
-              event.preventDefault();
-              onOpenWorkDetail(work);
-            }
-          }}
-          role="button"
-          tabIndex={0}
         >
           <div className="works-full-card-top">
             <span>{work.code}</span>
@@ -41,17 +32,23 @@ export default function WorksArchiveGrid({
             {(Array.isArray(work.tags) ? work.tags : []).map(tag => <span key={tag}>{tag}</span>)}
           </div>
           <div className="works-full-link">
-            <span>DETAIL / COMMENTS</span>
-            {work.link && (
-              <a
-                href={work.link}
-                onClick={event => event.stopPropagation()}
-                rel="noreferrer"
-                target="_blank"
-              >
-                ARCHIVE LINK <ExternalLink aria-hidden="true" />
-              </a>
-            )}
+            <span>ARCHIVE ACTIONS</span>
+            <div className="works-full-actions">
+              <button onClick={() => onOpenWorkDetail(work)} type="button">
+                <MessageSquareText aria-hidden="true" />
+                상세/댓글
+              </button>
+              {work.link && (
+                <a
+                  href={work.link}
+                  rel="noreferrer"
+                  target="_blank"
+                >
+                  <ExternalLink aria-hidden="true" />
+                  링크
+                </a>
+              )}
+            </div>
           </div>
         </article>
       )) : (

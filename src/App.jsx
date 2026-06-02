@@ -5,6 +5,7 @@ import './App.css';
 
 import Navbar from './components/Navbar';
 import InteractiveBackground from './components/InteractiveBackground';
+import { ActivityToastProvider } from './context/ActivityToastContext';
 import { AuthProvider } from './context/AuthContext';
 import { getStorageItem, setStorageItem } from './lib/browserStorage';
 
@@ -67,52 +68,54 @@ function App() {
 
   return (
     <AuthProvider>
-      <div className={`${isAdminSurface ? 'mobile-container desktop-admin' : isDesktopSurface ? 'mobile-container desktop-home' : 'mobile-container'} ${isAdminSurface ? 'admin-mode' : isReadingMode ? 'reading-mode' : 'console-mode'} ${isLowPowerSurface ? 'low-power-surface' : ''}`}>
-      <div className="app-wrapper">
-        {!isAdminSurface && <InteractiveBackground lowPower={isLowPowerSurface} />}
-        {isDesktopSurface && (
-          <button
-            className="site-mode-toggle"
-            onClick={() => setSiteMode(isReadingMode ? 'console' : 'reading')}
-            type="button"
-          >
-            {isReadingMode ? <TerminalSquare aria-hidden="true" /> : <BookOpen aria-hidden="true" />}
-            <span>{isReadingMode ? 'Console Mode' : 'Reading Mode'}</span>
-          </button>
-        )}
-        {!isAdminSurface && (
-          <button
-            className="viewport-mode-toggle"
-            onClick={() => setViewMode(isDesktopRequested ? 'mobile' : 'desktop')}
-            type="button"
-          >
-            {isDesktopRequested ? <Smartphone aria-hidden="true" /> : <Monitor aria-hidden="true" />}
-            <span>{isDesktopRequested ? '모바일 버전으로 전환' : 'PC 버전으로 전환'}</span>
-          </button>
-        )}
-        <div className="page-container">
-          <Suspense fallback={<RouteLoader />}>
-            <Routes location={location}>
-              <Route path="/" element={<Home />} />
-              <Route path="/works/:categorySlug" element={<WorksArchive />} />
-              <Route path="/media/:categorySlug" element={<MediaArchive />} />
-              <Route path="/exploration-log" element={<ExplorationLog />} />
-              <Route path="/questions" element={<Questions />} />
-              <Route path="/questions/:questionId" element={<Questions />} />
-              <Route path="/log" element={<LogEntry />} />
-              <Route path="/result/:id" element={<LogResult />} />
-              <Route path="/network" element={<Network />} />
-              <Route path="/network/:id" element={<NetworkDetail />} />
-              <Route path="/badges" element={<Badges />} />
-              <Route path="/profile" element={<Profile />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/admin" element={<Admin />} />
-            </Routes>
-          </Suspense>
+      <ActivityToastProvider>
+        <div className={`${isAdminSurface ? 'mobile-container desktop-admin' : isDesktopSurface ? 'mobile-container desktop-home' : 'mobile-container'} ${isAdminSurface ? 'admin-mode' : isReadingMode ? 'reading-mode' : 'console-mode'} ${isLowPowerSurface ? 'low-power-surface' : ''}`}>
+          <div className="app-wrapper">
+            {!isAdminSurface && <InteractiveBackground lowPower={isLowPowerSurface} />}
+            {isDesktopSurface && (
+              <button
+                className="site-mode-toggle"
+                onClick={() => setSiteMode(isReadingMode ? 'console' : 'reading')}
+                type="button"
+              >
+                {isReadingMode ? <TerminalSquare aria-hidden="true" /> : <BookOpen aria-hidden="true" />}
+                <span>{isReadingMode ? 'Console Mode' : 'Reading Mode'}</span>
+              </button>
+            )}
+            {!isAdminSurface && (
+              <button
+                className="viewport-mode-toggle"
+                onClick={() => setViewMode(isDesktopRequested ? 'mobile' : 'desktop')}
+                type="button"
+              >
+                {isDesktopRequested ? <Smartphone aria-hidden="true" /> : <Monitor aria-hidden="true" />}
+                <span>{isDesktopRequested ? '모바일 버전으로 전환' : 'PC 버전으로 전환'}</span>
+              </button>
+            )}
+            <div className="page-container">
+              <Suspense fallback={<RouteLoader />}>
+                <Routes location={location}>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/works/:categorySlug" element={<WorksArchive />} />
+                  <Route path="/media/:categorySlug" element={<MediaArchive />} />
+                  <Route path="/exploration-log" element={<ExplorationLog />} />
+                  <Route path="/questions" element={<Questions />} />
+                  <Route path="/questions/:questionId" element={<Questions />} />
+                  <Route path="/log" element={<LogEntry />} />
+                  <Route path="/result/:id" element={<LogResult />} />
+                  <Route path="/network" element={<Network />} />
+                  <Route path="/network/:id" element={<NetworkDetail />} />
+                  <Route path="/badges" element={<Badges />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/admin" element={<Admin />} />
+                </Routes>
+              </Suspense>
+            </div>
+            {!isAdminSurface && <Navbar />}
+          </div>
         </div>
-        {!isAdminSurface && <Navbar />}
-      </div>
-      </div>
+      </ActivityToastProvider>
     </AuthProvider>
   );
 }

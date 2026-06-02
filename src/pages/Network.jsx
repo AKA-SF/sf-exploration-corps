@@ -4,6 +4,7 @@ import { useLogs } from '../context/LogContext';
 import { Lock, Radar, Activity, Skull, AlertTriangle, Hexagon, RadioTower, SendHorizontal, MessageSquareText, Users, Zap } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import { ZoomableMap } from '../components/ZoomableMap';
+import { useActivityToast } from '../context/activityToastContextValue';
 import { useAuth } from '../context/authContextValue';
 import { recordUserActivity } from '../lib/activityLogger';
 import { supabase } from '../lib/supabaseClient';
@@ -53,6 +54,7 @@ const getSignalLine = (log, index) => {
 const Network = () => {
   const { logs, networkLogs } = useLogs();
   const { user } = useAuth();
+  const { showActivityToast } = useActivityToast();
   const navigate = useNavigate();
   const userLogCount = logs.length;
 
@@ -193,6 +195,11 @@ const Network = () => {
       genre: '네트워크 무전',
       metadata: { title: '무전 메시지 송신', body },
     });
+    showActivityToast({
+      detail: '공개 무전 채널에 새 신호를 송신했습니다.',
+      points: 4,
+      title: '무전 메시지 송신',
+    });
     setIsRadioSubmitting(false);
   };
 
@@ -237,6 +244,11 @@ const Network = () => {
       points: 3,
       genre: '네트워크 답신',
       metadata: { title: '무전 답신 송신', body, recipient: replyTarget.author_name },
+    });
+    showActivityToast({
+      detail: `${replyTarget.author_name || '탐사자'}에게 답신 신호를 보냈습니다.`,
+      points: 3,
+      title: '무전 답신 송신',
     });
     setIsRadioSubmitting(false);
   };

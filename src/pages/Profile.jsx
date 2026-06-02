@@ -7,6 +7,7 @@ import ProfileCyberIdCard from './profile/ProfileCyberIdCard';
 import ProfileHubPanel from './profile/ProfileHubPanel';
 import ProfileIdentityCard from './profile/ProfileIdentityCard';
 import ProfileMissionTree from './profile/ProfileMissionTree';
+import ProfileOnboardingPanel from './profile/ProfileOnboardingPanel';
 import { activityLabels, workStatusLabels } from './profile/profileLabels';
 import { activityTitle } from './profile/profileDataUtils';
 import {
@@ -95,11 +96,20 @@ export default function Profile() {
             user={user}
           />
 
+          <ProfileOnboardingPanel
+            latestTasteProfile={latestTasteProfile}
+            stats={stats}
+            workStatuses={workStatuses}
+          />
+
           <ProfileHubPanel
+            activitySummary={activitySummary}
             dailyLoginReceived={dailyLoginReceived}
+            latestWorkStatus={latestWorkStatus}
             nextMission={nextMission}
             points={points}
             rank={rank}
+            stats={stats}
             unlockedBadges={unlockedBadges}
             workStatuses={workStatuses}
           />

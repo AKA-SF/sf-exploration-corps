@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useActivityToast } from '../../context/activityToastContextValue';
 import { recordUserActivity } from '../../lib/activityLogger';
 import { getCommunityAuthHeaders } from '../questions/communityApi';
 import { getCommunityAuthorName, getCommunityOwnerToken } from '../questions/communityIdentity';
@@ -10,6 +11,7 @@ const initialQuestionForm = {
 };
 
 export default function useCommunityComposer({ user }) {
+  const { showActivityToast } = useActivityToast();
   const [questionForm, setQuestionForm] = useState(initialQuestionForm);
   const [questionStatus, setQuestionStatus] = useState('idle');
   const [questionMessage, setQuestionMessage] = useState('');
@@ -65,6 +67,11 @@ export default function useCommunityComposer({ user }) {
       setQuestionForm(initialQuestionForm);
       setQuestionStatus('success');
       setQuestionMessage('새 글이 저장되었습니다. +20 MP가 반영됩니다.');
+      showActivityToast({
+        detail: `${questionForm.category} 게시글 신호가 커뮤니티에 저장되었습니다.`,
+        points: 20,
+        title: '커뮤니티 교신 기록',
+      });
     } catch (error) {
       setQuestionStatus('error');
       setQuestionMessage(error.message);

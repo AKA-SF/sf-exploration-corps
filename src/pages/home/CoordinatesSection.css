@@ -706,12 +706,16 @@
   letter-spacing: 1.5px;
 }
 
-.coordinate-work-list {
+.coordinate-work-list,
+.coordinate-route-list,
+.coordinate-board-list {
   display: grid;
   gap: 8px;
 }
 
-.coordinate-work-item {
+.coordinate-work-item,
+.coordinate-route-item,
+.coordinate-board-item {
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 10px;
@@ -723,7 +727,16 @@
   text-decoration: none;
 }
 
-.coordinate-work-item strong {
+.coordinate-route-item {
+  width: 100%;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.coordinate-work-item strong,
+.coordinate-route-item strong,
+.coordinate-board-item strong {
   min-width: 0;
   color: #effdff;
   font-size: 13px;
@@ -731,7 +744,9 @@
   overflow-wrap: anywhere;
 }
 
-.coordinate-work-item em {
+.coordinate-work-item em,
+.coordinate-route-item em,
+.coordinate-board-item em {
   color: #8fdde2;
   font-family: "Courier New", monospace;
   font-size: 9px;
@@ -741,7 +756,11 @@
 }
 
 .coordinate-work-item:hover,
-.coordinate-work-item:focus-visible {
+.coordinate-work-item:focus-visible,
+.coordinate-route-item:hover,
+.coordinate-route-item:focus-visible,
+.coordinate-board-item:hover,
+.coordinate-board-item:focus-visible {
   border-color: rgba(25, 247, 241, 0.62);
   color: var(--cyan);
 }

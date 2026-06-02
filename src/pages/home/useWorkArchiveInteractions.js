@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useActivityToast } from '../../context/activityToastContextValue';
 import { recordUserActivity } from '../../lib/activityLogger';
 import { setJsonStorageItem } from '../../lib/browserStorage';
 import { getSupabaseClient } from '../../lib/getSupabaseClient';
@@ -14,12 +15,19 @@ const emptyWorkSubmitForm = {
   recommender: '',
 };
 
+const workStatusLabels = {
+  done: '읽었어요',
+  reading: '읽고 있어요',
+  want: '읽고 싶어요',
+};
+
 export default function useWorkArchiveInteractions({
   getRandomWorks,
   setRandomWorkCodes,
   setWorks,
   user,
 }) {
+  const { showActivityToast } = useActivityToast();
   const [selectedWork, setSelectedWork] = useState(null);
   const [workComments, setWorkComments] = useState([]);
   const [commentText, setCommentText] = useState('');
@@ -155,6 +163,10 @@ export default function useWorkArchiveInteractions({
       setWorkSubmitForm(emptyWorkSubmitForm);
       setWorkSubmitStatus('success');
       setWorkSubmitMessage('작품 신호가 노션 아카이브에 저장되었습니다.');
+      showActivityToast({
+        detail: `${workSubmitForm.title.trim()} 신호가 작품 아카이브에 추가되었습니다.`,
+        title: '작품 아카이브 저장',
+      });
     } catch (error) {
       setWorkSubmitStatus('error');
       setWorkSubmitMessage(error.message);
@@ -198,10 +210,11 @@ export default function useWorkArchiveInteractions({
       return;
     }
 
+    const points = nextStatus === 'done' ? 15 : 5;
     await recordUserActivity(user, {
       actionType: 'work_status',
       dedupeKey: `work_status:${selectedWork.code}:${nextStatus}`,
-      points: nextStatus === 'done' ? 15 : 5,
+      points,
       genre: selectedWork.medium,
       metadata: {
         title: `${selectedWork.title} 독서 상태`,
@@ -215,6 +228,11 @@ export default function useWorkArchiveInteractions({
 
     setCommentStatus('success');
     setCommentMessage('독서 상태가 저장되었습니다.');
+    showActivityToast({
+      detail: `${selectedWork.title} / ${workStatusLabels[nextStatus] || '독서 상태'} 저장`,
+      points,
+      title: '독서 상태 갱신',
+    });
   };
 
   const submitWorkComment = async event => {
@@ -275,6 +293,11 @@ export default function useWorkArchiveInteractions({
     setCommentText('');
     setCommentStatus('success');
     setCommentMessage('+10 MP. 댓글 신호가 저장되었습니다.');
+    showActivityToast({
+      detail: `${selectedWork.title} 댓글 신호가 저장되었습니다.`,
+      points: 10,
+      title: '댓글 교신 수신',
+    });
   };
 
   return {
