@@ -136,7 +136,7 @@ export default function CommunitySection({
                   {questionStatus === 'submitting' && '새 글을 저장 중입니다.'}
                   {questionStatus === 'idle' && (isAuthenticated ? '글을 작성한 뒤 새글 저장을 눌러주세요.' : '로그인 후 새 글을 저장할 수 있습니다.')}
                 </p>
-                <button type="submit" disabled={!isAuthenticated || questionStatus === 'submitting'}>
+                <button className="question-submit-button" type="submit" disabled={!isAuthenticated || questionStatus === 'submitting'}>
                   <Send aria-hidden="true" />
                   {questionStatus === 'submitting' ? '저장 중' : '새글 저장'}
                 </button>

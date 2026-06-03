@@ -287,6 +287,22 @@
   box-shadow: 0 0 28px rgba(25, 247, 241, 0.2);
 }
 
+.question-form .question-submit-button {
+  border: 1px solid rgba(25, 247, 241, 0.62);
+  color: #001114;
+  background: linear-gradient(180deg, #76fff7, var(--cyan));
+  text-shadow: none;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.18) inset,
+    0 0 30px rgba(25, 247, 241, 0.26);
+}
+
+.question-form .question-submit-button:hover,
+.question-form .question-submit-button:focus-visible {
+  color: #00090b;
+  background: linear-gradient(180deg, #e8fffb, #55fff4);
+}
+
 .question-form button:disabled {
   cursor: wait;
   opacity: 0.62;
@@ -328,6 +344,22 @@
 .reading-mode .question-form button {
   color: #fffdf6;
   background: #2f6f78;
+}
+
+.reading-mode .question-form .question-submit-button {
+  border-color: rgba(47, 111, 120, 0.74);
+  color: #fffdf6;
+  background: linear-gradient(180deg, #347f88, #1f5f68);
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.22);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.38) inset,
+    0 12px 28px rgba(47, 111, 120, 0.18);
+}
+
+.reading-mode .question-form .question-submit-button:hover,
+.reading-mode .question-form .question-submit-button:focus-visible {
+  color: #fffdf6;
+  background: linear-gradient(180deg, #3f8f98, #286f78);
 }
 
 .reading-mode .question-form input,
