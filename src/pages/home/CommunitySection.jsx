@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { memo, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { PenLine, Send } from 'lucide-react';
 import ModalShell from '../../components/ModalShell';
@@ -19,7 +19,7 @@ function formatQuestionDate(value) {
   return date.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' });
 }
 
-export default function CommunitySection({
+function CommunitySection({
   authorName,
   isAuthenticated,
   onQuestionFormChange,
@@ -159,3 +159,5 @@ export default function CommunitySection({
     </section>
   );
 }
+
+export default memo(CommunitySection);

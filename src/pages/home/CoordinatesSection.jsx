@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useRef, useState } from 'react';
+import { lazy, memo, Suspense, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Send } from 'lucide-react';
 import { useMotionProfile } from '../../hooks/useMotionProfile';
@@ -45,7 +45,7 @@ function MobileCoordinateMap({ activeGenre, nodes, onExpand, onNodeSelect, onRes
   );
 }
 
-export default function CoordinatesSection({
+function CoordinatesSection({
   activeGenre,
   hasCoordinateFocus,
   mapDescription,
@@ -297,3 +297,5 @@ export default function CoordinatesSection({
     </section>
   );
 }
+
+export default memo(CoordinatesSection);

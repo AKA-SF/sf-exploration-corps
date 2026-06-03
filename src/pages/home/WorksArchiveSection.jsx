@@ -1,7 +1,8 @@
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Database, ExternalLink, MessageSquareText } from 'lucide-react';
 
-export default function WorksArchiveSection({
+function WorksArchiveSection({
   displayedWorks,
   onOpenWorkDetail,
   onOpenWorkSubmit,
@@ -124,3 +125,5 @@ export default function WorksArchiveSection({
     </section>
   );
 }
+
+export default memo(WorksArchiveSection);

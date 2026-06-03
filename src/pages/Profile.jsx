@@ -1,9 +1,9 @@
+import { lazy, Suspense } from 'react';
 import { Navigate } from 'react-router-dom';
 import { LogOut, UserRound } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
 import ProfileActivityPanel from './profile/ProfileActivityPanel';
-import ProfileCyberIdCard from './profile/ProfileCyberIdCard';
 import ProfileHubPanel from './profile/ProfileHubPanel';
 import ProfileIdentityCard from './profile/ProfileIdentityCard';
 import ProfileMissionTree from './profile/ProfileMissionTree';
@@ -20,6 +20,17 @@ import ProfileReadingPanel from './profile/ProfileReadingPanel';
 import { useProfileData } from './profile/hooks/useProfileData';
 import './Profile.css';
 import '../styles/MobileExperience.css';
+
+const ProfileCyberIdCard = lazy(() => import('./profile/ProfileCyberIdCard'));
+
+function ProfileCyberIdFallback() {
+  return (
+    <button className="profile-cyber-id-tab" type="button" disabled>
+      <span className="mono">CYBER ID</span>
+      <strong>ID 카드 준비 중</strong>
+    </button>
+  );
+}
 
 export default function Profile() {
   const { isConfigured, loading, user, signOut } = useAuth();
@@ -82,15 +93,17 @@ export default function Profile() {
 
           <ProfileIdentityCard
             actionSlot={(
-              <ProfileCyberIdCard
-                nickname={nickname}
-                points={points}
-                rank={rank}
-                stats={stats}
-                tasteProfile={latestTasteProfile}
-                unlockedBadges={unlockedBadges}
-                user={user}
-              />
+              <Suspense fallback={<ProfileCyberIdFallback />}>
+                <ProfileCyberIdCard
+                  nickname={nickname}
+                  points={points}
+                  rank={rank}
+                  stats={stats}
+                  tasteProfile={latestTasteProfile}
+                  unlockedBadges={unlockedBadges}
+                  user={user}
+                />
+              </Suspense>
             )}
             nickname={nickname}
             rank={rank}

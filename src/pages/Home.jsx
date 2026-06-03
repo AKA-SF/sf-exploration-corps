@@ -1,8 +1,7 @@
-import { useCallback, useMemo } from 'react';
+import { lazy, Suspense, useCallback, useMemo } from 'react';
 import PageTransition from '../components/PageTransition';
 import { useActivityToast } from '../context/activityToastContextValue';
 import { useAuth } from '../context/authContextValue';
-import { recordUserActivity } from '../lib/activityLogger';
 import { getStorageItem, setStorageItem } from '../lib/browserStorage';
 import ArchiveDock from './home/ArchiveDock';
 import CommunitySection from './home/CommunitySection';
@@ -10,7 +9,6 @@ import ConceptDictionarySection from './home/ConceptDictionarySection';
 import ContactSection from './home/ContactSection';
 import CoordinatesSection from './home/CoordinatesSection';
 import HeroSection from './home/HeroSection';
-import HomeModals from './home/HomeModals';
 import HomeTopBar from './home/HomeTopBar';
 import MediaArchiveSection from './home/MediaArchiveSection';
 import TasteTestSection from './home/TasteTestSection';
@@ -47,6 +45,8 @@ import './home/ConceptDictionarySection.css';
 import './home/CommunitySection.css';
 import './home/HomeResponsive.css';
 import '../styles/MobileExperience.css';
+
+const HomeModals = lazy(() => import('./home/HomeModals'));
 
 function getSignalSearchText(item) {
   return [
@@ -147,6 +147,7 @@ export default function Home() {
     if (!user) return;
     const storageKey = `sf-mission-signal:${user.id}:${signalKey}`;
     if (getStorageItem(storageKey, '')) return;
+    const { recordUserActivity } = await import('../lib/activityLogger');
     const result = await recordUserActivity(user, {
       ...activity,
       dedupeKey: activity.dedupeKey || signalKey,
@@ -205,6 +206,9 @@ export default function Home() {
     questions: getRelatedItemsForWork(selectedWork, dashboard.questions, 3),
     works: getRelatedItemsForWork(selectedWork, works, 3),
   }), [concepts, dashboard.questions, selectedWork, works]);
+  const shouldRenderHomeModals = modalProps.coordinateLog.isOpen
+    || modalProps.workArchive.isSubmitOpen
+    || Boolean(modalProps.workArchive.selectedWork);
   const recordTasteComplete = useCallback((tasteProfileResult) => recordMissionSignal(`taste:${tasteProfileResult.code}`, {
     actionType: 'taste_test',
     points: 10,
@@ -226,7 +230,6 @@ export default function Home() {
       node: 'concept-dictionary',
     },
   }), [recordMissionSignal]);
-
   const {
     resetTasteTest,
     tasteAnswers,
@@ -245,6 +248,16 @@ export default function Home() {
     previewMedia,
     setActiveMediaCategory,
   } = useMediaArchivePreview(mediaItems);
+  const recordMediaSignal = useCallback((item) => recordMissionSignal(`media:${item.code}`, {
+    actionType: 'media_visit',
+    points: 3,
+    genre: item.category || activeMediaCategory,
+    metadata: {
+      title: item.title,
+      media_code: item.code,
+      node: 'media-archive',
+    },
+  }), [activeMediaCategory, recordMissionSignal]);
   const {
     conceptFeatureRef,
     conceptReadingMode,
@@ -261,6 +274,8 @@ export default function Home() {
     setActiveConceptCode,
     onConceptRead: recordConceptRead,
   });
+  const toggleConceptReadingMode = useCallback(() => setConceptReadingMode(value => !value), [setConceptReadingMode]);
+  const toggleShowAllConcepts = useCallback(() => setShowAllConcepts(value => !value), [setShowAllConcepts]);
 
   const {
     displayedWorks,
@@ -321,16 +336,7 @@ export default function Home() {
           activeMediaCategory={activeMediaCategory}
           mediaCategories={mediaCategories}
           onMediaCategoryChange={setActiveMediaCategory}
-          onRecordMediaSignal={item => recordMissionSignal(`media:${item.code}`, {
-            actionType: 'media_visit',
-            points: 3,
-            genre: item.category || activeMediaCategory,
-            metadata: {
-              title: item.title,
-              media_code: item.code,
-              node: 'media-archive',
-            },
-          })}
+          onRecordMediaSignal={recordMediaSignal}
           previewMedia={previewMedia}
         />
       </div>
@@ -365,8 +371,8 @@ export default function Home() {
           conceptsCount={concepts.length}
           getConceptSource={getConceptSource}
           onConceptSelect={selectConcept}
-          onReadingModeToggle={() => setConceptReadingMode(value => !value)}
-          onShowAllToggle={() => setShowAllConcepts(value => !value)}
+          onReadingModeToggle={toggleConceptReadingMode}
+          onShowAllToggle={toggleShowAllConcepts}
           selectedConcept={selectedConcept}
           showAllConcepts={showAllConcepts}
           visibleConcepts={visibleConcepts}
@@ -389,11 +395,15 @@ export default function Home() {
 
       <ContactSection contactChannels={contactChannels} />
 
-      <HomeModals
-        user={user}
-        workDetailRecommendations={workDetailRecommendations}
-        {...modalProps}
-      />
+      {shouldRenderHomeModals && (
+        <Suspense fallback={null}>
+          <HomeModals
+            user={user}
+            workDetailRecommendations={workDetailRecommendations}
+            {...modalProps}
+          />
+        </Suspense>
+      )}
     </PageTransition>
   );
 }

@@ -1,7 +1,8 @@
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Play } from 'lucide-react';
 
-export default function MediaArchiveSection({
+function MediaArchiveSection({
   activeMediaArchivePath,
   activeMediaCategory,
   mediaCategories,
@@ -73,3 +74,5 @@ export default function MediaArchiveSection({
     </section>
   );
 }
+
+export default memo(MediaArchiveSection);

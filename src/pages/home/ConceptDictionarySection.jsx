@@ -1,4 +1,6 @@
-export default function ConceptDictionarySection({
+import { memo } from 'react';
+
+function ConceptDictionarySection({
   conceptFeatureRef,
   conceptReadingMode,
   conceptsCount,
@@ -116,3 +118,5 @@ export default function ConceptDictionarySection({
     </section>
   );
 }
+
+export default memo(ConceptDictionarySection);

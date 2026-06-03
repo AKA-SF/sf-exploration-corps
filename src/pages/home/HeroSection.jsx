@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { memo, useEffect, useMemo, useState } from 'react';
 import { ChevronRight, Database } from 'lucide-react';
 import { formatTimestamp } from './homeUtils';
 
@@ -149,7 +149,7 @@ function SidePanel({ activeGenre, archiveMode, metrics, recentSignals }) {
   );
 }
 
-export default function HeroSection({
+function HeroSection({
   activeGenre,
   archiveMode,
   metrics,
@@ -220,3 +220,5 @@ export default function HeroSection({
     </main>
   );
 }
+
+export default memo(HeroSection);
