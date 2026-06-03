@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { supabase } from '../../../lib/supabaseClient';
+import { getSupabaseClient } from '../../../lib/getSupabaseClient';
 import {
   buildProfileNetworkSignals,
   buildProfileViewModel,
@@ -9,7 +9,7 @@ import {
   mapLocalWorkStatuses,
   setSelectedMissionRoute as persistSelectedMissionRoute,
 } from '../profileDataUtils';
-import { getCommunityAuthHeaders } from '../../questions/communityApi';
+import { fetchCommunityQuestions } from '../../questions/communityApi';
 
 const emptyProfileViewModel = buildProfileViewModel({
   activities: [],
@@ -31,11 +31,20 @@ export function useProfileData(user) {
   const [manualBadges, setManualBadges] = useState([]);
 
   useEffect(() => {
-    if (!user || !supabase) return;
+    if (!user) return;
     let isMounted = true;
 
     async function loadProfile() {
       setStatus('loading');
+      const supabase = await getSupabaseClient();
+      if (!isMounted) return;
+      if (!supabase) {
+        if (isMounted) {
+          setStatus('error');
+          setMessage('Supabase 연결 정보를 찾지 못했습니다.');
+        }
+        return;
+      }
       const fallbackNickname = getFallbackNickname(user);
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -121,17 +130,15 @@ export function useProfileData(user) {
         }, {});
       }
 
-      let communityQuestions = [];
+      let communityQuestions;
       try {
-        const authHeaders = await getCommunityAuthHeaders();
-        const response = await fetch('/api/questions?mine=1&includeCommentCounts=1&pageSize=40', {
-          cache: 'no-store',
-          headers: authHeaders,
+        const data = await fetchCommunityQuestions({
+          auth: true,
+          includeCommentCounts: 1,
+          mine: 1,
+          pageSize: 40,
         });
-        if (response.ok) {
-          const data = await response.json();
-          communityQuestions = Array.isArray(data.questions) ? data.questions : [];
-        }
+        communityQuestions = Array.isArray(data.questions) ? data.questions : [];
       } catch {
         communityQuestions = [];
       }

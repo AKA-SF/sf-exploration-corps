@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useActivityToast } from '../../context/activityToastContextValue';
 import { recordUserActivity } from '../../lib/activityLogger';
-import { getCommunityAuthHeaders } from '../questions/communityApi';
+import { createCommunityQuestion } from '../questions/communityApi';
 import { getCommunityAuthorName, getCommunityOwnerToken } from '../questions/communityIdentity';
 
 const initialQuestionForm = {
@@ -39,21 +39,11 @@ export default function useCommunityComposer({ onQuestionCreated, user }) {
     setQuestionMessage('');
 
     try {
-      const authHeaders = await getCommunityAuthHeaders();
-      const response = await fetch('/api/questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders },
-        body: JSON.stringify({
-          ...questionForm,
-          name: getCommunityAuthorName(user),
-          ownerToken: getCommunityOwnerToken(user),
-        }),
+      const data = await createCommunityQuestion({
+        ...questionForm,
+        name: getCommunityAuthorName(user),
+        ownerToken: getCommunityOwnerToken(user),
       });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data?.notion?.message || data?.error || '저장에 실패했습니다.');
-      }
-      const data = await response.json().catch(() => ({}));
 
       await recordUserActivity(user, {
         actionType: 'post',

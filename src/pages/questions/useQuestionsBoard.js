@@ -1,7 +1,16 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useActivityToast } from '../../context/activityToastContextValue';
 import { recordUserActivity } from '../../lib/activityLogger';
-import { getCommunityAuthHeaders } from './communityApi';
+import {
+  createCommunityComment,
+  createCommunityQuestion,
+  deleteCommunityComment,
+  deleteCommunityQuestion,
+  fetchCommunityQuestionDetail,
+  fetchCommunityQuestions,
+  updateCommunityComment,
+  updateCommunityQuestion,
+} from './communityApi';
 import { getCommunityAuthorName, getCommunityOwnerToken } from './communityIdentity';
 
 const fallbackQuestions = [];
@@ -57,14 +66,7 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
   const authorName = getCommunityAuthorName(user);
 
   const loadQuestions = useCallback(({ cursor = '', append = false } = {}) => {
-    const query = new URLSearchParams({ pageSize: String(QUESTIONS_PAGE_SIZE) });
-    if (cursor) query.set('cursor', cursor);
-
-    fetch(`/api/questions?${query.toString()}`, { cache: 'no-store' })
-      .then(response => {
-        if (!response.ok) throw new Error('Question archive unavailable');
-        return response.json();
-      })
+    fetchCommunityQuestions({ cursor, pageSize: QUESTIONS_PAGE_SIZE })
       .then(data => {
         const nextQuestions = Array.isArray(data.questions) ? data.questions : fallbackQuestions;
         setQuestions(current => (append ? [...current, ...nextQuestions] : nextQuestions));
@@ -85,13 +87,7 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
 
   const loadQuestionDetail = useCallback(async id => {
     const ownerToken = getOwnerToken(user);
-    const query = new URLSearchParams({ id, ownerToken });
-    const authHeaders = await getCommunityAuthHeaders();
-    fetch(`/api/questions?${query.toString()}`, { cache: 'no-store', headers: authHeaders })
-      .then(response => {
-        if (!response.ok) throw new Error('Question detail unavailable');
-        return response.json();
-      })
+    fetchCommunityQuestionDetail({ id, ownerToken })
       .then(data => {
         setActiveQuestion(data.question);
         setComments(Array.isArray(data.comments) ? data.comments : []);
@@ -155,21 +151,11 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     setQuestionMessage('');
 
     try {
-      const authHeaders = await getCommunityAuthHeaders();
-      const response = await fetch('/api/questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders },
-        body: JSON.stringify({
-          ...questionForm,
-          name: authorName,
-          ownerToken: getOwnerToken(user),
-        }),
+      const data = await createCommunityQuestion({
+        ...questionForm,
+        name: authorName,
+        ownerToken: getOwnerToken(user),
       });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data?.notion?.message || data?.error || '저장에 실패했습니다.');
-      }
-      const data = await response.json().catch(() => ({}));
       await recordUserActivity(user, {
         actionType: 'post',
         points: 20,
@@ -214,23 +200,12 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     setCommentMessage('');
 
     try {
-      const authHeaders = await getCommunityAuthHeaders();
-      const response = await fetch('/api/questions', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...authHeaders },
-        body: JSON.stringify({
-          mode: 'comment',
-          questionId,
-          name: authorName,
-          ownerToken: getOwnerToken(user),
-          ...commentForm,
-        }),
+      const data = await createCommunityComment({
+        questionId,
+        name: authorName,
+        ownerToken: getOwnerToken(user),
+        ...commentForm,
       });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data?.notion?.message || data?.error || '댓글 저장에 실패했습니다.');
-      }
-      const data = await response.json().catch(() => ({}));
       await recordUserActivity(user, {
         actionType: 'comment',
         points: 10,
@@ -290,24 +265,13 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     setQuestionEditMessage('');
 
     try {
-      const authHeaders = await getCommunityAuthHeaders();
-      const response = await fetch('/api/questions', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...authHeaders },
-        body: JSON.stringify({
-          mode: 'post',
-          questionId,
-          name: activeQuestion.author,
-          contact: activeQuestion.contact,
-          ownerToken: getOwnerToken(user),
-          ...questionEditForm,
-        }),
+      const data = await updateCommunityQuestion({
+        questionId,
+        name: activeQuestion.author,
+        contact: activeQuestion.contact,
+        ownerToken: getOwnerToken(user),
+        ...questionEditForm,
       });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data?.notion?.message || data?.error || '글 수정에 실패했습니다.');
-      }
-      const data = await response.json().catch(() => ({}));
       setActiveQuestion(current => ({
         ...(current ?? {}),
         ...(data.question ?? questionEditForm),
@@ -331,20 +295,10 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     setQuestionEditMessage('');
 
     try {
-      const authHeaders = await getCommunityAuthHeaders();
-      const response = await fetch('/api/questions', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', ...authHeaders },
-        body: JSON.stringify({
-          mode: 'post',
-          questionId,
-          ownerToken: getOwnerToken(user),
-        }),
+      await deleteCommunityQuestion({
+        questionId,
+        ownerToken: getOwnerToken(user),
       });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data?.notion?.message || data?.error || '글 삭제에 실패했습니다.');
-      }
       setQuestionEditStatus('success');
       setQuestionEditMessage('글이 삭제되었습니다.');
       onQuestionDeleted?.();
@@ -383,23 +337,12 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     setCommentEditMessage('');
 
     try {
-      const authHeaders = await getCommunityAuthHeaders();
-      const response = await fetch('/api/questions', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json', ...authHeaders },
-        body: JSON.stringify({
-          mode: 'comment',
-          commentId: editingCommentId,
-          name: comments.find(comment => comment.id === editingCommentId)?.name || authorName,
-          ownerToken: getOwnerToken(user),
-          ...commentEditForm,
-        }),
+      const data = await updateCommunityComment({
+        commentId: editingCommentId,
+        name: comments.find(comment => comment.id === editingCommentId)?.name || authorName,
+        ownerToken: getOwnerToken(user),
+        ...commentEditForm,
       });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data?.notion?.message || data?.error || '댓글 수정에 실패했습니다.');
-      }
-      const data = await response.json().catch(() => ({}));
       if (data.comment) {
         setComments(current => current.map(comment => (
           comment.id === editingCommentId ? data.comment : comment
@@ -425,20 +368,10 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     setCommentEditMessage('');
 
     try {
-      const authHeaders = await getCommunityAuthHeaders();
-      const response = await fetch('/api/questions', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json', ...authHeaders },
-        body: JSON.stringify({
-          mode: 'comment',
-          commentId,
-          ownerToken: getOwnerToken(user),
-        }),
+      await deleteCommunityComment({
+        commentId,
+        ownerToken: getOwnerToken(user),
       });
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data?.notion?.message || data?.error || '댓글 삭제에 실패했습니다.');
-      }
       setComments(current => current.filter(comment => comment.id !== commentId));
       setCommentEditStatus('success');
       setCommentEditMessage('댓글이 삭제되었습니다.');

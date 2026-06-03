@@ -24,6 +24,25 @@
   --ink: var(--mode-console-ink);
 }
 
+@supports (content-visibility: auto) {
+  .archive-home :where(
+    .taste-test-section,
+    .works-archive-section,
+    .media-section,
+    .coordinates-section,
+    .concept-section,
+    .question-section,
+    .contact-section
+  ) {
+    content-visibility: auto;
+    contain-intrinsic-size: 900px;
+  }
+
+  .archive-home :where(.coordinates-section) {
+    contain-intrinsic-size: 760px;
+  }
+}
+
 .archive-home::before,
 .archive-home::after {
   content: "";
