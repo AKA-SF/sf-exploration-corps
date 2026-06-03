@@ -17,6 +17,7 @@ const Questions = lazy(() => import('./pages/Questions'));
 const LogEntry = lazy(() => import('./pages/LogEntry'));
 const LogResult = lazy(() => import('./pages/LogResult'));
 const Profile = lazy(() => import('./pages/Profile'));
+const CrewMessage = lazy(() => import('./pages/CrewMessage'));
 const Login = lazy(() => import('./pages/Login'));
 const Badges = lazy(() => import('./pages/Badges'));
 const Network = lazy(() => import('./pages/Network'));
@@ -107,6 +108,7 @@ function App() {
                   <Route path="/network/:id" element={<NetworkDetail />} />
                   <Route path="/badges" element={<Badges />} />
                   <Route path="/profile" element={<Profile />} />
+                  <Route path="/crew/:crewCode/message" element={<CrewMessage />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/admin" element={<Admin />} />
                 </Routes>

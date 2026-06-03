@@ -377,11 +377,11 @@ function drawBarcode(context, x, y, width, height, seed) {
   context.restore();
 }
 
-function buildContactUrl(serial) {
+function buildContactUrl(publicCode) {
   const origin = typeof window === 'undefined'
     ? 'https://sf-exploration-corps.vercel.app'
     : window.location.origin;
-  return `${origin}/network?to=${encodeURIComponent(serial)}`;
+  return `${origin}/crew/${encodeURIComponent(publicCode)}/message`;
 }
 
 async function drawContactQrPanel(context, contactUrl, x, y, width, height) {
@@ -456,8 +456,9 @@ async function buildCardCanvas({ nickname, points, rank, stats, tasteProfile, un
   const context = canvas.getContext('2d');
   const seed = user?.id || user?.email || nickname || 'sf-explorer';
   const serial = `SFA-${String(Math.abs(hashString(seed)) % 999999).padStart(6, '0')}`;
+  const publicCode = user?.publicCode || serial;
   const issuedDate = new Date().toLocaleDateString('ko-KR');
-  const contactUrl = buildContactUrl(serial);
+  const contactUrl = buildContactUrl(publicCode);
   const taste = tasteProfile ?? {
     code: 'TYPE-SCAN',
     title: '성향 미확인',
@@ -581,6 +582,7 @@ function downloadCanvas(canvas, filename) {
 export default function ProfileCyberIdCard({
   nickname,
   points,
+  publicCode,
   rank,
   stats,
   tasteProfile,
@@ -597,7 +599,7 @@ export default function ProfileCyberIdCard({
     stats,
     tasteProfile,
     unlockedBadges,
-    user,
+    user: user ? { ...user, publicCode } : user,
   });
 
   const handleDownload = async () => {

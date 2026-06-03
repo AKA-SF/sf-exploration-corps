@@ -19,6 +19,42 @@ const emptyProfileViewModel = buildProfileViewModel({
   workStatuses: [],
 });
 
+const profileFields = 'id,nickname,public_code,mileage,title,avatar_url,created_at,updated_at';
+const legacyProfileFields = 'id,nickname,mileage,title,avatar_url,created_at,updated_at';
+
+async function selectProfileById(supabase, userId) {
+  const result = await supabase
+    .from('profiles')
+    .select(profileFields)
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (result.error?.code !== '42703') return result;
+
+  return supabase
+    .from('profiles')
+    .select(legacyProfileFields)
+    .eq('id', userId)
+    .maybeSingle();
+}
+
+async function selectProfileAfterWrite(supabase, userId) {
+  const result = await supabase
+    .from('profiles')
+    .select(profileFields)
+    .eq('id', userId)
+    .maybeSingle();
+
+  if (result.error?.code !== '42703') return result.data;
+
+  const { data } = await supabase
+    .from('profiles')
+    .select(legacyProfileFields)
+    .eq('id', userId)
+    .maybeSingle();
+  return data;
+}
+
 export function useProfileData(user) {
   const [profile, setProfile] = useState(null);
   const [activities, setActivities] = useState([]);
@@ -46,11 +82,7 @@ export function useProfileData(user) {
         return;
       }
       const fallbackNickname = getFallbackNickname(user);
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('id,nickname,mileage,title,avatar_url,created_at,updated_at')
-        .eq('id', user.id)
-        .maybeSingle();
+      const { data: profileData, error: profileError } = await selectProfileById(supabase, user.id);
 
       if (profileError && profileError.code !== 'PGRST116') {
         if (isMounted) {
@@ -65,16 +97,29 @@ export function useProfileData(user) {
         const { data: createdProfile, error: createError } = await supabase
           .from('profiles')
           .insert({ id: user.id, nickname: fallbackNickname })
-          .select('id,nickname,mileage,title,avatar_url,created_at,updated_at')
+          .select(profileFields)
           .single();
         if (createError) {
-          if (isMounted) {
+          if (createError.code === '42703') {
+            const { data: legacyCreatedProfile, error: legacyCreateError } = await supabase
+              .from('profiles')
+              .insert({ id: user.id, nickname: fallbackNickname })
+              .select(legacyProfileFields)
+              .single();
+            if (!legacyCreateError) {
+              nextProfile = legacyCreatedProfile;
+            } else if (isMounted) {
+              setStatus('error');
+              setMessage(legacyCreateError.message);
+            }
+          } else if (isMounted) {
             setStatus('error');
             setMessage(createError.message);
           }
-          return;
+          if (!nextProfile) return;
+        } else {
+          nextProfile = createdProfile;
         }
-        nextProfile = createdProfile;
       }
 
       const [
@@ -146,12 +191,12 @@ export function useProfileData(user) {
       const lockedNickname = getProfileNickname(user, nextProfile, fallbackNickname);
 
       if (nextProfile && !nextProfile.nickname) {
-        const { data: repairedProfile } = await supabase
+        await supabase
           .from('profiles')
           .update({ nickname: lockedNickname })
           .eq('id', user.id)
-          .select('id,nickname,mileage,title,avatar_url,created_at,updated_at')
-          .maybeSingle();
+          .select('id');
+        const repairedProfile = await selectProfileAfterWrite(supabase, user.id);
         nextProfile = repairedProfile ?? { ...nextProfile, nickname: lockedNickname };
       }
 

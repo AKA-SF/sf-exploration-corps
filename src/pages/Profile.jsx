@@ -7,6 +7,7 @@ import ProfileActivityPanel from './profile/ProfileActivityPanel';
 import ProfileHubPanel from './profile/ProfileHubPanel';
 import ProfileIdentityCard from './profile/ProfileIdentityCard';
 import ProfileMissionTree from './profile/ProfileMissionTree';
+import ProfileMessagesPanel from './profile/ProfileMessagesPanel';
 import ProfileOnboardingPanel from './profile/ProfileOnboardingPanel';
 import { activityLabels, workStatusLabels } from './profile/profileLabels';
 import { activityTitle } from './profile/profileDataUtils';
@@ -40,6 +41,7 @@ export default function Profile() {
     message,
     networkSignals,
     nickname,
+    profile,
     status,
     viewModel,
     workStatuses,
@@ -97,6 +99,7 @@ export default function Profile() {
                 <ProfileCyberIdCard
                   nickname={nickname}
                   points={points}
+                  publicCode={profile?.public_code}
                   rank={rank}
                   stats={stats}
                   tasteProfile={latestTasteProfile}
@@ -138,6 +141,7 @@ export default function Profile() {
             workStatuses={workStatuses}
             workStatusLabels={workStatusLabels}
           />
+          <ProfileMessagesPanel profile={profile} user={user} />
           <ProfileBadgeSummary badges={badges} />
           <ProfileActivityPanel
             activities={activities}

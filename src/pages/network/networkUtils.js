@@ -85,6 +85,7 @@ export function getSignalColor(signalType) {
   if (signalType.includes('ARCHIVE')) return 'var(--primary-cyan)';
   if (signalType.includes('BADGE')) return '#a855f7';
   if (signalType.includes('CONCEPT')) return '#70e0ff';
+  if (signalType.includes('PRIVATE')) return '#a855f7';
   if (signalType.includes('UNKNOWN')) return '#ef4444';
   if (signalType.includes('RADIO') || signalType.includes('REPLY')) return 'var(--primary-cyan)';
   return 'var(--text-muted)';
@@ -149,6 +150,13 @@ export function getActivitySignal(activity) {
       body: `${actionType === 'radio_reply' ? '무전 답신' : '공개 무전'} // ${metadata.body || title}`,
       href: '/network',
       status: actionType === 'radio_reply' ? 'REPLY_SIGNAL' : 'OPEN_RADIO',
+    };
+  }
+  if (actionType === 'crew_message' || actionType === 'crew_reply') {
+    return {
+      body: `${actionType === 'crew_reply' ? '개인 쪽지 답장' : '개인 쪽지'} // ${metadata.recipient_name || title}`,
+      href: '/profile',
+      status: 'PRIVATE_SIGNAL',
     };
   }
 

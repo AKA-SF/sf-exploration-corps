@@ -274,6 +274,7 @@
 
 .profile-badge-section,
 .profile-activity,
+.profile-messages,
 .profile-launch-panel,
 .profile-badge-summary,
 .profile-badge-hero {
@@ -593,6 +594,119 @@
 
 .profile-activity-summary em {
   color: var(--text-muted);
+}
+
+.profile-message-count {
+  align-self: start;
+  color: var(--accent-amber);
+  border: 1px solid rgba(255, 176, 0, 0.26);
+  background: rgba(255, 176, 0, 0.06);
+  padding: 6px 9px;
+  font-size: 10px;
+}
+
+.profile-message-address {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  border: 1px solid rgba(0, 255, 255, 0.18);
+  background: rgba(0, 255, 255, 0.045);
+  padding: 12px;
+}
+
+.profile-message-address svg {
+  color: var(--primary-cyan);
+}
+
+.profile-message-address span {
+  display: block;
+  color: var(--text-muted);
+  font-size: 9px;
+  letter-spacing: 1px;
+}
+
+.profile-message-address strong {
+  color: var(--primary-cyan);
+  font-size: 18px;
+}
+
+.profile-message-address a,
+.profile-message-actions a,
+.profile-message-actions button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 30px;
+  color: var(--primary-cyan);
+  border: 1px solid rgba(0, 255, 255, 0.24);
+  background: rgba(0, 255, 255, 0.06);
+  padding: 0 10px;
+  font-size: 11px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.profile-message-list {
+  display: grid;
+  gap: 8px;
+}
+
+.profile-message-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.025);
+  padding: 12px;
+}
+
+.profile-message-row.is-unread {
+  border-color: rgba(255, 176, 0, 0.32);
+  background: rgba(255, 176, 0, 0.055);
+}
+
+.profile-message-row span {
+  color: var(--text-muted);
+  font-size: 9px;
+}
+
+.profile-message-row strong {
+  display: block;
+  margin: 4px 0;
+  color: var(--text-main);
+  font-size: 15px;
+}
+
+.profile-message-row p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.profile-message-actions {
+  display: flex;
+  align-items: flex-end;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.profile-message-actions button {
+  color: var(--accent-amber);
+  border-color: rgba(255, 176, 0, 0.28);
+  background: rgba(255, 176, 0, 0.06);
+  cursor: pointer;
+}
+
+.profile-message-actions > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-muted);
+  font-size: 10px;
 }
 
 .mission-tree-panel {
@@ -1071,6 +1185,8 @@
   .profile-stat-grid,
   .profile-hub-grid,
   .profile-activity-summary,
+  .profile-message-address,
+  .profile-message-row,
   .profile-reading-grid,
   .profile-reading-shelves,
   .mission-training-grid,
@@ -1087,6 +1203,12 @@
 
   .profile-activity-row em {
     justify-content: flex-start;
+  }
+
+  .profile-message-actions {
+    align-items: stretch;
+    flex-direction: row;
+    flex-wrap: wrap;
   }
 
   .mission-tree-panel {
