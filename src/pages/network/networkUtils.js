@@ -14,17 +14,6 @@ export const MAX_ANIMATED_EDGES = 72;
 export const MAX_EDGE_COMPARE_WINDOW = 26;
 export const RADIO_MESSAGE_LIMIT = 48;
 
-export function getNetworkMotionProfile() {
-  if (typeof window === 'undefined') {
-    return { compact: false, reduced: false };
-  }
-
-  return {
-    compact: window.matchMedia('(max-width: 760px)').matches,
-    reduced: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  };
-}
-
 export function formatSignalTime(value) {
   return new Date(value).toLocaleTimeString('ko-KR', {
     hour: '2-digit',

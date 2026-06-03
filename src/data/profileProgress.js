@@ -479,10 +479,10 @@ export function getActivityStats(activities, workStatuses = []) {
     .filter(Boolean)
     .map(genre => String(genre).trim().toLowerCase())).size;
   const workStatusItems = Array.isArray(workStatuses) ? workStatuses : [];
-  const statusCounts = workStatusItems.reduce((result, item) => ({
-    ...result,
-    [item.status]: (result[item.status] ?? 0) + 1,
-  }), {});
+  const statusCounts = workStatusItems.reduce((result, item) => {
+    result[item.status] = (result[item.status] ?? 0) + 1;
+    return result;
+  }, {});
   const doneStatusText = workStatusItems
     .filter(item => item.status === 'done')
     .map(item => [item.work_title, item.work_code, item.genre, item.metadata ? JSON.stringify(item.metadata) : ''].filter(Boolean).join(' '))

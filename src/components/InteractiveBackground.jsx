@@ -1,21 +1,11 @@
 import { useLogs } from '../context/LogContext';
 import { useLocation } from 'react-router-dom';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
+import { useMotionProfile } from '../hooks/useMotionProfile';
 
 const seeded = (seed) => {
   const x = Math.sin(seed) * 10000;
   return x - Math.floor(x);
-};
-
-const getBackgroundMotionProfile = () => {
-  if (typeof window === 'undefined') {
-    return { compact: false, reduced: false };
-  }
-
-  return {
-    compact: window.matchMedia('(max-width: 760px)').matches,
-    reduced: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  };
 };
 
 const getParticleCount = ({ isHome, isStatic, compact }) => {
@@ -27,7 +17,7 @@ const getParticleCount = ({ isHome, isStatic, compact }) => {
 const InteractiveBackground = ({ lowPower = false }) => {
   const { currentSystemState } = useLogs();
   const location = useLocation();
-  const [motionProfile, setMotionProfile] = useState(getBackgroundMotionProfile);
+  const motionProfile = useMotionProfile();
   const risk = currentSystemState.riskLevel || 0;
   const isHome = location.pathname === '/';
   const isVisualSurface = isHome
@@ -46,22 +36,6 @@ const InteractiveBackground = ({ lowPower = false }) => {
   
   const speed = 1 + (risk / 100) * 3; 
   const isDanger = risk > 80 && isVisualSurface;
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-
-    const compactQuery = window.matchMedia('(max-width: 760px)');
-    const reducedQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const updateProfile = () => setMotionProfile(getBackgroundMotionProfile());
-
-    compactQuery.addEventListener('change', updateProfile);
-    reducedQuery.addEventListener('change', updateProfile);
-
-    return () => {
-      compactQuery.removeEventListener('change', updateProfile);
-      reducedQuery.removeEventListener('change', updateProfile);
-    };
-  }, []);
 
   const particles = useMemo(() => Array.from({ length: particleCount }).map((_, i) => ({
     id: i,

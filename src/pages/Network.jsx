@@ -5,13 +5,13 @@ import { Lock, Radar, RadioTower, SendHorizontal, MessageSquareText, Users, Zap 
 import PageTransition from '../components/PageTransition';
 import { ZoomableMap } from '../components/ZoomableMap';
 import { useAuth } from '../context/authContextValue';
+import { useMotionProfile } from '../hooks/useMotionProfile';
 import { supabase } from '../lib/supabaseClient';
 import useRadioMessages from './network/useRadioMessages';
 import {
   formatSignalTime,
   getActivitySignal,
   getDailyNetworkMission,
-  getNetworkMotionProfile,
   getSignalLine,
   getSignalColor,
   getUnknownSignalTarget,
@@ -32,7 +32,7 @@ const Network = () => {
 
   const [hoveredNode, setHoveredNode] = useState(null);
   const [activitySignals, setActivitySignals] = useState([]);
-  const [motionProfile, setMotionProfile] = useState(getNetworkMotionProfile);
+  const motionProfile = useMotionProfile();
   const {
     isRadioSubmitting,
     radioBody,
@@ -48,22 +48,6 @@ const Network = () => {
     submitRadioMessage,
     submitRadioReply,
   } = useRadioMessages(user);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-
-    const compactQuery = window.matchMedia('(max-width: 760px)');
-    const reducedQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const updateProfile = () => setMotionProfile(getNetworkMotionProfile());
-
-    compactQuery.addEventListener('change', updateProfile);
-    reducedQuery.addEventListener('change', updateProfile);
-
-    return () => {
-      compactQuery.removeEventListener('change', updateProfile);
-      reducedQuery.removeEventListener('change', updateProfile);
-    };
-  }, []);
 
   useEffect(() => {
     let isMounted = true;

@@ -115,10 +115,10 @@ export function useProfileData(user) {
           .select('work_code')
           .in('work_code', workCodes)
           .limit(1000);
-        workCommentCounts = (commentCountData ?? []).reduce((result, item) => ({
-          ...result,
-          [item.work_code]: (result[item.work_code] ?? 0) + 1,
-        }), {});
+        workCommentCounts = (commentCountData ?? []).reduce((result, item) => {
+          result[item.work_code] = (result[item.work_code] ?? 0) + 1;
+          return result;
+        }, {});
       }
 
       let communityQuestions = [];

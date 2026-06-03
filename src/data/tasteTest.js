@@ -247,7 +247,10 @@ function getWorkSearchText(work) {
 }
 
 export function getTasteProfile(answers, questions) {
-  const scores = Object.keys(tasteProfiles).reduce((result, key) => ({ ...result, [key]: 0 }), {});
+  const scores = Object.keys(tasteProfiles).reduce((result, key) => {
+    result[key] = 0;
+    return result;
+  }, {});
 
   questions.forEach(question => {
     const selectedIndex = answers[question.id];

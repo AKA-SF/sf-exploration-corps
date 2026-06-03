@@ -1,6 +1,7 @@
 import { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Send } from 'lucide-react';
+import { useMotionProfile } from '../../hooks/useMotionProfile';
 
 const CoordinateUniverse = lazy(() => import('../../components/CoordinateUniverse'));
 
@@ -70,9 +71,7 @@ export default function CoordinatesSection({
   const [shouldLoadMap, setShouldLoadMap] = useState(() => (
     typeof window !== 'undefined' && !('IntersectionObserver' in window)
   ));
-  const [isCompactViewport, setIsCompactViewport] = useState(() => (
-    typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches
-  ));
+  const { compact: isCompactViewport } = useMotionProfile();
   const [isMobileMapExpanded, setIsMobileMapExpanded] = useState(false);
 
   useEffect(() => {
@@ -92,20 +91,8 @@ export default function CoordinatesSection({
     return () => observer.disconnect();
   }, [shouldLoadMap]);
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-    const compactQuery = window.matchMedia('(max-width: 760px)');
-    const updateCompact = () => {
-      setIsCompactViewport(compactQuery.matches);
-      if (!compactQuery.matches) setIsMobileMapExpanded(false);
-    };
-
-    updateCompact();
-    compactQuery.addEventListener('change', updateCompact);
-    return () => compactQuery.removeEventListener('change', updateCompact);
-  }, []);
-
-  const useMobileLiteMap = isCompactViewport && !isMobileMapExpanded;
+  const mobileMapExpanded = isCompactViewport && isMobileMapExpanded;
+  const useMobileLiteMap = isCompactViewport && !mobileMapExpanded;
 
   return (
     <section className="coordinates-section" id="coordinates" ref={sectionRef}>

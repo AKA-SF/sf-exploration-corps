@@ -200,10 +200,10 @@ export function buildProfileViewModel({ activities, manualBadges = [], profile, 
     || missionTree.selectedRoute?.missions.find(mission => !mission.complete)
     || missionTree.routes.find(route => route.unlocked)?.missions.find(mission => !mission.complete)
     || null;
-  const statusCounts = workStatuses.reduce((result, item) => ({
-    ...result,
-    [item.status]: (result[item.status] ?? 0) + 1,
-  }), {});
+  const statusCounts = workStatuses.reduce((result, item) => {
+    result[item.status] = (result[item.status] ?? 0) + 1;
+    return result;
+  }, {});
   const latestWorkStatus = workStatuses[0] ?? null;
   const activitySummary = {
     posts: activities.filter(activity => activity.action_type === 'post').slice(0, 3),

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMotionProfile } from '../hooks/useMotionProfile';
 
 const toneColors = {
   cyan: ['#19f7f1', '#075966', '#00131c'],
@@ -64,17 +65,6 @@ function project(point, width, height, zoom) {
 
 function getSeed(id) {
   return id.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-}
-
-function getMotionProfile() {
-  if (typeof window === 'undefined') {
-    return { compact: false, reduced: false };
-  }
-
-  return {
-    compact: window.matchMedia('(max-width: 760px)').matches,
-    reduced: window.matchMedia('(prefers-reduced-motion: reduce)').matches,
-  };
 }
 
 function drawAtlasBackground(context, width, height, time, starSeeds, dustSeeds) {
@@ -322,7 +312,7 @@ export default function CoordinateUniverse({
   const [view, setView] = useState({ yaw: -0.24, pitch: 0.18, zoom: 1 });
   const [isDragging, setIsDragging] = useState(false);
   const [isRenderable, setIsRenderable] = useState(true);
-  const [motionProfile, setMotionProfile] = useState(getMotionProfile);
+  const motionProfile = useMotionProfile();
   const renderNodes = useMemo(() => (
     nodes.map(node => ({
       ...node,
@@ -382,23 +372,8 @@ export default function CoordinateUniverse({
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') return undefined;
-
-    const compactQuery = window.matchMedia('(max-width: 760px)');
-    const reducedQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const updateProfile = () => {
-      seedsRef.current = null;
-      setMotionProfile(getMotionProfile());
-    };
-
-    compactQuery.addEventListener('change', updateProfile);
-    reducedQuery.addEventListener('change', updateProfile);
-
-    return () => {
-      compactQuery.removeEventListener('change', updateProfile);
-      reducedQuery.removeEventListener('change', updateProfile);
-    };
-  }, []);
+    seedsRef.current = null;
+  }, [motionProfile]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
