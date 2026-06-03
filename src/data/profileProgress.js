@@ -1,15 +1,15 @@
 export const rankTable = [
   { title: '탐사보조원', min: 0 },
-  { title: '수습 대원', min: 20 },
-  { title: '탐사대원', min: 60 },
-  { title: '연구원', min: 120 },
-  { title: '분석사', min: 220 },
-  { title: '항해사', min: 380 },
-  { title: '선임 항해사', min: 620 },
-  { title: '부함장', min: 950 },
-  { title: '함장', min: 1400 },
-  { title: '심우주 사령관', min: 2000 },
-  { title: '포스트휴먼', min: 3000 },
+  { title: '수습 대원', min: 30 },
+  { title: '탐사대원', min: 100 },
+  { title: '연구원', min: 220 },
+  { title: '분석사', min: 400 },
+  { title: '항해사', min: 700 },
+  { title: '선임 항해사', min: 1100 },
+  { title: '부함장', min: 1600 },
+  { title: '함장', min: 2300 },
+  { title: '심우주 사령관', min: 3200 },
+  { title: '포스트휴먼', min: 4500 },
 ];
 
 export const badgeRules = [
