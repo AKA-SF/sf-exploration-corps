@@ -5,6 +5,7 @@ import {
   queryNotionDatabasePage,
   sendNotionError,
 } from './_notion.js';
+import { clearApiCachePrefix, getCachedJson } from './_apiCache.js';
 import { getOptionalUser, requireAdminUser, requireAuthenticatedUser } from './_adminAuth.js';
 import { pick, plainText } from './_notionProperties.js';
 import { findPropertyEntry, readJsonBody, richTextPayload } from './_notionWrite.js';
@@ -13,6 +14,15 @@ const DEFAULT_QUESTIONS_DATABASE_ID = '36a98dbef69d803abd53c09b6ff7f2e3';
 const OWNER_PREFIX = 'SFA_OWNER:';
 const COMMENT_PREFIX = 'SFA_COMMENT:';
 const DEFAULT_QUESTIONS_PAGE_SIZE = 40;
+const QUESTIONS_DATABASE_CACHE_TTL_MS = 5 * 60 * 1000;
+const QUESTIONS_LIST_CACHE_TTL_MS = 45 * 1000;
+const QUESTIONS_ADMIN_CACHE_TTL_MS = 20 * 1000;
+const VIEW_WRITE_TTL_MS = 90 * 1000;
+const viewWriteState = globalThis.__sfQuestionViewWriteState ??= new Map();
+
+function clearQuestionCaches() {
+  clearApiCachePrefix('questions:');
+}
 
 function findProperty(schema, preferredNames, type) {
   return findPropertyEntry(schema, preferredNames, type)
@@ -180,6 +190,9 @@ async function incrementViewCount({ page, schema, token }) {
   if (!entry) return page;
 
   const [name] = entry;
+  const lastWriteAt = viewWriteState.get(page.id) ?? 0;
+  if (Date.now() - lastWriteAt < VIEW_WRITE_TTL_MS) return page;
+
   const current = Number(plainText(page.properties?.[name])) || 0;
   const next = current + 1;
 
@@ -193,6 +206,7 @@ async function incrementViewCount({ page, schema, token }) {
         },
       },
     });
+    viewWriteState.set(page.id, Date.now());
     return {
       ...page,
       properties: {
@@ -226,8 +240,15 @@ export default async function handler(request, response) {
   }
 
   let database;
+  let databaseCache;
   try {
-    database = await notionRequest(`/databases/${databaseId}`, { token });
+    const cachedDatabase = await getCachedJson(
+      `questions:database:${databaseId}`,
+      QUESTIONS_DATABASE_CACHE_TTL_MS,
+      () => notionRequest(`/databases/${databaseId}`, { token }),
+    );
+    database = cachedDatabase.value;
+    databaseCache = cachedDatabase.cache;
   } catch (error) {
     return sendNotionError(response, {
       error,
@@ -236,6 +257,7 @@ export default async function handler(request, response) {
   }
 
   const schema = database.properties ?? {};
+  response.setHeader('X-SF-Question-Schema-Cache', databaseCache);
 
   if (request.method === 'GET') {
     const questionId = String(request.query?.id ?? '').trim();
@@ -275,9 +297,14 @@ export default async function handler(request, response) {
       const adminUser = await requireAdminUser(request, response);
       if (!adminUser) return null;
 
-      let results;
+      let cached;
       try {
-        results = await queryNotionDatabaseAll(token, databaseId);
+        cached = await getCachedJson(
+          `questions:admin-list:${databaseId}`,
+          QUESTIONS_ADMIN_CACHE_TTL_MS,
+          () => queryNotionDatabaseAll(token, databaseId),
+          { refresh: String(request.query?.refresh ?? '') === '1' },
+        );
       } catch (error) {
         return sendNotionError(response, {
           error,
@@ -286,10 +313,11 @@ export default async function handler(request, response) {
         });
       }
 
-      const questions = results
+      const questions = cached.value
         .map(mapPageToQuestion)
         .filter(question => question.title);
 
+      response.setHeader('X-SF-Archive-Cache', cached.cache);
       return response.status(200).json({
         admin: true,
         hasMore: false,
@@ -299,9 +327,16 @@ export default async function handler(request, response) {
       });
     }
 
-    let data;
+    const paginationParams = getPaginationParams(request.query);
+    const listCacheKey = `questions:list:${databaseId}:${paginationParams.pageSize}:${paginationParams.startCursor || 'first'}`;
+    let cached;
     try {
-      data = await queryNotionDatabasePage(token, databaseId, getPaginationParams(request.query));
+      cached = await getCachedJson(
+        listCacheKey,
+        QUESTIONS_LIST_CACHE_TTL_MS,
+        () => queryNotionDatabasePage(token, databaseId, paginationParams),
+        { refresh: String(request.query?.refresh ?? '') === '1' },
+      );
     } catch (error) {
       return sendNotionError(response, {
         error,
@@ -310,10 +345,12 @@ export default async function handler(request, response) {
       });
     }
 
+    const data = cached.value;
     const questions = (data.results ?? [])
       .map(mapPageToQuestion)
       .filter(question => question.title);
 
+    response.setHeader('X-SF-Archive-Cache', cached.cache);
     return response.status(200).json({
       hasMore: Boolean(data.has_more),
       nextCursor: data.next_cursor ?? '',
@@ -367,6 +404,7 @@ export default async function handler(request, response) {
             },
           },
         });
+        clearQuestionCaches();
 
         return response.status(200).json({
           ok: true,
@@ -403,6 +441,7 @@ export default async function handler(request, response) {
         method: 'PATCH',
         body: { properties },
       });
+      clearQuestionCaches();
 
       const updatedPage = await notionRequest(`/pages/${questionId}`, { token });
 
@@ -439,6 +478,7 @@ export default async function handler(request, response) {
               method: 'PATCH',
               body: { archived: true },
             });
+            clearQuestionCaches();
             return response.status(200).json({ ok: true });
           }
         }
@@ -451,6 +491,7 @@ export default async function handler(request, response) {
           method: 'PATCH',
           body: { archived: true },
         });
+        clearQuestionCaches();
         return response.status(200).json({ ok: true });
       }
 
@@ -465,6 +506,7 @@ export default async function handler(request, response) {
             method: 'PATCH',
             body: { archived: true },
           });
+          clearQuestionCaches();
           return response.status(200).json({ ok: true });
         }
       }
@@ -477,6 +519,7 @@ export default async function handler(request, response) {
         method: 'PATCH',
         body: { archived: true },
       });
+      clearQuestionCaches();
       return response.status(200).json({ ok: true });
     } catch (error) {
       return sendNotionError(response, {
@@ -522,6 +565,7 @@ export default async function handler(request, response) {
         },
       });
       comment.id = appended?.results?.[0]?.id;
+      clearQuestionCaches();
     } catch (error) {
       return sendNotionError(response, {
         error,
@@ -573,6 +617,7 @@ export default async function handler(request, response) {
         ] : [],
       },
     });
+    clearQuestionCaches();
   } catch (error) {
     return sendNotionError(response, {
       error,

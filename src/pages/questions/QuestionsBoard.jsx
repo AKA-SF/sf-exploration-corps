@@ -17,6 +17,14 @@ export default function QuestionsBoard({
       ? questions.length
       : questions.filter(question => normalizeQuestionCategory(question.category) === category).length
   );
+  const emptyTitle = loadStatus === 'loading'
+    ? '게시글을 불러오는 중입니다'
+    : loadStatus === 'error'
+      ? '커뮤니티 연결이 지연되고 있습니다'
+      : '아직 게시글이 없습니다';
+  const emptyMessage = loadStatus === 'error'
+    ? '잠시 후 다시 열거나 새로고침하면 마지막 정상 데이터와 다시 연결됩니다.'
+    : '새 글을 남기면 이곳에 바로 표시됩니다.';
 
   return (
     <>
@@ -55,8 +63,8 @@ export default function QuestionsBoard({
         )) : (
           <div className="questions-empty">
             <MessageSquare aria-hidden="true" />
-            <strong>{loadStatus === 'loading' ? '게시글을 불러오는 중입니다' : '아직 게시글이 없습니다'}</strong>
-            <span>새 글을 남기면 이곳에 바로 표시됩니다.</span>
+            <strong>{emptyTitle}</strong>
+            <span>{emptyMessage}</span>
           </div>
         )}
       </section>

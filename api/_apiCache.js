@@ -8,6 +8,13 @@ export function clearApiCache(key) {
   cacheStore.clear();
 }
 
+export function clearApiCachePrefix(prefix) {
+  if (!prefix) return;
+  for (const key of cacheStore.keys()) {
+    if (key.startsWith(prefix)) cacheStore.delete(key);
+  }
+}
+
 export async function getCachedJson(key, ttlMs, loader, { refresh = false } = {}) {
   const now = Date.now();
   const current = cacheStore.get(key);
@@ -31,6 +38,15 @@ export async function getCachedJson(key, ttlMs, loader, { refresh = false } = {}
       return value;
     })
     .catch(error => {
+      if (current?.value) {
+        cacheStore.set(key, {
+          expiresAt: Date.now() + Math.min(ttlMs, 30 * 1000),
+          pending: null,
+          stale: true,
+          value: current.value,
+        });
+        return current.value;
+      }
       cacheStore.delete(key);
       throw error;
     });
@@ -41,5 +57,7 @@ export async function getCachedJson(key, ttlMs, loader, { refresh = false } = {}
     value: current?.value ?? null,
   });
 
-  return { cache: 'MISS', value: await pending };
+  const value = await pending;
+  const updated = cacheStore.get(key);
+  return { cache: updated?.stale ? 'STALE' : 'MISS', value };
 }

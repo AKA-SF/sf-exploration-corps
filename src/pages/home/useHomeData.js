@@ -10,6 +10,10 @@ const initialLazySections = {
 const initialDashboard = {
   logs: [],
   questions: [],
+  loadState: {
+    logs: 'loading',
+    questions: 'loading',
+  },
   status: {
     works: false,
     media: false,
@@ -216,7 +220,7 @@ export default function useHomeData({
           signal: controller.signal,
           errorMessage: 'Exploration log unavailable',
         }),
-        fetchJson('/api/questions', {
+        fetchJson('/api/questions?pageSize=12', {
           cache: 'no-store',
           signal: controller.signal,
           errorMessage: 'Questions unavailable',
@@ -228,6 +232,11 @@ export default function useHomeData({
           ...state,
           logs: logsResult.status === 'fulfilled' && Array.isArray(logsResult.value.logs) ? logsResult.value.logs : [],
           questions: questionsResult.status === 'fulfilled' && Array.isArray(questionsResult.value.questions) ? questionsResult.value.questions : [],
+          loadState: {
+            ...state.loadState,
+            logs: logsResult.status === 'fulfilled' ? 'ready' : 'error',
+            questions: questionsResult.status === 'fulfilled' ? 'ready' : 'error',
+          },
           status: {
             ...state.status,
             logs: logsResult.status === 'fulfilled',

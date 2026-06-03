@@ -126,6 +126,7 @@ export default function Home() {
     onQuestionCreated: question => setDashboard(state => ({
       ...state,
       questions: [question, ...state.questions],
+      loadState: { ...state.loadState, questions: 'ready' },
       status: { ...state.status, questions: true },
     })),
     user,
@@ -379,6 +380,7 @@ export default function Home() {
           onQuestionFormChange={updateQuestionForm}
           onQuestionSubmit={submitQuestion}
           questionForm={questionForm}
+          questionLoadState={dashboard.loadState?.questions}
           questionMessage={questionMessage}
           questionStatus={questionStatus}
           questions={dashboard.questions}

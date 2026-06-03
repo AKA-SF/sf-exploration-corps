@@ -12,6 +12,38 @@ function CoordinateUniverseFallback() {
   );
 }
 
+function MobileCoordinateMap({ activeGenre, nodes, onExpand, onNodeSelect, onReset, selectedId }) {
+  const featuredNodes = nodes
+    .filter(node => !node.secondary || node.id === selectedId)
+    .slice(0, 12);
+
+  return (
+    <div className="coordinate-mobile-map" aria-label="모바일 탐사 좌표 요약">
+      <div className="coordinate-mobile-orbit" aria-hidden="true">
+        {featuredNodes.map(node => (
+          <button
+            className={`mobile-coordinate-node tone-${node.tone} ${node.id === selectedId ? 'is-selected' : ''}`}
+            key={node.id}
+            onClick={() => onNodeSelect(node)}
+            style={{ left: `${node.x}%`, top: `${node.y}%` }}
+            type="button"
+          >
+            <i />
+            <span>{node.label}</span>
+          </button>
+        ))}
+      </div>
+      <div className="coordinate-mobile-actions">
+        <span>{activeGenre ? '하위 좌표 탐색 중' : '핵심 좌표 요약 모드'}</span>
+        <div>
+          {activeGenre && <button onClick={onReset} type="button">중심으로</button>}
+          <button onClick={onExpand} type="button">우주 지도 열기</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function CoordinatesSection({
   activeGenre,
   hasCoordinateFocus,
@@ -38,6 +70,10 @@ export default function CoordinatesSection({
   const [shouldLoadMap, setShouldLoadMap] = useState(() => (
     typeof window !== 'undefined' && !('IntersectionObserver' in window)
   ));
+  const [isCompactViewport, setIsCompactViewport] = useState(() => (
+    typeof window !== 'undefined' && window.matchMedia('(max-width: 760px)').matches
+  ));
+  const [isMobileMapExpanded, setIsMobileMapExpanded] = useState(false);
 
   useEffect(() => {
     if (shouldLoadMap) return undefined;
@@ -56,6 +92,21 @@ export default function CoordinatesSection({
     return () => observer.disconnect();
   }, [shouldLoadMap]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined;
+    const compactQuery = window.matchMedia('(max-width: 760px)');
+    const updateCompact = () => {
+      setIsCompactViewport(compactQuery.matches);
+      if (!compactQuery.matches) setIsMobileMapExpanded(false);
+    };
+
+    updateCompact();
+    compactQuery.addEventListener('change', updateCompact);
+    return () => compactQuery.removeEventListener('change', updateCompact);
+  }, []);
+
+  const useMobileLiteMap = isCompactViewport && !isMobileMapExpanded;
+
   return (
     <section className="coordinates-section" id="coordinates" ref={sectionRef}>
       <div className="section-shell">
@@ -69,7 +120,19 @@ export default function CoordinatesSection({
         </div>
 
         <div className="coordinate-map-layout">
-          {shouldLoadMap ? (
+          {useMobileLiteMap ? (
+            <MobileCoordinateMap
+              activeGenre={activeGenre}
+              nodes={mapPositions}
+              onExpand={() => {
+                setShouldLoadMap(true);
+                setIsMobileMapExpanded(true);
+              }}
+              onNodeSelect={onNodeSelect}
+              onReset={onReset}
+              selectedId={selectedCoordinateId}
+            />
+          ) : shouldLoadMap ? (
             <Suspense fallback={<CoordinateUniverseFallback />}>
               <CoordinateUniverse
                 activeGenre={activeGenre}

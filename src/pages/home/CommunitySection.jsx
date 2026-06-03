@@ -25,6 +25,7 @@ export default function CommunitySection({
   onQuestionFormChange,
   onQuestionSubmit,
   questionForm,
+  questionLoadState = 'loading',
   questionMessage,
   questions = [],
   questionStatus,
@@ -63,7 +64,11 @@ export default function CommunitySection({
                 <Link to="/questions">전체 보기</Link>
               </div>
               <div className="community-signal-list">
-                {groupedQuestions[category].length > 0 ? groupedQuestions[category].map(question => (
+                {questionLoadState === 'loading' ? (
+                  <p className="community-signal-empty is-loading">커뮤니티 신호를 수신 중입니다.</p>
+                ) : questionLoadState === 'error' ? (
+                  <p className="community-signal-empty is-error">커뮤니티 연결이 지연되고 있습니다. 전체 게시판에서 다시 확인해주세요.</p>
+                ) : groupedQuestions[category].length > 0 ? groupedQuestions[category].map(question => (
                   <Link
                     className="community-signal-item"
                     key={`${category}-${question.id || question.title}`}

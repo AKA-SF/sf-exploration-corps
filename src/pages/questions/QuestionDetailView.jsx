@@ -17,11 +17,20 @@ export default function QuestionDetailView({
   onReadingModeToggle,
 }) {
   if (!activeQuestion) {
+    const emptyTitle = loadStatus === 'loading'
+      ? '게시글을 불러오는 중입니다'
+      : loadStatus === 'error'
+        ? '게시글 연결이 지연되고 있습니다'
+        : '게시글을 찾을 수 없습니다';
+    const emptyMessage = loadStatus === 'error'
+      ? 'Notion 또는 인증 연결을 확인한 뒤 다시 열어주세요.'
+      : '목록으로 돌아가 다시 선택해주세요.';
+
     return (
       <div className="questions-empty">
         <MessageSquare aria-hidden="true" />
-        <strong>{loadStatus === 'loading' ? '게시글을 불러오는 중입니다' : '게시글을 찾을 수 없습니다'}</strong>
-        <span>목록으로 돌아가 다시 선택해주세요.</span>
+        <strong>{emptyTitle}</strong>
+        <span>{emptyMessage}</span>
       </div>
     );
   }

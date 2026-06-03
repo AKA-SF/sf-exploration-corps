@@ -194,6 +194,121 @@
   border-radius: 50%;
 }
 
+.coordinate-mobile-map {
+  position: relative;
+  min-height: 430px;
+  border: 1px solid var(--line);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 46%, rgba(25, 247, 241, 0.18), transparent 23%),
+    radial-gradient(circle at 28% 22%, rgba(124, 199, 255, 0.12), transparent 20%),
+    linear-gradient(rgba(25, 247, 241, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(25, 247, 241, 0.035) 1px, transparent 1px),
+    #01070c;
+  background-size: auto, auto, 44px 44px, 44px 44px, auto;
+}
+
+.coordinate-mobile-orbit {
+  position: absolute;
+  inset: 22px 18px 82px;
+  border: 1px dashed rgba(25, 247, 241, 0.2);
+  border-radius: 50%;
+}
+
+.coordinate-mobile-orbit::before,
+.coordinate-mobile-orbit::after {
+  content: "";
+  position: absolute;
+  inset: 17%;
+  border: 1px solid rgba(25, 247, 241, 0.12);
+  border-radius: 50%;
+}
+
+.coordinate-mobile-orbit::after {
+  inset: 34%;
+  background: radial-gradient(circle, rgba(25, 247, 241, 0.65), rgba(25, 247, 241, 0.08) 34%, transparent 66%);
+}
+
+.mobile-coordinate-node {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+  max-width: 92px;
+  border: 0;
+  padding: 0;
+  color: #e8fbff;
+  background: transparent;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+
+.mobile-coordinate-node i {
+  width: 17px;
+  height: 17px;
+  border: 1px solid rgba(25, 247, 241, 0.72);
+  border-radius: 50%;
+  background: radial-gradient(circle at 36% 28%, #fff, rgba(25, 247, 241, 0.95) 22%, rgba(0, 32, 42, 0.95) 75%);
+  box-shadow: 0 0 18px rgba(25, 247, 241, 0.42);
+}
+
+.mobile-coordinate-node span {
+  padding: 4px 6px;
+  border: 1px solid rgba(25, 247, 241, 0.18);
+  background: rgba(0, 10, 15, 0.76);
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1.2;
+  text-align: center;
+}
+
+.mobile-coordinate-node.is-selected i {
+  border-color: rgba(240, 184, 90, 0.9);
+  box-shadow: 0 0 24px rgba(240, 184, 90, 0.5);
+}
+
+.mobile-coordinate-node.is-selected span {
+  color: #fff;
+  border-color: rgba(240, 184, 90, 0.58);
+}
+
+.coordinate-mobile-actions {
+  position: absolute;
+  z-index: 4;
+  right: 14px;
+  bottom: 14px;
+  left: 14px;
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid rgba(25, 247, 241, 0.22);
+  background: rgba(0, 12, 18, 0.84);
+}
+
+.coordinate-mobile-actions span {
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1.2px;
+}
+
+.coordinate-mobile-actions div {
+  display: flex;
+  gap: 8px;
+}
+
+.coordinate-mobile-actions button {
+  flex: 1;
+  min-height: 38px;
+  border: 1px solid rgba(25, 247, 241, 0.38);
+  color: #061316;
+  background: var(--cyan);
+  font-size: 12px;
+  font-weight: 950;
+}
+
 .genre-map {
   position: relative;
   height: 690px;

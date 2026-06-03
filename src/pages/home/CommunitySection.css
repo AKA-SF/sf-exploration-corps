@@ -147,6 +147,16 @@
   color: #8fb0bc;
 }
 
+.community-signal-empty.is-loading {
+  color: #a7f8f4;
+  background: linear-gradient(90deg, rgba(25, 247, 241, 0.08), transparent);
+}
+
+.community-signal-empty.is-error {
+  border-color: rgba(240, 184, 90, 0.34);
+  color: #f0d09a;
+}
+
 .question-composer-modal {
   width: min(760px, 100%);
   max-height: min(820px, calc(100vh - 42px));
