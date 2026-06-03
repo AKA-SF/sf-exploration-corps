@@ -17,6 +17,132 @@ export function activityTitle(activity) {
     || '탐사 활동';
 }
 
+function compactText(value, fallback = '') {
+  const text = String(value ?? '').replace(/\s+/g, ' ').trim();
+  if (!text) return fallback;
+  return text.length > 96 ? `${text.slice(0, 96)}...` : text;
+}
+
+function getWorkHref(workCode) {
+  return workCode ? `/works/novels?work=${encodeURIComponent(workCode)}` : '/works/novels';
+}
+
+function getTimestamp(value) {
+  const time = value ? new Date(value).getTime() : 0;
+  return Number.isFinite(time) ? time : 0;
+}
+
+export function buildProfileNetworkSignals({
+  activities = [],
+  communityQuestions = [],
+  workCommentCounts = {},
+  workComments = [],
+  workStatuses = [],
+}) {
+  const signals = [];
+  const seen = new Set();
+
+  const pushSignal = signal => {
+    const key = signal.key || `${signal.type}:${signal.href}:${signal.title}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    signals.push({
+      commentCount: 0,
+      date: '',
+      detail: '',
+      href: '',
+      tone: 'cyan',
+      ...signal,
+      key,
+    });
+  };
+
+  communityQuestions.forEach(question => {
+    pushSignal({
+      key: `question:${question.id}`,
+      type: 'community',
+      label: question.category || 'COMMUNITY',
+      title: question.title,
+      detail: compactText(question.content, '커뮤니티 게시글'),
+      href: question.id ? `/questions/${question.id}` : '/questions',
+      commentCount: question.commentCount ?? 0,
+      date: question.createdAt || question.date,
+      timestamp: getTimestamp(question.createdAt || question.date),
+      tone: 'amber',
+    });
+  });
+
+  workComments.forEach(comment => {
+    pushSignal({
+      key: `work-comment:${comment.id}`,
+      type: 'work-comment',
+      label: 'ARCHIVE COMMENT',
+      title: comment.work_title || comment.work_code,
+      detail: compactText(comment.body, '작품 카드에 댓글을 남겼습니다.'),
+      href: getWorkHref(comment.work_code),
+      commentCount: workCommentCounts[comment.work_code] ?? 0,
+      date: comment.created_at,
+      timestamp: getTimestamp(comment.created_at),
+      tone: 'violet',
+    });
+  });
+
+  workStatuses.forEach(status => {
+    pushSignal({
+      key: `work-status:${status.work_code}:${status.status}`,
+      type: 'work-status',
+      label: 'ARCHIVE CARD',
+      title: status.work_title || status.work_code,
+      detail: status.status === 'done'
+        ? '읽었어요 상태로 탐사 완료 기록'
+        : status.status === 'reading'
+          ? '읽고 있어요 상태로 현재 탐사 중'
+          : '읽고 싶어요 상태로 탐사 예정 좌표 등록',
+      href: getWorkHref(status.work_code),
+      commentCount: workCommentCounts[status.work_code] ?? 0,
+      date: status.updated_at,
+      timestamp: getTimestamp(status.updated_at),
+      tone: 'cyan',
+    });
+  });
+
+  activities
+    .filter(activity => ['post', 'comment', 'work_status'].includes(activity.action_type))
+    .forEach(activity => {
+      const metadata = activity.metadata ?? {};
+      if (metadata.question_id) {
+        pushSignal({
+          key: `activity-question:${activity.id}`,
+          type: 'activity',
+          label: activity.action_type === 'comment' ? 'COMMUNITY COMMENT' : 'COMMUNITY',
+          title: metadata.question_title || metadata.title || activityTitle(activity),
+          detail: compactText(metadata.category || activity.genre, '커뮤니티 활동'),
+          href: `/questions/${metadata.question_id}`,
+          date: activity.created_at,
+          timestamp: getTimestamp(activity.created_at),
+          tone: 'amber',
+        });
+      } else if (metadata.work_code) {
+        pushSignal({
+          key: `activity-work:${activity.id}`,
+          type: 'activity',
+          label: activity.action_type === 'work_status' ? 'ARCHIVE CARD' : 'ARCHIVE COMMENT',
+          title: metadata.work_title || metadata.title || activityTitle(activity),
+          detail: compactText(activity.genre, '작품 아카이브 활동'),
+          href: getWorkHref(metadata.work_code),
+          commentCount: workCommentCounts[metadata.work_code] ?? 0,
+          date: activity.created_at,
+          timestamp: getTimestamp(activity.created_at),
+          tone: activity.action_type === 'work_status' ? 'cyan' : 'violet',
+        });
+      }
+    });
+
+  return signals
+    .sort((a, b) => (b.timestamp ?? 0) - (a.timestamp ?? 0))
+    .slice(0, 16);
+}
+
 export function mapLocalWorkStatuses(userId) {
   if (!userId) return [];
   const localWorkStatuses = getJsonStorageItem(`sf-work-statuses:${userId}`, {});

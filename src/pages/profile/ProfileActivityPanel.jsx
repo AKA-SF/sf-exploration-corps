@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { MessageSquare } from 'lucide-react';
 
 export default function ProfileActivityPanel({
   activities,
@@ -6,14 +7,30 @@ export default function ProfileActivityPanel({
   activitySummary,
   activityTitle,
   message,
+  networkSignals = [],
   status,
 }) {
+  const fallbackSignals = activities.slice(0, 6).map(activity => ({
+    key: activity.id,
+    label: activityLabels[activity.action_type] || activity.action_type,
+    title: activityTitle(activity),
+    detail: `${activity.points ?? 0} MP 기록`,
+    href: activity.metadata?.question_id
+      ? `/questions/${activity.metadata.question_id}`
+      : activity.metadata?.work_code
+        ? `/works/novels?work=${encodeURIComponent(activity.metadata.work_code)}`
+        : '',
+    commentCount: 0,
+    tone: 'cyan',
+  }));
+  const signals = networkSignals.length > 0 ? networkSignals : fallbackSignals;
+
   return (
     <section className="profile-activity panel">
       <div className="class-track-header">
         <div>
           <span className="mono text-muted text-xs">RECENT SIGNALS</span>
-          <h3 className="mono">최근 활동</h3>
+          <h3 className="mono">네트워크 신호</h3>
         </div>
       </div>
 
@@ -44,15 +61,16 @@ export default function ProfileActivityPanel({
         </article>
       </div>
 
-      {activities.length > 0 ? activities.slice(0, 8).map(activity => (
-        <article className="profile-activity-row" key={activity.id}>
-          <span>{activityLabels[activity.action_type] || activity.action_type}</span>
-          <strong>{activityTitle(activity)}</strong>
-          <em>+{activity.points ?? 0} MP</em>
-        </article>
+      {signals.length > 0 ? signals.map(signal => (
+        <Link className={`profile-activity-row is-${signal.tone}`} key={signal.key} to={signal.href || '/profile'}>
+          <span>{signal.label}</span>
+          <strong>{signal.title}</strong>
+          <p>{signal.detail}</p>
+          <em><MessageSquare size={13} aria-hidden="true" /> {signal.commentCount ?? 0}</em>
+        </Link>
       )) : (
         <div className="profile-empty-state">
-          <p>아직 기록된 활동이 없습니다. 커뮤니티 글, 댓글, 탐사 로그와 연결하면 마일리지가 쌓입니다.</p>
+          <p>아직 수신된 네트워크 신호가 없습니다. 커뮤니티 글, 작품 댓글, 작품 상태를 남기면 이곳에 실제 기록이 올라옵니다.</p>
           <Link to="/questions">커뮤니티로 이동</Link>
         </div>
       )}

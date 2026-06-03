@@ -920,12 +920,22 @@
 
 .profile-activity-row {
   display: grid;
-  grid-template-columns: 120px 1fr auto;
-  gap: 12px;
-  align-items: center;
+  grid-template-columns: 112px minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  align-items: start;
   border: 1px solid rgba(0, 255, 255, 0.12);
   padding: 10px;
   background: rgba(0, 0, 0, 0.24);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.profile-activity-row:hover,
+.profile-activity-row:focus-visible {
+  border-color: rgba(0, 255, 255, 0.42);
+  background: rgba(0, 255, 255, 0.055);
+  transform: translateY(-1px);
 }
 
 .profile-activity-row span,
@@ -938,8 +948,35 @@
 }
 
 .profile-activity-row strong {
+  min-width: 0;
   color: var(--text-main);
   font-size: 12px;
+  line-height: 1.35;
+}
+
+.profile-activity-row p {
+  grid-column: 2 / 3;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.profile-activity-row em {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  min-width: 48px;
+  color: var(--accent-amber);
+}
+
+.profile-activity-row.is-amber span {
+  color: var(--accent-amber);
+}
+
+.profile-activity-row.is-violet span {
+  color: #b766ff;
 }
 
 .profile-empty-state {
@@ -1042,6 +1079,14 @@
   .profile-badge-grid.is-vault,
   .profile-activity-row {
     grid-template-columns: 1fr;
+  }
+
+  .profile-activity-row p {
+    grid-column: auto;
+  }
+
+  .profile-activity-row em {
+    justify-content: flex-start;
   }
 
   .mission-tree-panel {

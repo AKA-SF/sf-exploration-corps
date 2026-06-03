@@ -5,6 +5,7 @@ import { getCommunityAuthHeaders } from '../questions/communityApi';
 import { getCommunityAuthorName, getCommunityOwnerToken } from '../questions/communityIdentity';
 
 const initialQuestionForm = {
+  attachmentUrl: '',
   title: '',
   content: '',
   category: '자유글',
@@ -52,6 +53,7 @@ export default function useCommunityComposer({ onQuestionCreated, user }) {
         const data = await response.json().catch(() => ({}));
         throw new Error(data?.notion?.message || data?.error || '저장에 실패했습니다.');
       }
+      const data = await response.json().catch(() => ({}));
 
       await recordUserActivity(user, {
         actionType: 'post',
@@ -60,6 +62,8 @@ export default function useCommunityComposer({ onQuestionCreated, user }) {
         metadata: {
           title: questionForm.title,
           category: questionForm.category,
+          question_id: data.question?.id,
+          attachment_url: questionForm.attachmentUrl,
           node: 'community-board',
         },
       });
@@ -72,7 +76,8 @@ export default function useCommunityComposer({ onQuestionCreated, user }) {
         category: questionForm.category,
         content: questionForm.content,
         createdAt: new Date().toISOString(),
-        id: '',
+        id: data.question?.id ?? '',
+        attachmentUrl: questionForm.attachmentUrl,
         title: questionForm.title,
       });
       showActivityToast({

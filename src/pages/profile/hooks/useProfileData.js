@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../../lib/supabaseClient';
 import {
+  buildProfileNetworkSignals,
   buildProfileViewModel,
   getFallbackNickname,
   getProfileNickname,
@@ -8,6 +9,7 @@ import {
   mapLocalWorkStatuses,
   setSelectedMissionRoute as persistSelectedMissionRoute,
 } from '../profileDataUtils';
+import { getCommunityAuthHeaders } from '../../questions/communityApi';
 
 const emptyProfileViewModel = buildProfileViewModel({
   activities: [],
@@ -25,6 +27,7 @@ export function useProfileData(user) {
   const [message, setMessage] = useState('');
   const [selectedMissionRoute, setSelectedMissionRoute] = useState('');
   const [workStatuses, setWorkStatuses] = useState([]);
+  const [networkSignals, setNetworkSignals] = useState([]);
   const [manualBadges, setManualBadges] = useState([]);
 
   useEffect(() => {
@@ -69,6 +72,7 @@ export function useProfileData(user) {
         { data: activityData, error: activityError },
         { data: statusData, error: statusError },
         { data: badgeData, error: badgeError },
+        { data: workCommentData, error: workCommentError },
       ] = await Promise.all([
         supabase
           .from('activity_logs')
@@ -88,7 +92,49 @@ export function useProfileData(user) {
           .eq('user_id', user.id)
           .order('awarded_at', { ascending: false })
           .limit(200),
+        supabase
+          .from('work_comments')
+          .select('id,work_code,work_title,body,created_at')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(100),
       ]);
+
+      const nextActivities = activityError ? [] : activityData ?? [];
+      const nextWorkStatuses = statusError ? mapLocalWorkStatuses(user.id) : statusData ?? [];
+      const nextWorkComments = workCommentError ? [] : workCommentData ?? [];
+      const workCodes = Array.from(new Set([
+        ...nextWorkStatuses.map(item => item.work_code),
+        ...nextWorkComments.map(item => item.work_code),
+        ...nextActivities.map(item => item.metadata?.work_code),
+      ].filter(Boolean)));
+      let workCommentCounts = {};
+      if (workCodes.length > 0) {
+        const { data: commentCountData } = await supabase
+          .from('work_comments')
+          .select('work_code')
+          .in('work_code', workCodes)
+          .limit(1000);
+        workCommentCounts = (commentCountData ?? []).reduce((result, item) => ({
+          ...result,
+          [item.work_code]: (result[item.work_code] ?? 0) + 1,
+        }), {});
+      }
+
+      let communityQuestions = [];
+      try {
+        const authHeaders = await getCommunityAuthHeaders();
+        const response = await fetch('/api/questions?mine=1&includeCommentCounts=1&pageSize=40', {
+          cache: 'no-store',
+          headers: authHeaders,
+        });
+        if (response.ok) {
+          const data = await response.json();
+          communityQuestions = Array.isArray(data.questions) ? data.questions : [];
+        }
+      } catch {
+        communityQuestions = [];
+      }
 
       const lockedNickname = getProfileNickname(user, nextProfile, fallbackNickname);
 
@@ -105,8 +151,15 @@ export function useProfileData(user) {
       if (isMounted) {
         setProfile(nextProfile);
         setNickname(lockedNickname);
-        setActivities(activityError ? [] : activityData ?? []);
-        setWorkStatuses(statusError ? mapLocalWorkStatuses(user.id) : statusData ?? []);
+        setActivities(nextActivities);
+        setWorkStatuses(nextWorkStatuses);
+        setNetworkSignals(buildProfileNetworkSignals({
+          activities: nextActivities,
+          communityQuestions,
+          workCommentCounts,
+          workComments: nextWorkComments,
+          workStatuses: nextWorkStatuses,
+        }));
         setManualBadges(badgeError ? [] : badgeData ?? []);
         setSelectedMissionRoute(getSelectedMissionRoute(user.id));
         setStatus(activityError ? 'partial' : 'ready');
@@ -136,6 +189,7 @@ export function useProfileData(user) {
     activities,
     chooseMissionRoute,
     message,
+    networkSignals,
     nickname,
     profile,
     status,

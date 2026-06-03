@@ -62,6 +62,16 @@ export default function QuestionDetailView({
             <span>내용</span>
             <textarea name="content" onChange={onEditChange} rows="12" value={editForm.content} />
           </label>
+          <label>
+            <span>첨부 링크</span>
+            <input
+              name="attachmentUrl"
+              onChange={onEditChange}
+              placeholder="자료 파일, 이미지, 참고 링크 URL"
+              type="url"
+              value={editForm.attachmentUrl}
+            />
+          </label>
           <div className="question-owner-actions is-editing">
             <p className={`question-status is-${editStatus}`}>
               {editStatus === 'success' && editMessage}
@@ -89,6 +99,11 @@ export default function QuestionDetailView({
           <div className="question-detail-body">
             <p>{activeQuestion.content}</p>
           </div>
+          {activeQuestion.attachmentUrl && (
+            <a className="question-attachment-link" href={activeQuestion.attachmentUrl} target="_blank" rel="noreferrer">
+              첨부 자료 열기
+            </a>
+          )}
           {activeQuestion.canEdit && (
             <div className="question-owner-actions">
               <p className={`question-status is-${editStatus}`}>

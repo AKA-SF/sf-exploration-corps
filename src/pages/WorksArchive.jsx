@@ -1,5 +1,5 @@
-import { useParams } from 'react-router-dom';
-import { useMemo } from 'react';
+import { useParams, useSearchParams } from 'react-router-dom';
+import { useEffect, useMemo } from 'react';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
 import { getRandomWorks } from './home/homeUtils';
@@ -50,6 +50,7 @@ function getRelatedWorks(work, works) {
 export default function WorksArchive() {
   const { user } = useAuth();
   const { categorySlug = 'novels' } = useParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const {
     activeCategory,
     categoryWorks,
@@ -59,6 +60,7 @@ export default function WorksArchive() {
     status,
     visibleWorks,
     workCategories,
+    works,
   } = useWorksArchivePage(categorySlug);
   const {
     closeWorkDetail,
@@ -88,6 +90,21 @@ export default function WorksArchive() {
     user,
   });
   const relatedWorks = useMemo(() => getRelatedWorks(selectedWork, visibleWorks), [selectedWork, visibleWorks]);
+  const requestedWorkCode = searchParams.get('work') || '';
+
+  useEffect(() => {
+    if (!requestedWorkCode || selectedWork || status === 'loading') return;
+    const targetWork = works.find(work => work.code === requestedWorkCode);
+    if (targetWork) openWorkDetail(targetWork);
+  }, [openWorkDetail, requestedWorkCode, selectedWork, status, works]);
+
+  const closeRoutedWorkDetail = () => {
+    closeWorkDetail();
+    if (!requestedWorkCode) return;
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('work');
+    setSearchParams(nextParams, { replace: true });
+  };
 
   return (
     <PageTransition className="works-full-page">
@@ -130,7 +147,7 @@ export default function WorksArchive() {
         commentStatus={commentStatus}
         comments={workComments}
         commentText={commentText}
-        onClose={closeWorkDetail}
+        onClose={closeRoutedWorkDetail}
         onCommentSubmit={submitWorkComment}
         onCommentTextChange={setCommentText}
         onRelatedWorkOpen={openWorkDetail}

@@ -51,6 +51,17 @@ export default function QuestionWritePanel({
           </select>
         </label>
 
+        <label>
+          <span>첨부 링크</span>
+          <input
+            name="attachmentUrl"
+            onChange={onChange}
+            placeholder="자료 파일, 이미지, 참고 링크 URL"
+            type="url"
+            value={form.attachmentUrl}
+          />
+        </label>
+
         <div className="question-form-actions">
           <p className={`question-status is-${status}`}>
             {status === 'success' && message}

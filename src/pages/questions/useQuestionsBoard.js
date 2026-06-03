@@ -16,6 +16,7 @@ export const normalizeQuestionCategory = category => {
 };
 
 const emptyQuestionForm = {
+  attachmentUrl: '',
   title: '',
   content: '',
   category: '자유글',
@@ -168,6 +169,7 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
         const data = await response.json().catch(() => ({}));
         throw new Error(data?.notion?.message || data?.error || '저장에 실패했습니다.');
       }
+      const data = await response.json().catch(() => ({}));
       await recordUserActivity(user, {
         actionType: 'post',
         points: 20,
@@ -175,6 +177,8 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
         metadata: {
           title: questionForm.title,
           category: questionForm.category,
+          question_id: data.question?.id,
+          attachment_url: questionForm.attachmentUrl,
           node: 'community-board',
         },
       });
@@ -258,6 +262,7 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
   const beginQuestionEdit = () => {
     if (!activeQuestion?.canEdit) return;
     setQuestionEditForm({
+      attachmentUrl: activeQuestion.attachmentUrl ?? '',
       title: activeQuestion.title ?? '',
       content: activeQuestion.content ?? '',
       category: normalizeQuestionCategory(activeQuestion.category),

@@ -13,12 +13,14 @@ import { findPropertyEntry, readJsonBody, richTextPayload } from './_notionWrite
 const DEFAULT_QUESTIONS_DATABASE_ID = '36a98dbef69d803abd53c09b6ff7f2e3';
 const OWNER_PREFIX = 'SFA_OWNER:';
 const COMMENT_PREFIX = 'SFA_COMMENT:';
+const ATTACHMENT_PREFIX = 'SFA_ATTACHMENT:';
 const DEFAULT_QUESTIONS_PAGE_SIZE = 40;
 const QUESTIONS_DATABASE_CACHE_TTL_MS = 5 * 60 * 1000;
 const QUESTIONS_LIST_CACHE_TTL_MS = 45 * 1000;
 const QUESTIONS_ADMIN_CACHE_TTL_MS = 20 * 1000;
 const VIEW_WRITE_TTL_MS = 90 * 1000;
 const CATEGORY_PROPERTY_NAMES = ['말머리', '분류', '카테고리', 'Category', 'Type'];
+const ATTACHMENT_PROPERTY_NAMES = ['첨부', '첨부파일', '파일', '파일 URL', 'Attachment', 'Attachment URL', 'File'];
 const viewWriteState = globalThis.__sfQuestionViewWriteState ??= new Map();
 
 function clearQuestionCaches() {
@@ -40,6 +42,7 @@ function mapPageToQuestion(page, index) {
   const status = plainText(pick(properties, ['상태', 'Status']));
   const date = plainText(pick(properties, ['작성일', '날짜', 'Date']));
   const views = Number(plainText(pick(properties, ['조회수', '조회', 'Views', 'View Count']))) || 0;
+  const attachmentUrl = plainText(pick(properties, ATTACHMENT_PROPERTY_NAMES));
 
   return {
     id: page.id,
@@ -51,6 +54,8 @@ function mapPageToQuestion(page, index) {
     category: normalizeCommunityCategory(category),
     status,
     date,
+    attachmentUrl,
+    commentCount: 0,
     views,
   };
 }
@@ -74,6 +79,12 @@ function parseOwnerBlock(block) {
   if (block.type !== 'paragraph') return '';
   const text = block.paragraph?.rich_text?.map(part => part.plain_text).join('') ?? '';
   return text.startsWith(OWNER_PREFIX) ? text.replace(OWNER_PREFIX, '').trim() : '';
+}
+
+function parseAttachmentBlock(block) {
+  if (block.type !== 'paragraph') return '';
+  const text = block.paragraph?.rich_text?.map(part => part.plain_text).join('') ?? '';
+  return text.startsWith(ATTACHMENT_PREFIX) ? text.replace(ATTACHMENT_PREFIX, '').trim() : '';
 }
 
 function sanitizeOwnerToken(value) {
@@ -162,6 +173,7 @@ function setIfPresent(properties, schema, names, type, value) {
 }
 
 function buildQuestionProperties(schema, {
+  attachmentUrl,
   category,
   contact,
   content,
@@ -176,6 +188,8 @@ function buildQuestionProperties(schema, {
   setIfPresent(properties, schema, ['연락처', 'Contact', 'Email', '이메일'], 'rich_text', contact);
   setIfPresent(properties, schema, ['이메일', 'Email'], 'email', contact);
   setIfPresent(properties, schema, CATEGORY_PROPERTY_NAMES, 'select', normalizeCommunityCategory(category));
+  setIfPresent(properties, schema, ATTACHMENT_PROPERTY_NAMES, 'url', attachmentUrl);
+  setIfPresent(properties, schema, ATTACHMENT_PROPERTY_NAMES, 'rich_text', attachmentUrl);
   setIfPresent(properties, schema, ['상태', 'Status'], 'status', '공개');
   if (includeDate) {
     setIfPresent(properties, schema, ['작성일', '날짜', 'Date'], 'date', new Date().toISOString().slice(0, 10));
@@ -192,6 +206,19 @@ async function loadPageBlocks({ pageId, token }) {
 function pageCanEdit(blocks, ownerToken) {
   if (!ownerToken) return false;
   return (blocks.results ?? []).some(block => parseOwnerBlock(block) === ownerToken);
+}
+
+function enrichQuestionFromBlocks(question, blocks, ownerToken) {
+  const results = blocks.results ?? [];
+  const comments = results.map(parseCommentBlock).filter(Boolean);
+  const attachmentUrl = results.map(parseAttachmentBlock).filter(Boolean).at(-1);
+
+  return {
+    ...question,
+    attachmentUrl: question.attachmentUrl || attachmentUrl || '',
+    canEdit: pageCanEdit(blocks, ownerToken),
+    commentCount: comments.length,
+  };
 }
 
 async function incrementViewCount({ page, schema, token }) {
@@ -294,10 +321,7 @@ export default async function handler(request, response) {
         .map(comment => sanitizeComment(comment, ownerToken));
 
       return response.status(200).json({
-        question: {
-          ...mapPageToQuestion(page, 0),
-          canEdit: pageCanEdit(blocks, ownerToken),
-        },
+        question: enrichQuestionFromBlocks(mapPageToQuestion(page, 0), blocks, ownerToken),
         comments,
       });
     }
@@ -336,6 +360,15 @@ export default async function handler(request, response) {
       });
     }
 
+    const includeCommentCounts = String(request.query?.includeCommentCounts ?? '') === '1';
+    const mineOnly = String(request.query?.mine ?? '') === '1';
+    let authenticatedUser = mineOnly || includeCommentCounts ? await getOptionalUser(request) : null;
+    if (mineOnly && !authenticatedUser) {
+      authenticatedUser = await requireAuthenticatedUser(request, response);
+      if (!authenticatedUser) return null;
+    }
+    const ownerToken = getUserOwnerToken(authenticatedUser) || sanitizeOwnerToken(request.query?.ownerToken);
+
     const paginationParams = getPaginationParams(request.query);
     const listCacheKey = `questions:list:${databaseId}:${paginationParams.pageSize}:${paginationParams.startCursor || 'first'}`;
     let cached;
@@ -355,9 +388,19 @@ export default async function handler(request, response) {
     }
 
     const data = cached.value;
-    const questions = (data.results ?? [])
+    let questions = (data.results ?? [])
       .map(mapPageToQuestion)
       .filter(question => question.title);
+
+    if (mineOnly || includeCommentCounts) {
+      const enrichedQuestions = await Promise.all(questions.map(async question => {
+        const blocks = await loadPageBlocks({ pageId: question.id, token });
+        return enrichQuestionFromBlocks(question, blocks, ownerToken);
+      }));
+      questions = mineOnly
+        ? enrichedQuestions.filter(question => question.canEdit)
+        : enrichedQuestions;
+    }
 
     response.setHeader('X-SF-Archive-Cache', cached.cache);
     return response.status(200).json({
@@ -427,6 +470,7 @@ export default async function handler(request, response) {
       const name = authenticatedAuthorName;
       const contact = String(body?.contact ?? '').trim();
       const category = String(body?.category ?? '').trim() || '자유글';
+      const attachmentUrl = String(body?.attachmentUrl ?? '').trim();
 
       if (!questionId || !title || !content) {
         return response.status(400).json({ error: 'Question ID, title, and content are required' });
@@ -438,6 +482,7 @@ export default async function handler(request, response) {
       }
 
       const properties = buildQuestionProperties(schema, {
+        attachmentUrl,
         category,
         contact,
         content,
@@ -450,6 +495,21 @@ export default async function handler(request, response) {
         method: 'PATCH',
         body: { properties },
       });
+      if (attachmentUrl) {
+        await notionRequest(`/blocks/${questionId}/children`, {
+          token,
+          method: 'PATCH',
+          body: {
+            children: [{
+              object: 'block',
+              type: 'paragraph',
+              paragraph: {
+                rich_text: richTextPayload(`${ATTACHMENT_PREFIX}${attachmentUrl}`),
+              },
+            }],
+          },
+        });
+      }
       clearQuestionCaches();
 
       const updatedPage = await notionRequest(`/pages/${questionId}`, { token });
@@ -590,6 +650,7 @@ export default async function handler(request, response) {
   const name = authenticatedAuthorName;
   const contact = String(body?.contact ?? '').trim();
   const category = String(body?.category ?? '').trim() || '자유글';
+  const attachmentUrl = String(body?.attachmentUrl ?? '').trim();
   const ownerToken = authenticatedOwnerToken;
 
   if (!title || !content) {
@@ -597,6 +658,7 @@ export default async function handler(request, response) {
   }
 
   const properties = buildQuestionProperties(schema, {
+    attachmentUrl,
     category,
     contact,
     content,
@@ -609,24 +671,41 @@ export default async function handler(request, response) {
   }
 
   try {
-    await notionRequest('/pages', {
+    const children = [
+      ...(ownerToken ? [{
+        object: 'block',
+        type: 'paragraph',
+        paragraph: {
+          rich_text: richTextPayload(`${OWNER_PREFIX}${ownerToken}`),
+        },
+      }] : []),
+      ...(attachmentUrl ? [{
+        object: 'block',
+        type: 'paragraph',
+        paragraph: {
+          rich_text: richTextPayload(`${ATTACHMENT_PREFIX}${attachmentUrl}`),
+        },
+      }] : []),
+    ];
+    const createdPage = await notionRequest('/pages', {
       token,
       method: 'POST',
       body: {
         parent: { database_id: databaseId },
         properties,
-        children: ownerToken ? [
-          {
-            object: 'block',
-            type: 'paragraph',
-            paragraph: {
-              rich_text: richTextPayload(`${OWNER_PREFIX}${ownerToken}`),
-            },
-          },
-        ] : [],
+        children,
       },
     });
     clearQuestionCaches();
+    return response.status(200).json({
+      ok: true,
+      question: {
+        ...mapPageToQuestion(createdPage, 0),
+        attachmentUrl,
+        canEdit: true,
+        commentCount: 0,
+      },
+    });
   } catch (error) {
     return sendNotionError(response, {
       error,
@@ -634,5 +713,4 @@ export default async function handler(request, response) {
     });
   }
 
-  return response.status(200).json({ ok: true });
 }

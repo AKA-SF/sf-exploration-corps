@@ -27,6 +27,7 @@ export default function Profile() {
     activities,
     chooseMissionRoute,
     message,
+    networkSignals,
     nickname,
     status,
     viewModel,
@@ -131,6 +132,7 @@ export default function Profile() {
             activitySummary={activitySummary}
             activityTitle={activityTitle}
             message={message}
+            networkSignals={networkSignals}
             status={status}
           />
         </div>
