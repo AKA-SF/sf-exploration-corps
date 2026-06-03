@@ -5,10 +5,16 @@ import { Lock, Radar, RadioTower, SendHorizontal, MessageSquareText, Users, Zap 
 import PageTransition from '../components/PageTransition';
 import { ZoomableMap } from '../components/ZoomableMap';
 import { useAuth } from '../context/authContextValue';
+import { supabase } from '../lib/supabaseClient';
 import useRadioMessages from './network/useRadioMessages';
 import {
+  formatSignalTime,
+  getActivitySignal,
+  getDailyNetworkMission,
   getNetworkMotionProfile,
   getSignalLine,
+  getSignalColor,
+  getUnknownSignalTarget,
   LOG_TYPES,
   MAX_ANIMATED_EDGES,
   MAX_EDGE_COMPARE_WINDOW,
@@ -25,6 +31,7 @@ const Network = () => {
   const userLogCount = logs.length;
 
   const [hoveredNode, setHoveredNode] = useState(null);
+  const [activitySignals, setActivitySignals] = useState([]);
   const [motionProfile, setMotionProfile] = useState(getNetworkMotionProfile);
   const {
     isRadioSubmitting,
@@ -55,6 +62,49 @@ const Network = () => {
     return () => {
       compactQuery.removeEventListener('change', updateProfile);
       reducedQuery.removeEventListener('change', updateProfile);
+    };
+  }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadActivitySignals = async () => {
+      if (!supabase) {
+        setActivitySignals([]);
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('activity_logs')
+        .select('id, action_type, genre, points, metadata, created_at')
+        .order('created_at', { ascending: false })
+        .limit(18);
+
+      if (!isMounted) return;
+
+      if (error) {
+        setActivitySignals([]);
+        return;
+      }
+
+      setActivitySignals((data ?? []).map(activity => {
+        const signal = getActivitySignal(activity);
+        return {
+          id: `activity-${activity.id}`,
+          color: getSignalColor(signal.status),
+          status: signal.status,
+          sender: activity.genre || 'CREW_ACTIVITY',
+          body: signal.body,
+          href: signal.href,
+          time: formatSignalTime(activity.created_at),
+        };
+      }));
+    };
+
+    loadActivitySignals();
+
+    return () => {
+      isMounted = false;
     };
   }, []);
 
@@ -127,6 +177,13 @@ const Network = () => {
       .slice(0, edgeLimit);
   }, [motionProfile, spatialLogs]);
 
+  const dailyMission = useMemo(() => getDailyNetworkMission(), []);
+
+  const unknownSignal = useMemo(
+    () => getUnknownSignalTarget({ activitySignals, radioMessages, spatialLogs }),
+    [activitySignals, radioMessages, spatialLogs],
+  );
+
   const transmissionStream = useMemo(() => {
     const radioSignals = radioStream.map(signal => ({
       id: `radio-${signal.id}`,
@@ -138,6 +195,26 @@ const Network = () => {
       message: signal.message,
       isReplyToMe: signal.isReplyToMe,
     }));
+
+    const unknownStreamSignal = {
+      id: 'unknown-daily-signal',
+      color: unknownSignal.color,
+      status: unknownSignal.status,
+      sender: 'DEEP_SCAN',
+      body: `미확인 신호 감지 // ${unknownSignal.body}`,
+      href: unknownSignal.href,
+      time: unknownSignal.label,
+    };
+
+    const missionSignal = {
+      id: `daily-mission-${dailyMission.id}`,
+      color: getSignalColor(dailyMission.signal),
+      status: 'DAILY_MISSION',
+      sender: 'MISSION-CONTROL',
+      body: `${dailyMission.title} // ${dailyMission.detail}`,
+      href: dailyMission.href,
+      time: dailyMission.reward,
+    };
 
     const baseStream = spatialLogs
       .slice()
@@ -152,6 +229,8 @@ const Network = () => {
             status: isEncrypted ? 'LOCKED' : log.typeKey,
             sender: log.explorerId,
             body: isEncrypted ? `암호화된 신호 감지 / ACCESS_REQ LVL_${log.encryptionLevel}` : getSignalLine(log, index),
+            href: isEncrypted ? null : `/network/${log.id}`,
+            time: isEncrypted ? `LVL_${log.encryptionLevel}` : 'LOG_TRACE',
           },
           ...log.responseSignals.slice(-1).map(signal => ({
             id: `${log.id}-${signal.signalId}`,
@@ -159,20 +238,27 @@ const Network = () => {
             status: 'RESPONSE',
             sender: signal.sender,
             body: `응답 신호 수신 // ${signal.message}`,
+            href: `/network/${log.id}`,
+            time: 'RELAY_REPLY',
           })),
         ];
       });
 
     if (baseStream.length + radioSignals.length < 5) {
       baseStream.push(
-        { id: 'system-watch-01', color: 'var(--primary-cyan)', status: 'SYSTEM', sender: 'ARCHIVE-CORE', body: '섹터별 감정 동기화율을 갱신 중입니다.' },
-        { id: 'system-watch-02', color: 'var(--accent-amber)', status: 'MISSION', sender: 'MISSION-CONTROL', body: '이번 주 공동 목표: LOST_TRANSMISSION 3개 해독.' },
-        { id: 'system-watch-03', color: '#a855f7', status: 'ANOMALY', sender: 'NULL-PILGRIM', body: '하드SF 클러스터 근처에서 비정상 개념 태그가 반복됩니다.' },
+        { id: 'system-watch-01', color: 'var(--primary-cyan)', status: 'SYSTEM', sender: 'ARCHIVE-CORE', body: '섹터별 감정 동기화율을 갱신 중입니다.', href: '/works/novels', time: 'ARCHIVE' },
+        { id: 'system-watch-02', color: 'var(--accent-amber)', status: 'MISSION', sender: 'MISSION-CONTROL', body: '오늘의 임무 채널을 열어 대원 활동 신호를 기다리는 중입니다.', href: dailyMission.href, time: dailyMission.reward },
       );
     }
 
-    return [...radioSignals, ...baseStream].slice(0, 10);
-  }, [radioStream, spatialLogs, userLogCount]);
+    return [
+      unknownStreamSignal,
+      ...activitySignals.slice(0, 6),
+      ...radioSignals,
+      missionSignal,
+      ...baseStream,
+    ].slice(0, 12);
+  }, [activitySignals, dailyMission, radioStream, spatialLogs, unknownSignal, userLogCount]);
 
   const handleNodeClick = (log) => {
     if (userLogCount >= log.encryptionLevel) {
@@ -196,17 +282,30 @@ const Network = () => {
           <span>{signal.time || signal.sender}</span>
         </div>
         <p>{signal.body}</p>
-        {!ghost && signal.message && signal.message.user_id !== user?.id && (
-          <button
-            className="radio-reply-button mono"
-            onClick={() => {
-              setReplyTarget(signal.message);
-              setReplyBody('');
-            }}
-            type="button"
-          >
-            답신 보내기
-          </button>
+        {!ghost && (signal.href || (signal.message && signal.message.user_id !== user?.id)) && (
+          <div className="relay-line-actions">
+            {signal.href && (
+              <button
+                className="relay-track-button mono"
+                onClick={() => navigate(signal.href)}
+                type="button"
+              >
+                신호 추적
+              </button>
+            )}
+            {signal.message && signal.message.user_id !== user?.id && (
+              <button
+                className="radio-reply-button mono"
+                onClick={() => {
+                  setReplyTarget(signal.message);
+                  setReplyBody('');
+                }}
+                type="button"
+              >
+                답신 보내기
+              </button>
+            )}
+          </div>
         )}
       </div>
     </div>
@@ -237,7 +336,7 @@ const Network = () => {
           </span>
           <span>
             <b>PACKETS</b>
-            <em>{edges.length * 2}</em>
+            <em>{edges.length * 2 + activitySignals.length + radioMessages.length}</em>
           </span>
         </div>
       </section>
@@ -409,13 +508,29 @@ const Network = () => {
           <div className="relay-metrics">
             <div className="relay-metric mono">
               <Users size={11} />
-              <span>{Math.max(7, spatialLogs.length * 3 + radioMessages.length)} ACTIVE</span>
+              <span>{Math.max(7, spatialLogs.length * 3 + radioMessages.length + activitySignals.length)} ACTIVE</span>
             </div>
             <div className="relay-metric mono">
               <Zap size={11} />
-              <span>{edges.length * 2 + radioMessages.length} PACKETS</span>
+              <span>{edges.length * 2 + radioMessages.length + activitySignals.length} PACKETS</span>
             </div>
           </div>
+          <div className="network-mission-card">
+            <div className="network-mission-card__meta mono">
+              <span style={{ color: getSignalColor(dailyMission.signal) }}>TODAY_MISSION</span>
+              <span>{dailyMission.reward}</span>
+            </div>
+            <strong>{dailyMission.title}</strong>
+            <p>{dailyMission.detail}</p>
+            <button className="mono" onClick={() => navigate(dailyMission.href)} type="button">
+              임무 좌표 이동
+            </button>
+          </div>
+          <button className="unknown-signal-card" onClick={() => navigate(unknownSignal.href)} type="button">
+            <span className="mono">UNKNOWN_SIGNAL</span>
+            <strong>{unknownSignal.body}</strong>
+            <em className="mono">{unknownSignal.label}</em>
+          </button>
           <form className="radio-composer" onSubmit={submitRadioMessage}>
             <label className="mono" htmlFor="radio-message">OPEN_RADIO_MESSAGE</label>
             <textarea
