@@ -18,6 +18,7 @@ const QUESTIONS_DATABASE_CACHE_TTL_MS = 5 * 60 * 1000;
 const QUESTIONS_LIST_CACHE_TTL_MS = 45 * 1000;
 const QUESTIONS_ADMIN_CACHE_TTL_MS = 20 * 1000;
 const VIEW_WRITE_TTL_MS = 90 * 1000;
+const CATEGORY_PROPERTY_NAMES = ['말머리', '분류', '카테고리', 'Category', 'Type'];
 const viewWriteState = globalThis.__sfQuestionViewWriteState ??= new Map();
 
 function clearQuestionCaches() {
@@ -35,7 +36,7 @@ function mapPageToQuestion(page, index) {
   const content = plainText(pick(properties, ['내용', '본문', '질문 내용', 'Content', 'Description']));
   const author = plainText(pick(properties, ['작성자', '이름', 'Author']));
   const contact = plainText(pick(properties, ['연락처', 'Contact', 'Email', '이메일']));
-  const category = plainText(pick(properties, ['분류', 'Category', 'Type']));
+  const category = plainText(pick(properties, CATEGORY_PROPERTY_NAMES));
   const status = plainText(pick(properties, ['상태', 'Status']));
   const date = plainText(pick(properties, ['작성일', '날짜', 'Date']));
   const views = Number(plainText(pick(properties, ['조회수', '조회', 'Views', 'View Count']))) || 0;
@@ -47,7 +48,7 @@ function mapPageToQuestion(page, index) {
     content,
     author: author || '익명',
     contact,
-    category: category || '토론 질문',
+    category: normalizeCommunityCategory(category),
     status,
     date,
     views,
@@ -120,9 +121,17 @@ function getStatusName(property, preferredName) {
 function getSelectName(property, preferredName) {
   const options = property?.select?.options ?? [];
   if (options.length === 0) return preferredName;
-  return options.find(option => option.name === preferredName)?.name
-    ?? options[0]?.name
-    ?? '';
+  return options.find(option => option.name === preferredName)?.name ?? preferredName;
+}
+
+function normalizeCommunityCategory(value) {
+  const source = String(value ?? '').trim().replace(/\s+/g, '');
+  if (!source) return '자유글';
+  if (['작품추천', '작품추천글', '추천', '추천글', '작품'].includes(source)) return '작품추천';
+  if (['질문', '토론질문', '문의'].includes(source)) return '질문';
+  if (['토론', '토론글', '논의'].includes(source)) return '토론';
+  if (['자유글', '자유', '커뮤니티', '아카이브제안', '강의/워크숍주제'].includes(source)) return '자유글';
+  return value || '자유글';
 }
 
 function buildProperty(property, value) {
@@ -166,7 +175,7 @@ function buildQuestionProperties(schema, {
   setIfPresent(properties, schema, ['작성자', '이름', 'Name', 'Author'], 'rich_text', name || '익명');
   setIfPresent(properties, schema, ['연락처', 'Contact', 'Email', '이메일'], 'rich_text', contact);
   setIfPresent(properties, schema, ['이메일', 'Email'], 'email', contact);
-  setIfPresent(properties, schema, ['분류', 'Category', 'Type'], 'select', category);
+  setIfPresent(properties, schema, CATEGORY_PROPERTY_NAMES, 'select', normalizeCommunityCategory(category));
   setIfPresent(properties, schema, ['상태', 'Status'], 'status', '공개');
   if (includeDate) {
     setIfPresent(properties, schema, ['작성일', '날짜', 'Date'], 'date', new Date().toISOString().slice(0, 10));
