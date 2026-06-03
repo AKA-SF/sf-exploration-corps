@@ -1,25 +1,33 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLogs } from '../context/LogContext';
 import { Lock, Radar, RadioTower, SendHorizontal, MessageSquareText, Users, Zap } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import { ZoomableMap } from '../components/ZoomableMap';
 import { useAuth } from '../context/authContextValue';
+import { useActivityToast } from '../context/activityToastContextValue';
 import { useMotionProfile } from '../hooks/useMotionProfile';
+import { recordUserActivity } from '../lib/activityLogger';
 import { supabase } from '../lib/supabaseClient';
+import { fetchCommunityQuestions } from './questions/communityApi';
 import useRadioMessages from './network/useRadioMessages';
 import {
   formatSignalTime,
   getActivitySignal,
+  getBoardSignal,
   getDailyNetworkMission,
+  getNetworkMissionProgress,
   getSignalLine,
   getSignalColor,
   getUnknownSignalTarget,
+  getWorkCommentSignal,
   LOG_TYPES,
   MAX_ANIMATED_EDGES,
   MAX_EDGE_COMPARE_WINDOW,
   MAX_VISIBLE_EDGES,
   MAX_VISIBLE_NODES,
+  NETWORK_AUX_SIGNAL_LIMIT,
+  NETWORK_REACTIONS,
 } from './network/networkUtils';
 import './Network.css';
 import '../styles/MobileExperience.css';
@@ -27,11 +35,17 @@ import '../styles/MobileExperience.css';
 const Network = () => {
   const { logs, networkLogs } = useLogs();
   const { user } = useAuth();
+  const { showActivityToast } = useActivityToast();
   const navigate = useNavigate();
   const userLogCount = logs.length;
 
   const [hoveredNode, setHoveredNode] = useState(null);
   const [activitySignals, setActivitySignals] = useState([]);
+  const [boardSignals, setBoardSignals] = useState([]);
+  const [workCommentSignals, setWorkCommentSignals] = useState([]);
+  const [amplifiedSignals, setAmplifiedSignals] = useState(() => new Set());
+  const [reactionNotice, setReactionNotice] = useState('');
+  const [isReacting, setIsReacting] = useState(false);
   const motionProfile = useMotionProfile();
   const {
     isRadioSubmitting,
@@ -48,6 +62,20 @@ const Network = () => {
     submitRadioMessage,
     submitRadioReply,
   } = useRadioMessages(user);
+
+  const normalizeActivitySignal = useCallback(activity => {
+    const signal = getActivitySignal(activity);
+    return {
+      id: `activity-${activity.id}`,
+      color: getSignalColor(signal.status),
+      status: signal.status,
+      sender: activity.genre || 'CREW_ACTIVITY',
+      body: signal.body,
+      href: signal.href,
+      time: formatSignalTime(activity.created_at),
+      createdAt: activity.created_at,
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -71,21 +99,64 @@ const Network = () => {
         return;
       }
 
-      setActivitySignals((data ?? []).map(activity => {
-        const signal = getActivitySignal(activity);
-        return {
-          id: `activity-${activity.id}`,
-          color: getSignalColor(signal.status),
-          status: signal.status,
-          sender: activity.genre || 'CREW_ACTIVITY',
-          body: signal.body,
-          href: signal.href,
-          time: formatSignalTime(activity.created_at),
-        };
-      }));
+      setActivitySignals((data ?? []).map(normalizeActivitySignal));
     };
 
     loadActivitySignals();
+
+    if (!supabase) return () => {
+      isMounted = false;
+    };
+
+    const channel = supabase
+      .channel('network-activity-live')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'activity_logs',
+      }, payload => {
+        if (payload.new?.user_id !== user?.id) return;
+        setActivitySignals(current => {
+          const nextSignal = normalizeActivitySignal(payload.new);
+          if (current.some(signal => signal.id === nextSignal.id)) return current;
+          return [nextSignal, ...current].slice(0, 18);
+        });
+      })
+      .subscribe();
+
+    return () => {
+      isMounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, [normalizeActivitySignal, user]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function loadAuxiliarySignals() {
+      const [boardResult, workCommentResult] = await Promise.allSettled([
+        fetchCommunityQuestions({ pageSize: NETWORK_AUX_SIGNAL_LIMIT }),
+        supabase
+          ? supabase
+            .from('work_comments')
+            .select('id,work_code,work_title,author_name,body,created_at')
+            .order('created_at', { ascending: false })
+            .limit(NETWORK_AUX_SIGNAL_LIMIT)
+          : Promise.resolve({ data: [] }),
+      ]);
+
+      if (!isMounted) return;
+
+      if (boardResult.status === 'fulfilled') {
+        setBoardSignals((boardResult.value.questions ?? []).map(getBoardSignal));
+      }
+
+      if (workCommentResult.status === 'fulfilled' && !workCommentResult.value.error) {
+        setWorkCommentSignals((workCommentResult.value.data ?? []).map(getWorkCommentSignal));
+      }
+    }
+
+    loadAuxiliarySignals();
 
     return () => {
       isMounted = false;
@@ -163,6 +234,13 @@ const Network = () => {
 
   const dailyMission = useMemo(() => getDailyNetworkMission(), []);
 
+  const missionProgress = useMemo(() => getNetworkMissionProgress({
+    activitySignals,
+    dailyMission,
+    radioMessages,
+    user,
+  }), [activitySignals, dailyMission, radioMessages, user]);
+
   const unknownSignal = useMemo(
     () => getUnknownSignalTarget({ activitySignals, radioMessages, spatialLogs }),
     [activitySignals, radioMessages, spatialLogs],
@@ -237,12 +315,14 @@ const Network = () => {
 
     return [
       unknownStreamSignal,
+      ...radioSignals.slice(0, 5),
       ...activitySignals.slice(0, 6),
-      ...radioSignals,
+      ...boardSignals.slice(0, 4),
+      ...workCommentSignals.slice(0, 4),
       missionSignal,
       ...baseStream,
     ].slice(0, 12);
-  }, [activitySignals, dailyMission, radioStream, spatialLogs, unknownSignal, userLogCount]);
+  }, [activitySignals, boardSignals, dailyMission, radioStream, spatialLogs, unknownSignal, userLogCount, workCommentSignals]);
 
   const handleNodeClick = (log) => {
     if (userLogCount >= log.encryptionLevel) {
@@ -251,6 +331,52 @@ const Network = () => {
   };
 
   const animatedEdgeLimit = motionProfile.reduced ? 0 : motionProfile.compact ? 28 : MAX_ANIMATED_EDGES;
+
+  const reactToSignal = async (signal, reaction) => {
+    if (!user) {
+      setReactionNotice('로그인 후 신호에 반응할 수 있습니다.');
+      return;
+    }
+    if (isReacting) return;
+
+    const today = new Date().toLocaleDateString('sv-SE');
+    const reactionKey = `${reaction.id}:${signal.id}:${today}`;
+    if (amplifiedSignals.has(reactionKey)) {
+      setReactionNotice('이 신호는 오늘 이미 처리했습니다.');
+      return;
+    }
+
+    setIsReacting(true);
+    setReactionNotice('');
+    const result = await recordUserActivity(user, {
+      actionType: reaction.id === 'amplify' ? 'signal_reaction' : 'reaction',
+      dedupeKey: `network:${reactionKey}`,
+      genre: '네트워크 반응',
+      points: reaction.points,
+      metadata: {
+        title: `${reaction.label} / ${signal.status}`,
+        body: signal.body,
+        href: signal.href,
+        signal_id: signal.id,
+        signal_status: signal.status,
+        reaction: reaction.id,
+        node: 'network-relay',
+      },
+    });
+
+    if (result.ok) {
+      setAmplifiedSignals(current => new Set(current).add(reactionKey));
+      setReactionNotice(`${reaction.label} 완료. +${reaction.points} MP`);
+      showActivityToast({
+        detail: `${signal.status} 신호에 ${reaction.label}을 남겼습니다.`,
+        points: reaction.points,
+        title: '네트워크 반응 기록',
+      });
+    } else {
+      setReactionNotice(result.error?.message || '신호 반응 저장에 실패했습니다.');
+    }
+    setIsReacting(false);
+  };
 
   const renderRelayLine = (signal, index, ghost = false) => (
     <div
@@ -266,7 +392,7 @@ const Network = () => {
           <span>{signal.time || signal.sender}</span>
         </div>
         <p>{signal.body}</p>
-        {!ghost && (signal.href || (signal.message && signal.message.user_id !== user?.id)) && (
+        {!ghost && (
           <div className="relay-line-actions">
             {signal.href && (
               <button
@@ -277,6 +403,22 @@ const Network = () => {
                 신호 추적
               </button>
             )}
+            {NETWORK_REACTIONS.map(reaction => {
+              const today = new Date().toLocaleDateString('sv-SE');
+              const reactionKey = `${reaction.id}:${signal.id}:${today}`;
+              const isDone = amplifiedSignals.has(reactionKey);
+              return (
+                <button
+                  className={`relay-reaction-button mono ${reaction.id === 'amplify' ? 'is-amplify' : ''}`}
+                  disabled={isReacting || isDone}
+                  key={reaction.id}
+                  onClick={() => reactToSignal(signal, reaction)}
+                  type="button"
+                >
+                  {isDone ? '완료' : `${reaction.label} +${reaction.points}`}
+                </button>
+              );
+            })}
             {signal.message && signal.message.user_id !== user?.id && (
               <button
                 className="radio-reply-button mono"
@@ -502,10 +644,14 @@ const Network = () => {
           <div className="network-mission-card">
             <div className="network-mission-card__meta mono">
               <span style={{ color: getSignalColor(dailyMission.signal) }}>TODAY_MISSION</span>
-              <span>{dailyMission.reward}</span>
+              <span>{missionProgress.completed ? 'COMPLETE' : dailyMission.reward}</span>
             </div>
             <strong>{dailyMission.title}</strong>
             <p>{dailyMission.detail}</p>
+            <div className={`mission-progress mono ${missionProgress.completed ? 'is-complete' : ''}`}>
+              <span>{missionProgress.label}</span>
+              <b>{missionProgress.completed ? 'SYNCED' : 'IN_PROGRESS'}</b>
+            </div>
             <button className="mono" onClick={() => navigate(dailyMission.href)} type="button">
               임무 좌표 이동
             </button>
@@ -556,6 +702,7 @@ const Network = () => {
             <p className="radio-notice">무전 테이블 연결이 필요합니다. Supabase SQL 스키마를 다시 실행해주세요.</p>
           )}
           {radioNotice && radioStatus !== 'schema-missing' && <p className="radio-notice">{radioNotice}</p>}
+          {reactionNotice && <p className="radio-notice">{reactionNotice}</p>}
           <div
             className="relay-stream"
             style={{ '--relay-duration': `${Math.max(26, transmissionStream.length * 4.2)}s` }}

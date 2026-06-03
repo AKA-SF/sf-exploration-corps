@@ -13,6 +13,13 @@ export const MAX_VISIBLE_EDGES = 160;
 export const MAX_ANIMATED_EDGES = 72;
 export const MAX_EDGE_COMPARE_WINDOW = 26;
 export const RADIO_MESSAGE_LIMIT = 48;
+export const NETWORK_AUX_SIGNAL_LIMIT = 8;
+
+export const NETWORK_REACTIONS = [
+  { id: 'confirm', label: '수신 확인', points: 1, status: 'CONFIRM' },
+  { id: 'amplify', label: '신호 증폭', points: 2, status: 'AMPLIFY' },
+  { id: 'bookmark', label: '좌표 저장', points: 1, status: 'BOOKMARK' },
+];
 
 export function formatSignalTime(value) {
   return new Date(value).toLocaleTimeString('ko-KR', {
@@ -150,6 +157,57 @@ export function getActivitySignal(activity) {
     href: '/profile',
     status: 'SYSTEM_ACTIVITY',
   };
+}
+
+export function getBoardSignal(question) {
+  return {
+    id: `question-${question.id || question.title}`,
+    body: `커뮤니티 ${question.category || '교신'} // ${question.title}`,
+    color: getSignalColor('COMMUNITY_POST'),
+    href: question.id ? `/questions/${question.id}` : '/questions',
+    sender: question.author || question.name || 'COMMUNITY',
+    status: 'COMMUNITY_POST',
+    time: question.createdAt ? formatSignalTime(question.createdAt) : 'BOARD',
+  };
+}
+
+export function getWorkCommentSignal(comment) {
+  return {
+    id: `work-comment-${comment.id}`,
+    body: `작품 카드 댓글 // ${comment.work_title || comment.work_code || '아카이브 좌표'}`,
+    color: getSignalColor('ARCHIVE_COMMENT'),
+    href: comment.work_code ? `/works/novels?work=${encodeURIComponent(comment.work_code)}` : '/works/novels',
+    sender: comment.author_name || 'ARCHIVE-CREW',
+    status: 'ARCHIVE_COMMENT',
+    time: formatSignalTime(comment.created_at),
+  };
+}
+
+export function getNetworkMissionProgress({ activitySignals = [], dailyMission, radioMessages = [], user }) {
+  const today = new Date().toLocaleDateString('sv-SE');
+  const isToday = value => value && new Date(value).toLocaleDateString('sv-SE') === today;
+
+  if (dailyMission.id === 'send-radio') {
+    const completed = radioMessages.some(message => message.user_id === user?.id && isToday(message.created_at));
+    return { completed, label: completed ? '완료' : '0 / 1' };
+  }
+
+  if (dailyMission.id === 'open-community') {
+    const completed = activitySignals.some(signal => signal.status?.includes('COMMUNITY'));
+    return { completed, label: completed ? '완료' : '커뮤니티 신호 대기' };
+  }
+
+  if (dailyMission.id === 'trace-work') {
+    const completed = activitySignals.some(signal => signal.status?.includes('ARCHIVE'));
+    return { completed, label: completed ? '완료' : '작품 좌표 대기' };
+  }
+
+  if (dailyMission.id === 'decode-concept') {
+    const completed = activitySignals.some(signal => signal.status?.includes('CONCEPT'));
+    return { completed, label: completed ? '완료' : '개념 신호 대기' };
+  }
+
+  return { completed: false, label: '진행 중' };
 }
 
 export function getUnknownSignalTarget({ activitySignals = [], radioMessages = [], spatialLogs = [] }) {
