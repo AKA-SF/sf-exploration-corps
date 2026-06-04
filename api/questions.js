@@ -17,8 +17,10 @@ const ATTACHMENT_PREFIX = 'SFA_ATTACHMENT:';
 const DEFAULT_QUESTIONS_PAGE_SIZE = 40;
 const QUESTIONS_DATABASE_CACHE_TTL_MS = 5 * 60 * 1000;
 const QUESTIONS_LIST_CACHE_TTL_MS = 45 * 1000;
+const QUESTIONS_BLOCKS_CACHE_TTL_MS = 60 * 1000;
 const QUESTIONS_ADMIN_CACHE_TTL_MS = 20 * 1000;
 const VIEW_WRITE_TTL_MS = 90 * 1000;
+const QUESTIONS_BLOCKS_CONCURRENCY = 6;
 const CATEGORY_PROPERTY_NAMES = ['말머리', '분류', '카테고리', 'Category', 'Type'];
 const ATTACHMENT_PROPERTY_NAMES = ['첨부', '첨부파일', '파일', '파일 URL', 'Attachment', 'Attachment URL', 'File'];
 const viewWriteState = globalThis.__sfQuestionViewWriteState ??= new Map();
@@ -198,9 +200,35 @@ function buildQuestionProperties(schema, {
   return properties;
 }
 
-async function loadPageBlocks({ pageId, token }) {
-  return notionRequest(`/blocks/${pageId}/children?page_size=100`, { token })
-    .catch(() => ({ results: [] }));
+async function loadPageBlocks({ pageId, refresh = false, token }) {
+  try {
+    const cached = await getCachedJson(
+      `questions:blocks:${pageId}`,
+      QUESTIONS_BLOCKS_CACHE_TTL_MS,
+      () => notionRequest(`/blocks/${pageId}/children?page_size=100`, { token }),
+      { refresh },
+    );
+    return cached.value;
+  } catch {
+    return { results: [] };
+  }
+}
+
+async function mapWithConcurrency(items, limit, mapper) {
+  const results = new Array(items.length);
+  let cursor = 0;
+
+  async function worker() {
+    while (cursor < items.length) {
+      const index = cursor;
+      cursor += 1;
+      results[index] = await mapper(items[index], index);
+    }
+  }
+
+  const workerCount = Math.min(Math.max(limit, 1), items.length);
+  await Promise.all(Array.from({ length: workerCount }, worker));
+  return results;
 }
 
 function pageCanEdit(blocks, ownerToken) {
@@ -362,7 +390,7 @@ export default async function handler(request, response) {
 
     const includeCommentCounts = String(request.query?.includeCommentCounts ?? '') === '1';
     const mineOnly = String(request.query?.mine ?? '') === '1';
-    let authenticatedUser = mineOnly || includeCommentCounts ? await getOptionalUser(request) : null;
+    let authenticatedUser = mineOnly ? await getOptionalUser(request) : null;
     if (mineOnly && !authenticatedUser) {
       authenticatedUser = await requireAuthenticatedUser(request, response);
       if (!authenticatedUser) return null;
@@ -393,10 +421,10 @@ export default async function handler(request, response) {
       .filter(question => question.title);
 
     if (mineOnly || includeCommentCounts) {
-      const enrichedQuestions = await Promise.all(questions.map(async question => {
+      const enrichedQuestions = await mapWithConcurrency(questions, QUESTIONS_BLOCKS_CONCURRENCY, async question => {
         const blocks = await loadPageBlocks({ pageId: question.id, token });
         return enrichQuestionFromBlocks(question, blocks, ownerToken);
-      }));
+      });
       questions = mineOnly
         ? enrichedQuestions.filter(question => question.canEdit)
         : enrichedQuestions;
