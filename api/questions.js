@@ -112,6 +112,22 @@ function sanitizeText(value, maxLength = 8000) {
   return String(value ?? '').trim().slice(0, maxLength);
 }
 
+function isMissingCommunityTable(error) {
+  const message = `${error?.message ?? ''} ${error?.details?.message ?? ''} ${error?.details?.code ?? ''}`;
+  return /community_posts|community_comments|schema cache|relation .* does not exist|42P01|PGRST/i.test(message);
+}
+
+function getCommunitySetupPayload() {
+  return {
+    error: 'Supabase community tables are not ready. Run supabase/community.sql in Supabase SQL Editor.',
+    hasMore: false,
+    nextCursor: '',
+    questions: [],
+    setupRequired: true,
+    totalCount: 0,
+  };
+}
+
 function buildPostQuery({
   admin = false,
   category = '',
@@ -211,9 +227,18 @@ async function listQuestions(request, response, query) {
     && !wantsMineOnly
     && !request.headers.authorization
     && !request.headers.Authorization;
-  const payload = shouldCache
-    ? (await getCachedJson(cacheKey, QUESTIONS_LIST_CACHE_TTL_MS, loader)).value
-    : await loader();
+  let payload;
+  try {
+    payload = shouldCache
+      ? (await getCachedJson(cacheKey, QUESTIONS_LIST_CACHE_TTL_MS, loader)).value
+      : await loader();
+  } catch (error) {
+    if (isMissingCommunityTable(error)) {
+      response.status(200).json(getCommunitySetupPayload());
+      return;
+    }
+    throw error;
+  }
 
   response.status(200).json(payload);
 }
@@ -446,6 +471,14 @@ async function archiveComment(request, response, body) {
 }
 
 function sendSupabaseError(response, error) {
+  if (isMissingCommunityTable(error)) {
+    response.status(503).json({
+      error: '커뮤니티 Supabase 테이블이 아직 준비되지 않았습니다. supabase/community.sql을 Supabase SQL Editor에서 실행해주세요.',
+      setupRequired: true,
+    });
+    return;
+  }
+
   response.status(error.status || 500).json({
     details: error.details,
     error: error.message || '커뮤니티 요청에 실패했습니다.',
