@@ -27,6 +27,7 @@
   grid-template-columns: 150px minmax(0, 1fr) auto;
   gap: 22px;
   align-items: center;
+  width: min(1520px, 100%);
   max-width: 1520px;
   margin: 0 auto 18px;
   padding: 18px 22px;
@@ -159,7 +160,7 @@
 }
 
 .questions-board {
-  width: min(1460px, 100%);
+  width: min(1500px, calc(100% - 20px));
   max-width: calc(100vw - clamp(44px, 6vw, 104px));
   margin: 0 auto 22px;
   border: 1px solid rgba(25, 247, 241, 0.24);
@@ -172,7 +173,7 @@
 .questions-board-head,
 .question-row {
   display: grid;
-  grid-template-columns: 86px 110px minmax(0, 1fr) 150px 138px 72px 80px;
+  grid-template-columns: 86px 110px minmax(0, 1fr) 150px 138px 80px;
   gap: 16px;
   align-items: center;
 }
@@ -208,6 +209,9 @@
 }
 
 .question-row strong {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
   min-width: 0;
   overflow: hidden;
   color: #fff;
@@ -215,6 +219,21 @@
   font-weight: 900;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.question-row strong > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.question-title-comments {
+  flex: 0 0 auto;
+  color: var(--cyan);
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 900;
 }
 
 .question-row span,
@@ -238,20 +257,8 @@
 }
 
 .question-row .question-code,
-.question-row .question-comments,
 .question-row .question-views {
   color: var(--cyan);
-}
-
-.question-row .question-comments {
-  display: inline-grid;
-  place-items: center;
-  justify-self: start;
-  min-width: 34px;
-  min-height: 26px;
-  border: 1px solid rgba(25, 247, 241, 0.28);
-  background: rgba(25, 247, 241, 0.06);
-  padding: 0 8px;
 }
 
 .question-row .question-views {
@@ -827,8 +834,19 @@
 }
 
 .question-form button:disabled {
-  cursor: wait;
-  opacity: 0.62;
+  border: 1px solid rgba(25, 247, 241, 0.28);
+  color: rgba(210, 255, 253, 0.78);
+  background: rgba(25, 247, 241, 0.12);
+  cursor: not-allowed;
+  opacity: 1;
+  box-shadow: none;
+}
+
+.question-form .question-submit-button:disabled {
+  border-color: rgba(25, 247, 241, 0.34);
+  color: rgba(220, 255, 253, 0.82);
+  background: linear-gradient(180deg, rgba(25, 247, 241, 0.18), rgba(25, 247, 241, 0.09));
+  text-shadow: none;
 }
 
 .question-form button svg {
@@ -963,6 +981,7 @@
 
 .reading-mode .question-row span,
 .reading-mode .question-row time,
+.reading-mode .question-title-comments,
 .reading-mode .questions-header span,
 .reading-mode .questions-status,
 .reading-mode .public-question-top,
@@ -1094,8 +1113,17 @@
 }
 
 .reading-mode .question-form button:disabled {
-  background: rgba(47, 111, 120, 0.46) !important;
-  color: rgba(255, 253, 246, 0.78) !important;
+  border-color: rgba(47, 111, 120, 0.26) !important;
+  background: rgba(47, 111, 120, 0.1) !important;
+  color: #2f6f78 !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+.reading-mode .question-form .question-submit-button:disabled {
+  border-color: rgba(47, 111, 120, 0.26) !important;
+  color: #2f6f78 !important;
+  background: rgba(47, 111, 120, 0.1) !important;
 }
 
 .reading-mode .question-status.is-success {
