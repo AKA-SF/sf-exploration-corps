@@ -1,100 +1,23 @@
-import {
-  getNotionConfig,
-  notionRequest,
-  queryNotionDatabaseAll,
-  queryNotionDatabasePage,
-  sendNotionError,
-} from './_notion.js';
 import { clearApiCachePrefix, getCachedJson } from './_apiCache.js';
 import { getOptionalUser, requireAdminUser, requireAuthenticatedUser } from './_adminAuth.js';
-import { pick, plainText } from './_notionProperties.js';
-import { findPropertyEntry, readJsonBody, richTextPayload } from './_notionWrite.js';
+import { supabaseRestRequest, supabaseRpcRequest } from './_supabaseRest.js';
 
-const DEFAULT_QUESTIONS_DATABASE_ID = '36a98dbef69d803abd53c09b6ff7f2e3';
-const OWNER_PREFIX = 'SFA_OWNER:';
-const COMMENT_PREFIX = 'SFA_COMMENT:';
-const ATTACHMENT_PREFIX = 'SFA_ATTACHMENT:';
 const DEFAULT_QUESTIONS_PAGE_SIZE = 40;
-const QUESTIONS_DATABASE_CACHE_TTL_MS = 5 * 60 * 1000;
-const QUESTIONS_LIST_CACHE_TTL_MS = 45 * 1000;
-const QUESTIONS_BLOCKS_CACHE_TTL_MS = 60 * 1000;
-const QUESTIONS_ADMIN_CACHE_TTL_MS = 20 * 1000;
-const VIEW_WRITE_TTL_MS = 90 * 1000;
-const QUESTIONS_BLOCKS_CONCURRENCY = 6;
-const CATEGORY_PROPERTY_NAMES = ['말머리', '분류', '카테고리', 'Category', 'Type'];
-const ATTACHMENT_PROPERTY_NAMES = ['첨부', '첨부파일', '파일', '파일 URL', 'Attachment', 'Attachment URL', 'File'];
-const viewWriteState = globalThis.__sfQuestionViewWriteState ??= new Map();
+const QUESTIONS_LIST_CACHE_TTL_MS = 20 * 1000;
+const COMMUNITY_CATEGORIES = ['자유글', '작품추천', '질문', '토론'];
 
 function clearQuestionCaches() {
   clearApiCachePrefix('questions:');
 }
 
-function findProperty(schema, preferredNames, type) {
-  return findPropertyEntry(schema, preferredNames, type)
-    ?? Object.entries(schema ?? {}).find(([, property]) => property.type === type);
-}
-
-function mapPageToQuestion(page, index) {
-  const properties = page.properties ?? {};
-  const title = plainText(pick(properties, ['질문', '제목', 'Title', 'Name', '이름']));
-  const content = plainText(pick(properties, ['내용', '본문', '질문 내용', 'Content', 'Description']));
-  const author = plainText(pick(properties, ['작성자', '이름', 'Author']));
-  const contact = plainText(pick(properties, ['연락처', 'Contact', 'Email', '이메일']));
-  const category = plainText(pick(properties, CATEGORY_PROPERTY_NAMES));
-  const status = plainText(pick(properties, ['상태', 'Status']));
-  const date = plainText(pick(properties, ['작성일', '날짜', 'Date']));
-  const views = Number(plainText(pick(properties, ['조회수', '조회', 'Views', 'View Count']))) || 0;
-  const attachmentUrl = plainText(pick(properties, ATTACHMENT_PROPERTY_NAMES));
-
-  return {
-    id: page.id,
-    code: `Q-${String(index + 1).padStart(3, '0')}`,
-    title,
-    content,
-    author: author || '익명',
-    contact,
-    category: normalizeCommunityCategory(category),
-    status,
-    date,
-    attachmentUrl,
-    commentCount: 0,
-    views,
-  };
-}
-
-function parseCommentBlock(block) {
-  if (block.type !== 'paragraph') return null;
-  const text = block.paragraph?.rich_text?.map(part => part.plain_text).join('') ?? '';
-  if (!text.startsWith(COMMENT_PREFIX)) return null;
-
-  try {
-    return {
-      id: block.id,
-      ...JSON.parse(text.replace(COMMENT_PREFIX, '')),
-    };
-  } catch {
-    return null;
-  }
-}
-
-function parseOwnerBlock(block) {
-  if (block.type !== 'paragraph') return '';
-  const text = block.paragraph?.rich_text?.map(part => part.plain_text).join('') ?? '';
-  return text.startsWith(OWNER_PREFIX) ? text.replace(OWNER_PREFIX, '').trim() : '';
-}
-
-function parseAttachmentBlock(block) {
-  if (block.type !== 'paragraph') return '';
-  const text = block.paragraph?.rich_text?.map(part => part.plain_text).join('') ?? '';
-  return text.startsWith(ATTACHMENT_PREFIX) ? text.replace(ATTACHMENT_PREFIX, '').trim() : '';
-}
-
-function sanitizeOwnerToken(value) {
-  return String(value ?? '').trim().slice(0, 96);
-}
-
-function getUserOwnerToken(user) {
-  return user?.id ? `user:${user.id}` : '';
+function normalizeCommunityCategory(value) {
+  const source = String(value ?? '').trim().replace(/\s+/g, '');
+  if (!source) return '자유글';
+  if (['작품추천', '작품추천글', '추천', '추천글', '작품', '작품추천'].includes(source)) return '작품추천';
+  if (['질문', '토론질문', '문의'].includes(source)) return '질문';
+  if (['토론', '토론글', '논의'].includes(source)) return '토론';
+  if (['자유글', '자유', '커뮤니티', '아카이브제안', '강의/워크숍주제'].includes(source)) return '자유글';
+  return COMMUNITY_CATEGORIES.includes(value) ? value : '자유글';
 }
 
 function getUserAuthorName(user) {
@@ -108,637 +31,474 @@ function getUserAuthorName(user) {
 }
 
 function getPaginationParams(query) {
+  const pageSize = Math.min(Math.max(Number(query?.pageSize) || DEFAULT_QUESTIONS_PAGE_SIZE, 1), 80);
+  const offset = Math.max(Number(query?.cursor) || 0, 0);
+  return { offset, pageSize };
+}
+
+function formatDate(value) {
+  return value ? String(value).slice(0, 10) : new Date().toISOString().slice(0, 10);
+}
+
+function mapPostToQuestion(post, {
+  canEdit = false,
+  commentCount = 0,
+  index = 0,
+  offset = 0,
+} = {}) {
   return {
-    pageSize: Math.min(Math.max(Number(query?.pageSize) || DEFAULT_QUESTIONS_PAGE_SIZE, 1), 80),
-    startCursor: String(query?.cursor ?? '').trim(),
+    id: post.id,
+    code: `Q-${String(offset + index + 1).padStart(3, '0')}`,
+    title: post.title || '제목 없음',
+    content: post.body || '',
+    author: post.author_name || '탐사자',
+    contact: '',
+    category: normalizeCommunityCategory(post.category),
+    status: post.status === 'archived' ? '삭제됨' : '공개',
+    date: formatDate(post.created_at),
+    attachmentUrl: post.attachment_url || '',
+    commentCount,
+    views: Number(post.view_count) || 0,
+    canEdit,
+    createdAt: post.created_at,
   };
 }
 
-function sanitizeComment(comment, ownerToken) {
-  if (!comment) return null;
-  const { ownerToken: commentOwnerToken, ...rest } = comment;
+function mapComment(row, user) {
   return {
-    ...rest,
-    canEdit: Boolean(ownerToken && commentOwnerToken && ownerToken === commentOwnerToken),
+    id: row.id,
+    name: row.author_name || '탐사자',
+    content: row.body || '',
+    date: formatDate(row.created_at),
+    canEdit: Boolean(user?.id && row.user_id === user.id),
   };
 }
 
-function getStatusName(property, preferredName) {
-  const options = property?.status?.options ?? [];
-  return options.find(option => option.name === preferredName)?.name
-    ?? options.find(option => ['대기', '접수', '검토 중', 'Not started', 'To do'].includes(option.name))?.name
-    ?? options[0]?.name
-    ?? '';
-}
-
-function getSelectName(property, preferredName) {
-  const options = property?.select?.options ?? [];
-  if (options.length === 0) return preferredName;
-  return options.find(option => option.name === preferredName)?.name ?? preferredName;
-}
-
-function normalizeCommunityCategory(value) {
-  const source = String(value ?? '').trim().replace(/\s+/g, '');
-  if (!source) return '자유글';
-  if (['작품추천', '작품추천글', '추천', '추천글', '작품'].includes(source)) return '작품추천';
-  if (['질문', '토론질문', '문의'].includes(source)) return '질문';
-  if (['토론', '토론글', '논의'].includes(source)) return '토론';
-  if (['자유글', '자유', '커뮤니티', '아카이브제안', '강의/워크숍주제'].includes(source)) return '자유글';
-  return value || '자유글';
-}
-
-function buildProperty(property, value) {
-  if (!value) return null;
-  const { type } = property;
-  if (type === 'title') return { title: richTextPayload(value) };
-  if (type === 'rich_text') return { rich_text: richTextPayload(value) };
-  if (type === 'select') {
-    const selectName = getSelectName(property, value);
-    return selectName ? { select: { name: selectName } } : null;
+function parseJsonBody(request) {
+  if (request.body && typeof request.body === 'object') {
+    return Promise.resolve(request.body);
   }
-  if (type === 'email') return value.includes('@') ? { email: value } : null;
-  if (type === 'url') return value.startsWith('http') ? { url: value } : null;
-  if (type === 'date') return { date: { start: value } };
-  if (type === 'status') {
-    const statusName = getStatusName(property, value);
-    return statusName ? { status: { name: statusName } } : null;
-  }
-  return null;
-}
-
-function setIfPresent(properties, schema, names, type, value) {
-  const entry = findProperty(schema, names, type);
-  if (!entry) return;
-  const [name, property] = entry;
-  const payload = buildProperty(property, value);
-  if (payload) properties[name] = payload;
-}
-
-function buildQuestionProperties(schema, {
-  attachmentUrl,
-  category,
-  contact,
-  content,
-  name,
-  title,
-}, { includeDate = false } = {}) {
-  const properties = {};
-
-  setIfPresent(properties, schema, ['질문', '제목', 'Title', 'Name', '이름'], 'title', title);
-  setIfPresent(properties, schema, ['내용', '본문', '질문 내용', 'Content', 'Description'], 'rich_text', content);
-  setIfPresent(properties, schema, ['작성자', '이름', 'Name', 'Author'], 'rich_text', name || '익명');
-  setIfPresent(properties, schema, ['연락처', 'Contact', 'Email', '이메일'], 'rich_text', contact);
-  setIfPresent(properties, schema, ['이메일', 'Email'], 'email', contact);
-  setIfPresent(properties, schema, CATEGORY_PROPERTY_NAMES, 'select', normalizeCommunityCategory(category));
-  setIfPresent(properties, schema, ATTACHMENT_PROPERTY_NAMES, 'url', attachmentUrl);
-  setIfPresent(properties, schema, ATTACHMENT_PROPERTY_NAMES, 'rich_text', attachmentUrl);
-  setIfPresent(properties, schema, ['상태', 'Status'], 'status', '공개');
-  if (includeDate) {
-    setIfPresent(properties, schema, ['작성일', '날짜', 'Date'], 'date', new Date().toISOString().slice(0, 10));
-  }
-
-  return properties;
-}
-
-async function loadPageBlocks({ pageId, refresh = false, token }) {
-  try {
-    const cached = await getCachedJson(
-      `questions:blocks:${pageId}`,
-      QUESTIONS_BLOCKS_CACHE_TTL_MS,
-      () => notionRequest(`/blocks/${pageId}/children?page_size=100`, { token }),
-      { refresh },
-    );
-    return cached.value;
-  } catch {
-    return { results: [] };
-  }
-}
-
-async function mapWithConcurrency(items, limit, mapper) {
-  const results = new Array(items.length);
-  let cursor = 0;
-
-  async function worker() {
-    while (cursor < items.length) {
-      const index = cursor;
-      cursor += 1;
-      results[index] = await mapper(items[index], index);
+  if (typeof request.body === 'string') {
+    try {
+      return Promise.resolve(JSON.parse(request.body));
+    } catch (error) {
+      error.status = 400;
+      return Promise.reject(error);
     }
   }
 
-  const workerCount = Math.min(Math.max(limit, 1), items.length);
-  await Promise.all(Array.from({ length: workerCount }, worker));
-  return results;
+  return new Promise((resolve, reject) => {
+    let raw = '';
+    request.on('data', chunk => {
+      raw += chunk;
+    });
+    request.on('end', () => {
+      if (!raw) {
+        resolve({});
+        return;
+      }
+      try {
+        resolve(JSON.parse(raw));
+      } catch (error) {
+        error.status = 400;
+        reject(error);
+      }
+    });
+    request.on('error', reject);
+  });
 }
 
-function pageCanEdit(blocks, ownerToken) {
-  if (!ownerToken) return false;
-  return (blocks.results ?? []).some(block => parseOwnerBlock(block) === ownerToken);
+function sanitizeText(value, maxLength = 8000) {
+  return String(value ?? '').trim().slice(0, maxLength);
 }
 
-function enrichQuestionFromBlocks(question, blocks, ownerToken) {
-  const results = blocks.results ?? [];
-  const comments = results.map(parseCommentBlock).filter(Boolean);
-  const attachmentUrl = results.map(parseAttachmentBlock).filter(Boolean).at(-1);
+function buildPostQuery({
+  admin = false,
+  category = '',
+  mineOnly = false,
+  offset = 0,
+  pageSize = DEFAULT_QUESTIONS_PAGE_SIZE,
+  user,
+} = {}) {
+  const params = new URLSearchParams();
+  params.set('select', 'id,user_id,author_name,category,title,body,attachment_url,view_count,status,created_at,updated_at');
+  params.set('order', 'created_at.desc');
+  params.set('limit', String(pageSize));
+  params.set('offset', String(offset));
 
-  return {
-    ...question,
-    attachmentUrl: question.attachmentUrl || attachmentUrl || '',
-    canEdit: pageCanEdit(blocks, ownerToken),
-    commentCount: comments.length,
+  if (!admin) params.set('status', 'eq.public');
+  if (mineOnly && user?.id) params.set('user_id', `eq.${user.id}`);
+
+  const normalizedCategory = normalizeCommunityCategory(category);
+  if (category && category !== '전체' && COMMUNITY_CATEGORIES.includes(normalizedCategory)) {
+    params.set('category', `eq.${normalizedCategory}`);
+  }
+
+  return `community_posts?${params.toString()}`;
+}
+
+async function fetchCommentCounts(postIds, request) {
+  if (!postIds.length) return new Map();
+
+  const params = new URLSearchParams();
+  params.set('select', 'post_id');
+  params.set('status', 'eq.public');
+  params.set('post_id', `in.(${postIds.join(',')})`);
+
+  const comments = await supabaseRestRequest(`community_comments?${params.toString()}`, { request });
+  const counts = new Map();
+  (comments ?? []).forEach(comment => {
+    counts.set(comment.post_id, (counts.get(comment.post_id) || 0) + 1);
+  });
+  return counts;
+}
+
+async function listQuestions(request, response, query) {
+  const { offset, pageSize } = getPaginationParams(query);
+  const wantsAdminList = query.admin === '1';
+  const includeCommentCounts = query.includeCommentCounts === '1';
+  const wantsMineOnly = query.mineOnly === '1';
+
+  const adminUser = wantsAdminList ? await requireAdminUser(request, response) : null;
+  if (wantsAdminList && !adminUser) return;
+
+  const user = wantsMineOnly || request.headers.authorization || request.headers.Authorization
+    ? await getOptionalUser(request)
+    : null;
+
+  const cacheKey = `questions:list:${JSON.stringify({
+    admin: wantsAdminList,
+    category: query.category || '',
+    includeCommentCounts,
+    mineOnly: wantsMineOnly,
+    offset,
+    pageSize,
+    userId: wantsMineOnly ? user?.id || '' : '',
+  })}`;
+
+  const loader = async () => {
+    const posts = await supabaseRestRequest(
+      buildPostQuery({
+        admin: wantsAdminList,
+        category: query.category,
+        mineOnly: wantsMineOnly,
+        offset,
+        pageSize,
+        user,
+      }),
+      { request },
+    );
+    const postIds = (posts ?? []).map(post => post.id);
+    const counts = includeCommentCounts || wantsAdminList
+      ? await fetchCommentCounts(postIds, request)
+      : new Map();
+    const questions = (posts ?? []).map((post, index) => mapPostToQuestion(post, {
+      canEdit: Boolean(user?.id && post.user_id === user.id),
+      commentCount: counts.get(post.id) || 0,
+      index,
+      offset,
+    }));
+
+    return {
+      hasMore: (posts ?? []).length === pageSize,
+      nextCursor: (posts ?? []).length === pageSize ? String(offset + pageSize) : '',
+      questions,
+      totalCount: questions.length,
+    };
   };
+
+  const shouldCache = !wantsAdminList
+    && !wantsMineOnly
+    && !request.headers.authorization
+    && !request.headers.Authorization;
+  const payload = shouldCache
+    ? (await getCachedJson(cacheKey, QUESTIONS_LIST_CACHE_TTL_MS, loader)).value
+    : await loader();
+
+  response.status(200).json(payload);
 }
 
-async function incrementViewCount({ page, schema, token }) {
-  const entry = findProperty(schema, ['조회수', '조회', 'Views', 'View Count'], 'number');
-  if (!entry) return page;
+async function fetchPostById(id, request) {
+  const params = new URLSearchParams();
+  params.set('select', 'id,user_id,author_name,category,title,body,attachment_url,view_count,status,created_at,updated_at');
+  params.set('id', `eq.${id}`);
+  params.set('limit', '1');
+  const rows = await supabaseRestRequest(`community_posts?${params.toString()}`, { request });
+  return rows?.[0] ?? null;
+}
 
-  const [name] = entry;
-  const lastWriteAt = viewWriteState.get(page.id) ?? 0;
-  if (Date.now() - lastWriteAt < VIEW_WRITE_TTL_MS) return page;
+async function fetchCommentsForPost(id, request) {
+  const params = new URLSearchParams();
+  params.set('select', 'id,post_id,user_id,author_name,body,status,created_at,updated_at');
+  params.set('post_id', `eq.${id}`);
+  params.set('status', 'eq.public');
+  params.set('order', 'created_at.asc');
+  return supabaseRestRequest(`community_comments?${params.toString()}`, { request });
+}
 
-  const current = Number(plainText(page.properties?.[name])) || 0;
-  const next = current + 1;
+async function showQuestionDetail(request, response, query) {
+  const user = await getOptionalUser(request);
+  const post = await fetchPostById(query.id, request);
+  if (!post || post.status === 'archived') {
+    response.status(404).json({ error: '글을 찾을 수 없습니다.' });
+    return;
+  }
 
   try {
-    await notionRequest(`/pages/${page.id}`, {
-      token,
-      method: 'PATCH',
-      body: {
-        properties: {
-          [name]: { number: next },
-        },
-      },
+    const nextCount = await supabaseRpcRequest('increment_community_post_view', {
+      body: { p_post_id: post.id },
+      request,
     });
-    viewWriteState.set(page.id, Date.now());
-    return {
-      ...page,
-      properties: {
-        ...page.properties,
-        [name]: {
-          ...page.properties?.[name],
-          number: next,
-        },
-      },
-    };
+    if (Number.isFinite(Number(nextCount))) post.view_count = Number(nextCount);
   } catch {
-    return page;
+    // 조회수 기록은 부가 기능이라 실패해도 글 읽기는 유지합니다.
   }
+
+  const comments = await fetchCommentsForPost(post.id, request);
+  const canEdit = Boolean(user?.id && post.user_id === user.id);
+  response.status(200).json({
+    comments: (comments ?? []).map(comment => mapComment(comment, user)),
+    question: mapPostToQuestion(post, {
+      canEdit,
+      commentCount: comments?.length || 0,
+    }),
+  });
+}
+
+async function createQuestion(request, response, body) {
+  const user = await requireAuthenticatedUser(request, response);
+  if (!user) return;
+
+  const title = sanitizeText(body.title, 140);
+  const content = sanitizeText(body.content, 8000);
+  if (!title || !content) {
+    response.status(400).json({ error: '글 제목과 글 내용을 입력해주세요.' });
+    return;
+  }
+
+  const rows = await supabaseRestRequest('community_posts', {
+    body: {
+      attachment_url: sanitizeText(body.attachmentUrl, 1200) || null,
+      author_name: sanitizeText(body.name, 40) || getUserAuthorName(user),
+      body: content,
+      category: normalizeCommunityCategory(body.category),
+      title,
+      user_id: user.id,
+    },
+    method: 'POST',
+    prefer: 'return=representation',
+    request,
+  });
+
+  clearQuestionCaches();
+  response.status(201).json({
+    ok: true,
+    question: mapPostToQuestion(rows?.[0], { canEdit: true }),
+  });
+}
+
+async function createComment(request, response, body) {
+  const user = await requireAuthenticatedUser(request, response);
+  if (!user) return;
+
+  const questionId = sanitizeText(body.questionId, 80);
+  const content = sanitizeText(body.content, 2000);
+  if (!questionId || !content) {
+    response.status(400).json({ error: '댓글 내용을 입력해주세요.' });
+    return;
+  }
+
+  const rows = await supabaseRestRequest('community_comments', {
+    body: {
+      author_name: sanitizeText(body.name, 40) || getUserAuthorName(user),
+      body: content,
+      post_id: questionId,
+      user_id: user.id,
+    },
+    method: 'POST',
+    prefer: 'return=representation',
+    request,
+  });
+
+  clearQuestionCaches();
+  response.status(201).json({
+    comment: mapComment(rows?.[0], user),
+    ok: true,
+  });
+}
+
+async function updateQuestion(request, response, body) {
+  const user = await requireAuthenticatedUser(request, response);
+  if (!user) return;
+
+  const id = sanitizeText(body.questionId || body.id, 80);
+  const title = sanitizeText(body.title, 140);
+  const content = sanitizeText(body.content, 8000);
+  if (!id || !title || !content) {
+    response.status(400).json({ error: '수정할 글 제목과 내용을 입력해주세요.' });
+    return;
+  }
+
+  const rows = await supabaseRestRequest(`community_posts?id=eq.${encodeURIComponent(id)}`, {
+    body: {
+      attachment_url: sanitizeText(body.attachmentUrl, 1200) || null,
+      body: content,
+      category: normalizeCommunityCategory(body.category),
+      title,
+    },
+    method: 'PATCH',
+    prefer: 'return=representation',
+    request,
+  });
+
+  if (!rows?.[0]) {
+    response.status(403).json({ error: '수정 권한이 없거나 글을 찾을 수 없습니다.' });
+    return;
+  }
+
+  clearQuestionCaches();
+  response.status(200).json({
+    ok: true,
+    question: mapPostToQuestion(rows[0], { canEdit: rows[0].user_id === user.id }),
+  });
+}
+
+async function updateComment(request, response, body) {
+  const user = await requireAuthenticatedUser(request, response);
+  if (!user) return;
+
+  const id = sanitizeText(body.commentId || body.id, 80);
+  const content = sanitizeText(body.content, 2000);
+  if (!id || !content) {
+    response.status(400).json({ error: '수정할 댓글 내용을 입력해주세요.' });
+    return;
+  }
+
+  const rows = await supabaseRestRequest(`community_comments?id=eq.${encodeURIComponent(id)}`, {
+    body: { body: content },
+    method: 'PATCH',
+    prefer: 'return=representation',
+    request,
+  });
+
+  if (!rows?.[0]) {
+    response.status(403).json({ error: '수정 권한이 없거나 댓글을 찾을 수 없습니다.' });
+    return;
+  }
+
+  clearQuestionCaches();
+  response.status(200).json({
+    comment: mapComment(rows[0], user),
+    ok: true,
+  });
+}
+
+async function archiveQuestion(request, response, body) {
+  const user = await requireAuthenticatedUser(request, response);
+  if (!user) return;
+
+  const id = sanitizeText(body.questionId || body.id, 80);
+  if (!id) {
+    response.status(400).json({ error: '삭제할 글을 찾을 수 없습니다.' });
+    return;
+  }
+
+  const rows = await supabaseRestRequest(`community_posts?id=eq.${encodeURIComponent(id)}`, {
+    body: { status: 'archived' },
+    method: 'PATCH',
+    prefer: 'return=representation',
+    request,
+  });
+
+  if (!rows?.[0]) {
+    response.status(403).json({ error: '삭제 권한이 없거나 글을 찾을 수 없습니다.' });
+    return;
+  }
+
+  clearQuestionCaches();
+  response.status(200).json({ ok: true });
+}
+
+async function archiveComment(request, response, body) {
+  const user = await requireAuthenticatedUser(request, response);
+  if (!user) return;
+
+  const id = sanitizeText(body.commentId || body.id, 80);
+  if (!id) {
+    response.status(400).json({ error: '삭제할 댓글을 찾을 수 없습니다.' });
+    return;
+  }
+
+  const rows = await supabaseRestRequest(`community_comments?id=eq.${encodeURIComponent(id)}`, {
+    body: { status: 'archived' },
+    method: 'PATCH',
+    prefer: 'return=representation',
+    request,
+  });
+
+  if (!rows?.[0]) {
+    response.status(403).json({ error: '삭제 권한이 없거나 댓글을 찾을 수 없습니다.' });
+    return;
+  }
+
+  clearQuestionCaches();
+  response.status(200).json({ ok: true });
+}
+
+function sendSupabaseError(response, error) {
+  response.status(error.status || 500).json({
+    details: error.details,
+    error: error.message || '커뮤니티 요청에 실패했습니다.',
+  });
 }
 
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'no-store');
+  const query = request.query ?? {};
 
-  if (!['GET', 'POST', 'PATCH', 'DELETE'].includes(request.method)) {
-    response.setHeader('Allow', 'GET, POST, PATCH, DELETE');
-    return response.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const { token, databaseId, missing } = getNotionConfig('NOTION_QUESTIONS_DATABASE_ID', DEFAULT_QUESTIONS_DATABASE_ID);
-
-  if (missing.length > 0) {
-    return response.status(503).json({
-      error: 'Question database is not configured',
-      missing,
-    });
-  }
-
-  let database;
-  let databaseCache;
   try {
-    const cachedDatabase = await getCachedJson(
-      `questions:database:${databaseId}`,
-      QUESTIONS_DATABASE_CACHE_TTL_MS,
-      () => notionRequest(`/databases/${databaseId}`, { token }),
-    );
-    database = cachedDatabase.value;
-    databaseCache = cachedDatabase.cache;
-  } catch (error) {
-    return sendNotionError(response, {
-      error,
-      fallbackMessage: 'Question database request failed',
-    });
-  }
-
-  const schema = database.properties ?? {};
-  response.setHeader('X-SF-Question-Schema-Cache', databaseCache);
-
-  if (request.method === 'GET') {
-    const questionId = String(request.query?.id ?? '').trim();
-
-    if (questionId) {
-      const authenticatedUser = await getOptionalUser(request);
-      let page;
-      try {
-        page = await notionRequest(`/pages/${questionId}`, { token });
-      } catch (error) {
-        return sendNotionError(response, {
-          error,
-          fallbackMessage: 'Question detail request failed',
-          payload: { question: null, comments: [] },
-        });
+    if (request.method === 'GET') {
+      if (query.id) {
+        await showQuestionDetail(request, response, query);
+        return;
       }
-
-      page = await incrementViewCount({ page, schema, token });
-
-      const ownerToken = getUserOwnerToken(authenticatedUser) || sanitizeOwnerToken(request.query?.ownerToken);
-      const blocks = await loadPageBlocks({ pageId: questionId, token });
-      const comments = (blocks.results ?? [])
-        .map(parseCommentBlock)
-        .filter(Boolean)
-        .map(comment => sanitizeComment(comment, ownerToken));
-
-      return response.status(200).json({
-        question: enrichQuestionFromBlocks(mapPageToQuestion(page, 0), blocks, ownerToken),
-        comments,
-      });
+      await listQuestions(request, response, query);
+      return;
     }
 
-    if (String(request.query?.admin ?? '') === '1') {
-      const adminUser = await requireAdminUser(request, response);
-      if (!adminUser) return null;
+    const body = await parseJsonBody(request);
+    const mode = body.mode || 'post';
 
-      let cached;
-      try {
-        cached = await getCachedJson(
-          `questions:admin-list:${databaseId}`,
-          QUESTIONS_ADMIN_CACHE_TTL_MS,
-          () => queryNotionDatabaseAll(token, databaseId),
-          { refresh: String(request.query?.refresh ?? '') === '1' },
-        );
-      } catch (error) {
-        return sendNotionError(response, {
-          error,
-          fallbackMessage: 'Question list request failed',
-          payload: { questions: [], totalCount: 0 },
-        });
-      }
-
-      const questions = cached.value
-        .map(mapPageToQuestion)
-        .filter(question => question.title);
-
-      response.setHeader('X-SF-Archive-Cache', cached.cache);
-      return response.status(200).json({
-        admin: true,
-        hasMore: false,
-        nextCursor: '',
-        questions,
-        totalCount: questions.length,
-      });
-    }
-
-    const includeCommentCounts = String(request.query?.includeCommentCounts ?? '') === '1';
-    const mineOnly = String(request.query?.mine ?? '') === '1';
-    let authenticatedUser = mineOnly ? await getOptionalUser(request) : null;
-    if (mineOnly && !authenticatedUser) {
-      authenticatedUser = await requireAuthenticatedUser(request, response);
-      if (!authenticatedUser) return null;
-    }
-    const ownerToken = getUserOwnerToken(authenticatedUser) || sanitizeOwnerToken(request.query?.ownerToken);
-
-    const paginationParams = getPaginationParams(request.query);
-    const listCacheKey = `questions:list:${databaseId}:${paginationParams.pageSize}:${paginationParams.startCursor || 'first'}`;
-    let cached;
-    try {
-      cached = await getCachedJson(
-        listCacheKey,
-        QUESTIONS_LIST_CACHE_TTL_MS,
-        () => queryNotionDatabasePage(token, databaseId, paginationParams),
-        { refresh: String(request.query?.refresh ?? '') === '1' },
-      );
-    } catch (error) {
-      return sendNotionError(response, {
-        error,
-        fallbackMessage: 'Question list request failed',
-        payload: { questions: [] },
-      });
-    }
-
-    const data = cached.value;
-    let questions = (data.results ?? [])
-      .map(mapPageToQuestion)
-      .filter(question => question.title);
-
-    if (mineOnly || includeCommentCounts) {
-      const enrichedQuestions = await mapWithConcurrency(questions, QUESTIONS_BLOCKS_CONCURRENCY, async question => {
-        const blocks = await loadPageBlocks({ pageId: question.id, token });
-        return enrichQuestionFromBlocks(question, blocks, ownerToken);
-      });
-      questions = mineOnly
-        ? enrichedQuestions.filter(question => question.canEdit)
-        : enrichedQuestions;
-    }
-
-    response.setHeader('X-SF-Archive-Cache', cached.cache);
-    return response.status(200).json({
-      hasMore: Boolean(data.has_more),
-      nextCursor: data.next_cursor ?? '',
-      questions,
-    });
-  }
-
-  let body;
-  try {
-    body = await readJsonBody(request);
-  } catch (error) {
-    return response.status(error.status || 400).json({ error: error.message || 'Invalid JSON body' });
-  }
-
-  const authenticatedUser = await requireAuthenticatedUser(request, response);
-  if (!authenticatedUser) return null;
-  const authenticatedOwnerToken = getUserOwnerToken(authenticatedUser);
-  const authenticatedAuthorName = getUserAuthorName(authenticatedUser);
-
-  if (request.method === 'PATCH') {
-    const mode = String(body?.mode ?? 'post').trim();
-    const ownerToken = authenticatedOwnerToken;
-
-    try {
+    if (request.method === 'POST') {
       if (mode === 'comment') {
-        const commentId = String(body?.commentId ?? '').trim();
-        const name = authenticatedAuthorName;
-        const content = String(body?.content ?? '').trim();
-        if (!commentId || !content) {
-          return response.status(400).json({ error: 'Comment ID and content are required' });
-        }
-
-        const block = await notionRequest(`/blocks/${commentId}`, { token });
-        const currentComment = parseCommentBlock(block);
-        if (!currentComment?.ownerToken || currentComment.ownerToken !== ownerToken) {
-          return response.status(403).json({ error: 'Only the original writer can edit this comment' });
-        }
-
-        const updatedComment = {
-          ...currentComment,
-          name,
-          content,
-        };
-
-        await notionRequest(`/blocks/${commentId}`, {
-          token,
-          method: 'PATCH',
-          body: {
-            paragraph: {
-              rich_text: richTextPayload(`${COMMENT_PREFIX}${JSON.stringify(updatedComment)}`),
-            },
-          },
-        });
-        clearQuestionCaches();
-
-        return response.status(200).json({
-          ok: true,
-          comment: sanitizeComment(updatedComment, ownerToken),
-        });
+        await createComment(request, response, body);
+        return;
       }
-
-      const questionId = String(body?.questionId ?? '').trim();
-      const title = String(body?.title ?? '').trim();
-      const content = String(body?.content ?? '').trim();
-      const name = authenticatedAuthorName;
-      const contact = String(body?.contact ?? '').trim();
-      const category = String(body?.category ?? '').trim() || '자유글';
-      const attachmentUrl = String(body?.attachmentUrl ?? '').trim();
-
-      if (!questionId || !title || !content) {
-        return response.status(400).json({ error: 'Question ID, title, and content are required' });
-      }
-
-      const blocks = await loadPageBlocks({ pageId: questionId, token });
-      if (!pageCanEdit(blocks, ownerToken)) {
-        return response.status(403).json({ error: 'Only the original writer can edit this post' });
-      }
-
-      const properties = buildQuestionProperties(schema, {
-        attachmentUrl,
-        category,
-        contact,
-        content,
-        name,
-        title,
-      });
-
-      await notionRequest(`/pages/${questionId}`, {
-        token,
-        method: 'PATCH',
-        body: { properties },
-      });
-      if (attachmentUrl) {
-        await notionRequest(`/blocks/${questionId}/children`, {
-          token,
-          method: 'PATCH',
-          body: {
-            children: [{
-              object: 'block',
-              type: 'paragraph',
-              paragraph: {
-                rich_text: richTextPayload(`${ATTACHMENT_PREFIX}${attachmentUrl}`),
-              },
-            }],
-          },
-        });
-      }
-      clearQuestionCaches();
-
-      const updatedPage = await notionRequest(`/pages/${questionId}`, { token });
-
-      return response.status(200).json({
-        ok: true,
-        question: {
-          ...mapPageToQuestion(updatedPage, 0),
-          canEdit: true,
-        },
-      });
-    } catch (error) {
-      return sendNotionError(response, {
-        error,
-        fallbackMessage: 'Community update failed',
-      });
+      await createQuestion(request, response, body);
+      return;
     }
-  }
 
-  if (request.method === 'DELETE') {
-    const mode = String(body?.mode ?? 'post').trim();
-    const ownerToken = authenticatedOwnerToken;
-
-    try {
+    if (request.method === 'PATCH') {
       if (mode === 'comment') {
-        const commentId = String(body?.commentId ?? '').trim();
-        if (!commentId) return response.status(400).json({ error: 'Comment ID is required' });
-
-        if (ownerToken) {
-          const block = await notionRequest(`/blocks/${commentId}`, { token });
-          const comment = parseCommentBlock(block);
-          if (comment?.ownerToken === ownerToken) {
-            await notionRequest(`/blocks/${commentId}`, {
-              token,
-              method: 'PATCH',
-              body: { archived: true },
-            });
-            clearQuestionCaches();
-            return response.status(200).json({ ok: true });
-          }
-        }
-
-        const adminUser = await requireAdminUser(request, response);
-        if (!adminUser) return null;
-
-        await notionRequest(`/blocks/${commentId}`, {
-          token,
-          method: 'PATCH',
-          body: { archived: true },
-        });
-        clearQuestionCaches();
-        return response.status(200).json({ ok: true });
+        await updateComment(request, response, body);
+        return;
       }
+      await updateQuestion(request, response, body);
+      return;
+    }
 
-      const questionId = String(body?.questionId ?? '').trim();
-      if (!questionId) return response.status(400).json({ error: 'Question ID is required' });
-
-      if (ownerToken) {
-        const blocks = await loadPageBlocks({ pageId: questionId, token });
-        if (pageCanEdit(blocks, ownerToken)) {
-          await notionRequest(`/pages/${questionId}`, {
-            token,
-            method: 'PATCH',
-            body: { archived: true },
-          });
-          clearQuestionCaches();
-          return response.status(200).json({ ok: true });
-        }
+    if (request.method === 'DELETE') {
+      if (mode === 'comment') {
+        await archiveComment(request, response, body);
+        return;
       }
-
-      const adminUser = await requireAdminUser(request, response);
-      if (!adminUser) return null;
-
-      await notionRequest(`/pages/${questionId}`, {
-        token,
-        method: 'PATCH',
-        body: { archived: true },
-      });
-      clearQuestionCaches();
-      return response.status(200).json({ ok: true });
-    } catch (error) {
-      return sendNotionError(response, {
-        error,
-        fallbackMessage: 'Community deletion failed',
-      });
-    }
-  }
-
-  const mode = String(body?.mode ?? 'post').trim();
-
-  if (mode === 'comment') {
-    const questionId = String(body?.questionId ?? '').trim();
-    const name = authenticatedAuthorName;
-    const content = String(body?.content ?? '').trim();
-    const ownerToken = authenticatedOwnerToken;
-
-    if (!questionId || !content) {
-      return response.status(400).json({ error: 'Question ID and comment content are required' });
+      await archiveQuestion(request, response, body);
+      return;
     }
 
-    const comment = {
-      name,
-      content,
-      date: new Date().toISOString().slice(0, 10),
-      ownerToken,
-    };
-
-    try {
-      const appended = await notionRequest(`/blocks/${questionId}/children`, {
-        token,
-        method: 'PATCH',
-        body: {
-          children: [
-            {
-              object: 'block',
-              type: 'paragraph',
-              paragraph: {
-                rich_text: richTextPayload(`${COMMENT_PREFIX}${JSON.stringify(comment)}`),
-              },
-            },
-          ],
-        },
-      });
-      comment.id = appended?.results?.[0]?.id;
-      clearQuestionCaches();
-    } catch (error) {
-      return sendNotionError(response, {
-        error,
-        fallbackMessage: 'Comment submission failed',
-      });
-    }
-
-    return response.status(200).json({ ok: true, comment: sanitizeComment(comment, ownerToken) });
-  }
-
-  const title = String(body?.title ?? '').trim();
-  const content = String(body?.content ?? '').trim();
-  const name = authenticatedAuthorName;
-  const contact = String(body?.contact ?? '').trim();
-  const category = String(body?.category ?? '').trim() || '자유글';
-  const attachmentUrl = String(body?.attachmentUrl ?? '').trim();
-  const ownerToken = authenticatedOwnerToken;
-
-  if (!title || !content) {
-    return response.status(400).json({ error: 'Title and content are required' });
-  }
-
-  const properties = buildQuestionProperties(schema, {
-    attachmentUrl,
-    category,
-    contact,
-    content,
-    name,
-    title,
-  }, { includeDate: true });
-
-  if (!Object.values(schema).some(property => property.type === 'title') || Object.keys(properties).length === 0) {
-    return response.status(400).json({ error: 'Question database needs a title property' });
-  }
-
-  try {
-    const children = [
-      ...(ownerToken ? [{
-        object: 'block',
-        type: 'paragraph',
-        paragraph: {
-          rich_text: richTextPayload(`${OWNER_PREFIX}${ownerToken}`),
-        },
-      }] : []),
-      ...(attachmentUrl ? [{
-        object: 'block',
-        type: 'paragraph',
-        paragraph: {
-          rich_text: richTextPayload(`${ATTACHMENT_PREFIX}${attachmentUrl}`),
-        },
-      }] : []),
-    ];
-    const createdPage = await notionRequest('/pages', {
-      token,
-      method: 'POST',
-      body: {
-        parent: { database_id: databaseId },
-        properties,
-        children,
-      },
-    });
-    clearQuestionCaches();
-    return response.status(200).json({
-      ok: true,
-      question: {
-        ...mapPageToQuestion(createdPage, 0),
-        attachmentUrl,
-        canEdit: true,
-        commentCount: 0,
-      },
-    });
+    response.setHeader('Allow', 'GET,POST,PATCH,DELETE');
+    response.status(405).json({ error: 'Method not allowed' });
   } catch (error) {
-    return sendNotionError(response, {
-      error,
-      fallbackMessage: 'Question submission failed',
-    });
+    sendSupabaseError(response, error);
   }
-
 }
