@@ -16,6 +16,16 @@ export function getSupabaseRpcUrl() {
   return url ? `${url.replace(/\/$/, '')}/rest/v1/rpc` : '';
 }
 
+function parseSupabaseResponse(text, response) {
+  if (!text) return null;
+  try {
+    return JSON.parse(text);
+  } catch {
+    if (response.ok) return text;
+    return { message: text };
+  }
+}
+
 export async function supabaseRestRequest(path, {
   body,
   method = 'GET',
@@ -43,6 +53,7 @@ export async function supabaseRestRequest(path, {
   const headers = {
     apikey: service ? serviceRoleKey : anonKey,
     Authorization: `Bearer ${bearerToken}`,
+    Accept: 'application/json',
     'Content-Type': 'application/json',
   };
   if (prefer) headers.Prefer = prefer;
@@ -54,7 +65,7 @@ export async function supabaseRestRequest(path, {
   });
 
   const text = await response.text();
-  const data = text ? JSON.parse(text) : null;
+  const data = parseSupabaseResponse(text, response);
   if (!response.ok) {
     const error = new Error(data?.message || data?.hint || 'Supabase request failed');
     error.details = data;

@@ -180,7 +180,7 @@ export function useProfileData(user) {
         const data = await fetchCommunityQuestions({
           auth: true,
           includeCommentCounts: 1,
-          mine: 1,
+          mineOnly: 1,
           pageSize: 40,
         });
         communityQuestions = Array.isArray(data.questions) ? data.questions : [];
