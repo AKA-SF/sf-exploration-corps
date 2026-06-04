@@ -919,6 +919,12 @@
   color: #fffdf6 !important;
 }
 
+.reading-mode .questions-filter button:hover span,
+.reading-mode .questions-filter button:focus-visible span,
+.reading-mode .questions-filter button.is-active span {
+  color: #fffdf6 !important;
+}
+
 .reading-mode .questions-filter button em {
   border-color: rgba(47, 111, 120, 0.22) !important;
   color: #2f6f78 !important;

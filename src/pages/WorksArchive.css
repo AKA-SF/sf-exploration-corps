@@ -445,6 +445,22 @@
   color: #172126;
 }
 
+.reading-mode .works-full-search input::placeholder {
+  color: rgba(52, 68, 75, 0.5);
+}
+
+.reading-mode .works-full-card-top,
+.reading-mode .works-full-card-top em,
+.reading-mode .works-full-recommender,
+.reading-mode .works-full-link {
+  color: #2f6f78;
+  text-shadow: none;
+}
+
+.reading-mode .works-full-link {
+  border-top-color: rgba(47, 111, 120, 0.18);
+}
+
 .reading-mode .works-full-tags span {
   border-color: rgba(47, 111, 120, 0.24);
   background: rgba(255, 255, 255, 0.5);

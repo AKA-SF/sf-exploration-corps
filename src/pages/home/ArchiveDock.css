@@ -84,3 +84,39 @@
 .dock-card:hover {
   background: rgba(25, 247, 241, 0.055);
 }
+
+.reading-mode .archive-dock {
+  border-color: rgba(47, 111, 120, 0.2);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.56), rgba(232, 222, 202, 0.28)),
+    rgba(255, 252, 244, 0.82);
+  backdrop-filter: none;
+}
+
+.reading-mode .dock-card {
+  border-right-color: rgba(47, 111, 120, 0.18);
+  color: #172126;
+}
+
+.reading-mode .dock-card > svg:first-child,
+.reading-mode .dock-card > svg:last-child,
+.reading-mode .dock-card small {
+  color: #2f6f78;
+}
+
+.reading-mode .dock-card strong {
+  color: #111827;
+}
+
+.reading-mode .dock-card em {
+  color: #34444b;
+}
+
+.reading-mode .dock-card small {
+  border-color: rgba(47, 111, 120, 0.24);
+  background: rgba(255, 252, 244, 0.52);
+}
+
+.reading-mode .dock-card:hover {
+  background: rgba(47, 111, 120, 0.08);
+}

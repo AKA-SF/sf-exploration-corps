@@ -182,6 +182,7 @@
 
 .log-card {
   position: relative;
+  isolation: isolate;
   display: inline-block;
   width: 100%;
   margin: 0 0 18px;
@@ -245,6 +246,7 @@
 }
 
 .log-card::before {
+  z-index: 0;
   inset: -4px;
   background:
     linear-gradient(90deg, rgba(96, 67, 35, 0.38), transparent 5%, transparent 95%, rgba(96, 67, 35, 0.32)),
@@ -256,6 +258,7 @@
 }
 
 .log-card::after {
+  z-index: 0;
   inset: 12px;
   border: 1px solid rgba(43, 112, 163, 0.24);
   box-shadow: 0 0 18px rgba(104, 76, 42, 0.12) inset;
@@ -426,6 +429,106 @@
   margin-top: 28px;
   padding-top: 14px;
   border-top: 2px solid rgba(43, 112, 163, 0.36);
+}
+
+.reading-mode .page-container:has(.exploration-log-page),
+.reading-mode.page-container:has(.exploration-log-page) {
+  background: #f3efe6 !important;
+}
+
+.reading-mode .exploration-log-page {
+  --cyan: #2f6f78;
+  background:
+    radial-gradient(circle at 78% 10%, rgba(47, 111, 120, 0.1), transparent 28%),
+    linear-gradient(180deg, rgba(255, 252, 244, 0.98), rgba(239, 233, 219, 0.98)) !important;
+  color: #172126 !important;
+}
+
+.reading-mode .log-archive-header,
+.reading-mode .log-search-bar,
+.reading-mode .log-empty-result {
+  border-color: rgba(46, 72, 77, 0.22) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.66), rgba(232, 222, 202, 0.34)),
+    rgba(255, 252, 244, 0.9) !important;
+  color: #172126 !important;
+  box-shadow: none !important;
+}
+
+.reading-mode .log-back-link,
+.reading-mode .log-header-status,
+.reading-mode .log-reading-toggle {
+  border-color: rgba(47, 111, 120, 0.28) !important;
+  background: rgba(255, 252, 244, 0.72) !important;
+  color: #2f6f78 !important;
+  box-shadow: none !important;
+}
+
+.reading-mode .log-archive-header span,
+.reading-mode .log-header-status,
+.reading-mode .log-search-bar,
+.reading-mode .log-search-bar span,
+.reading-mode .log-empty-result strong {
+  color: #2f6f78 !important;
+  text-shadow: none !important;
+}
+
+.reading-mode .log-archive-header h1 {
+  color: #111827 !important;
+  text-shadow: none !important;
+}
+
+.reading-mode .log-archive-header p,
+.reading-mode .log-empty-result {
+  color: #34444b !important;
+}
+
+.reading-mode .log-search-bar input {
+  color: #172126 !important;
+}
+
+.reading-mode .log-search-bar input::placeholder {
+  color: rgba(52, 68, 75, 0.5) !important;
+}
+
+.reading-mode .log-card {
+  color: #263646 !important;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(255, 255, 255, 0.9), transparent 22%),
+    radial-gradient(circle at 78% 86%, rgba(110, 78, 39, 0.1), transparent 24%),
+    linear-gradient(90deg, rgba(42, 112, 163, 0.23) 1px, transparent 1px) 0 58% / 100% 38px,
+    linear-gradient(rgba(42, 112, 163, 0.21) 1px, transparent 1px) 0 58% / 100% 38px,
+    repeating-linear-gradient(110deg, rgba(62, 44, 24, 0.035) 0 1px, transparent 1px 8px),
+    linear-gradient(180deg, #fff7df, #e9dfc5) !important;
+}
+
+.reading-mode .log-card h2 {
+  color: #171d24 !important;
+  text-shadow: none !important;
+}
+
+.reading-mode .log-card p,
+.reading-mode .exploration-log-page.is-reading-local .log-card p,
+.reading-mode .exploration-log-page.is-reading-local .log-card.mini p,
+.reading-mode .exploration-log-page.is-reading-local .log-card.quote p {
+  color: rgba(41, 51, 62, 0.9) !important;
+}
+
+.reading-mode .log-card-top,
+.reading-mode .log-card-link,
+.reading-mode .log-card-top *,
+.reading-mode .log-card-link * {
+  color: #1d4662 !important;
+  text-shadow: none !important;
+}
+
+.reading-mode .log-stars,
+.reading-mode .log-card-meta em,
+.reading-mode .log-tags span {
+  border-color: rgba(43, 112, 163, 0.32) !important;
+  color: #1d4662 !important;
+  background: rgba(255, 250, 232, 0.5) !important;
+  text-shadow: none !important;
 }
 
 @media (max-width: 900px) {

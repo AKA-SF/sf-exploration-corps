@@ -713,6 +713,149 @@
   font-style: normal;
 }
 
+.reading-mode .home-stage {
+  color: #172126;
+}
+
+.reading-mode .scan-column {
+  border-color: rgba(47, 111, 120, 0.22);
+  color: rgba(47, 111, 120, 0.45);
+}
+
+.reading-mode .scan-column .active {
+  color: #245f68;
+  text-shadow: none;
+}
+
+.reading-mode .scan-column .active::after {
+  background: #2f6f78;
+  box-shadow: none;
+}
+
+.reading-mode .hero-panel {
+  border-bottom-color: rgba(47, 111, 120, 0.18);
+}
+
+.reading-mode .hero-panel::before {
+  opacity: 0.22;
+  filter: grayscale(0.8) sepia(0.2);
+  mix-blend-mode: multiply;
+}
+
+.reading-mode .hero-panel::after {
+  opacity: 0.14;
+}
+
+.reading-mode .signal-label,
+.reading-mode .hero-kicker {
+  color: #2f6f78;
+  text-shadow: none;
+}
+
+.reading-mode .hero-copy h1 {
+  color: #111827;
+  text-shadow: none;
+}
+
+.reading-mode .hero-description {
+  color: #34444b;
+}
+
+.reading-mode .hero-actions .primary-action {
+  border-color: rgba(47, 111, 120, 0.42);
+  color: #fffdf6;
+  background: linear-gradient(135deg, #347f88, #1f5f68);
+  box-shadow: 0 12px 28px rgba(47, 111, 120, 0.16);
+}
+
+.reading-mode .hero-actions .secondary-action {
+  border-color: rgba(47, 111, 120, 0.28);
+  color: #2f6f78 !important;
+  background: rgba(255, 252, 244, 0.72);
+  box-shadow: none;
+}
+
+.reading-mode .hero-signal-banner,
+.reading-mode .mission-card {
+  border-color: rgba(47, 111, 120, 0.24);
+  background:
+    linear-gradient(90deg, rgba(47, 111, 120, 0.08), rgba(148, 107, 32, 0.06)),
+    rgba(255, 252, 244, 0.78);
+  box-shadow: none;
+}
+
+.reading-mode .hero-signal-banner span,
+.reading-mode .hero-signal-banner a,
+.reading-mode .mission-card span,
+.reading-mode .mission-card strong {
+  color: #2f6f78;
+}
+
+.reading-mode .hero-signal-banner strong {
+  color: #111827;
+}
+
+.reading-mode .hero-signal-banner p,
+.reading-mode .mission-card p,
+.reading-mode .mission-card em {
+  color: #34444b;
+}
+
+.reading-mode .hud-panel,
+.reading-mode .mini-map {
+  border-color: rgba(47, 111, 120, 0.24);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.66), rgba(232, 222, 202, 0.34)),
+    rgba(255, 252, 244, 0.78);
+  box-shadow: none;
+}
+
+.reading-mode .hud-panel h2,
+.reading-mode .mini-map-top,
+.reading-mode .mini-map-top *,
+.reading-mode .hud-panel dt,
+.reading-mode .log-line strong,
+.reading-mode .archive-status,
+.reading-mode .archive-status svg {
+  color: #2f6f78;
+  text-shadow: none;
+}
+
+.reading-mode .log-line {
+  border-bottom-color: rgba(47, 111, 120, 0.14);
+}
+
+.reading-mode .log-line span,
+.reading-mode .timestamp p,
+.reading-mode .hud-panel dd {
+  color: #34444b;
+  text-shadow: none;
+}
+
+.reading-mode .log-line em,
+.reading-mode .archive-status em {
+  color: #586a70;
+  text-shadow: none;
+}
+
+.reading-mode .archive-status strong {
+  color: #1f5f68;
+  text-shadow: none;
+}
+
+.reading-mode .sync-list {
+  border-top-color: rgba(47, 111, 120, 0.16);
+}
+
+.reading-mode .galaxy span {
+  border-color: rgba(47, 111, 120, 0.48);
+}
+
+.reading-mode .galaxy i {
+  background: #2f6f78;
+  box-shadow: 0 0 22px rgba(47, 111, 120, 0.22);
+}
+
 @keyframes radarSweep {
   to {
     transform: rotate(360deg);
