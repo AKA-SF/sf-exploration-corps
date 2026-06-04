@@ -7,7 +7,7 @@ import Navbar from './components/Navbar';
 import InteractiveBackground from './components/InteractiveBackground';
 import { ActivityToastProvider } from './context/ActivityToastContext';
 import { AuthProvider } from './context/AuthContext';
-import { getStorageItem, setStorageItem } from './lib/browserStorage';
+import { getStorageItem, removeStorageItem, setStorageItem } from './lib/browserStorage';
 
 const Home = lazy(() => import('./pages/Home'));
 const ExplorationLog = lazy(() => import('./pages/ExplorationLog'));
@@ -33,10 +33,26 @@ function RouteLoader() {
   );
 }
 
+const VIEW_MODE_STORAGE_KEY = 'sf-view-mode';
+const MOBILE_VIEW_QUERY = '(max-width: 760px)';
+
+function isMobileViewport() {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia(MOBILE_VIEW_QUERY).matches;
+}
+
+function getInitialViewMode() {
+  if (isMobileViewport()) {
+    removeStorageItem(VIEW_MODE_STORAGE_KEY);
+    return 'mobile';
+  }
+  return getStorageItem(VIEW_MODE_STORAGE_KEY, 'mobile');
+}
+
 function App() {
   const location = useLocation();
   const [siteMode, setSiteMode] = useState(() => getStorageItem('sf-site-mode', 'console'));
-  const [viewMode, setViewMode] = useState(() => getStorageItem('sf-view-mode', 'mobile'));
+  const [viewMode, setViewMode] = useState(getInitialViewMode);
   const isAdminSurface = location.pathname.startsWith('/admin');
   const isDesktopSurface = location.pathname === '/'
     || location.pathname.startsWith('/works')
@@ -58,7 +74,11 @@ function App() {
   }, [siteMode]);
 
   useEffect(() => {
-    setStorageItem('sf-view-mode', viewMode);
+    if (isMobileViewport()) {
+      removeStorageItem(VIEW_MODE_STORAGE_KEY);
+    } else {
+      setStorageItem(VIEW_MODE_STORAGE_KEY, viewMode);
+    }
     document.body.classList.toggle('desktop-view-requested', isDesktopRequested);
     document.body.classList.toggle('mobile-compact-active', !isDesktopRequested);
     return () => {
