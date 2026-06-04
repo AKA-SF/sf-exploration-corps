@@ -172,7 +172,7 @@
 .questions-board-head,
 .question-row {
   display: grid;
-  grid-template-columns: 86px 110px minmax(0, 1fr) 150px 138px 80px;
+  grid-template-columns: 86px 110px minmax(0, 1fr) 150px 138px 72px 80px;
   gap: 16px;
   align-items: center;
 }
@@ -238,8 +238,20 @@
 }
 
 .question-row .question-code,
+.question-row .question-comments,
 .question-row .question-views {
   color: var(--cyan);
+}
+
+.question-row .question-comments {
+  display: inline-grid;
+  place-items: center;
+  justify-self: start;
+  min-width: 34px;
+  min-height: 26px;
+  border: 1px solid rgba(25, 247, 241, 0.28);
+  background: rgba(25, 247, 241, 0.06);
+  padding: 0 8px;
 }
 
 .question-row .question-views {

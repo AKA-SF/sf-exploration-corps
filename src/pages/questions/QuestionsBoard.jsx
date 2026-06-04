@@ -49,6 +49,7 @@ export default function QuestionsBoard({
           <span>제목</span>
           <span>작성자</span>
           <span>날짜</span>
+          <span>댓글</span>
           <span>조회수</span>
         </div>
         {visibleQuestions.length > 0 ? visibleQuestions.map(question => (
@@ -58,6 +59,7 @@ export default function QuestionsBoard({
             <strong>{question.title}</strong>
             <span>{question.author}</span>
             <time>{question.date || '-'}</time>
+            <span className="question-comments">{question.commentCount ?? 0}</span>
             <span className="question-views">{question.views ?? 0}</span>
           </Link>
         )) : (

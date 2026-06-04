@@ -94,6 +94,7 @@ export default function QuestionDetailView({
           <div className="question-detail-meta">
             <span>작성자 {activeQuestion.author}</span>
             <time>{activeQuestion.date || 'NO DATE'}</time>
+            <em>댓글 {activeQuestion.commentCount ?? 0}</em>
             <em>조회수 {activeQuestion.views ?? 0}</em>
           </div>
           <div className="question-detail-body">

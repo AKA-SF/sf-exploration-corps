@@ -66,7 +66,7 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
   const authorName = getCommunityAuthorName(user);
 
   const loadQuestions = useCallback(({ cursor = '', append = false } = {}) => {
-    fetchCommunityQuestions({ cursor, pageSize: QUESTIONS_PAGE_SIZE })
+    fetchCommunityQuestions({ cursor, includeCommentCounts: 1, pageSize: QUESTIONS_PAGE_SIZE })
       .then(data => {
         const nextQuestions = Array.isArray(data.questions) ? data.questions : fallbackQuestions;
         setQuestions(current => (append ? [...current, ...nextQuestions] : nextQuestions));
@@ -220,6 +220,9 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
       setCommentForm(emptyCommentForm);
       if (data.comment) {
         setComments(current => [...current, data.comment]);
+        setActiveQuestion(current => current
+          ? { ...current, commentCount: (Number(current.commentCount) || 0) + 1 }
+          : current);
       }
       setCommentStatus('success');
       setCommentMessage('댓글이 저장되었습니다. +10 MP가 반영됩니다.');
@@ -373,6 +376,9 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
         ownerToken: getOwnerToken(user),
       });
       setComments(current => current.filter(comment => comment.id !== commentId));
+      setActiveQuestion(current => current
+        ? { ...current, commentCount: Math.max((Number(current.commentCount) || 1) - 1, 0) }
+        : current);
       setCommentEditStatus('success');
       setCommentEditMessage('댓글이 삭제되었습니다.');
     } catch (error) {
