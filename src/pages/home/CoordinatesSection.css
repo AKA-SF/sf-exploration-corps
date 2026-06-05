@@ -1015,6 +1015,81 @@
     rgba(0, 18, 26, 0.84);
 }
 
+.reading-mode .coordinate-brief {
+  border-color: rgba(47, 111, 120, 0.28);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(232, 222, 202, 0.48)),
+    rgba(255, 252, 244, 0.94);
+}
+
+.reading-mode .coordinate-log-trigger {
+  border-color: rgba(47, 111, 120, 0.48);
+  background: var(--mode-reading-cyan);
+  color: var(--mode-reading-contrast);
+  text-shadow: none;
+}
+
+.reading-mode .coordinate-log-trigger svg {
+  color: var(--mode-reading-contrast);
+  stroke: currentColor;
+}
+
+.reading-mode .coordinate-log-trigger:disabled {
+  border-color: rgba(47, 111, 120, 0.28);
+  background: rgba(47, 111, 120, 0.18);
+  color: var(--mode-reading-muted);
+}
+
+.reading-mode .coordinate-log-trigger:not(:disabled):hover,
+.reading-mode .coordinate-log-trigger:not(:disabled):focus-visible {
+  border-color: rgba(47, 111, 120, 0.68);
+  background: #245f68;
+  color: var(--mode-reading-contrast);
+}
+
+.reading-mode .coordinate-recommend-route-list article,
+.reading-mode .coordinate-route-item,
+.reading-mode .coordinate-work-item,
+.reading-mode .coordinate-board-item,
+.reading-mode .coordinate-concept-list button {
+  border-color: rgba(47, 111, 120, 0.28);
+  background: rgba(255, 252, 244, 0.78);
+  box-shadow: none;
+}
+
+.reading-mode .coordinate-recommend-route-list strong,
+.reading-mode .coordinate-route-item strong,
+.reading-mode .coordinate-work-item strong,
+.reading-mode .coordinate-board-item strong {
+  color: var(--mode-reading-heading);
+  text-shadow: none;
+}
+
+.reading-mode .coordinate-recommend-route-list p,
+.reading-mode .coordinate-route-item em,
+.reading-mode .coordinate-work-item em,
+.reading-mode .coordinate-board-item em {
+  color: var(--mode-reading-muted);
+  text-shadow: none;
+}
+
+.reading-mode .coordinate-recommend-route-list button,
+.reading-mode .coordinate-concept-list button {
+  border-color: rgba(47, 111, 120, 0.4);
+  background: rgba(255, 252, 244, 0.94);
+  color: var(--mode-reading-link);
+  text-shadow: none;
+}
+
+.reading-mode .coordinate-recommend-route-list button:hover,
+.reading-mode .coordinate-recommend-route-list button:focus-visible,
+.reading-mode .coordinate-concept-list button:hover,
+.reading-mode .coordinate-concept-list button:focus-visible {
+  border-color: rgba(47, 111, 120, 0.68);
+  background: rgba(221, 242, 239, 0.95);
+  color: var(--mode-reading-heading);
+}
+
 .coordinate-mini-space b {
   position: absolute;
   top: 50%;

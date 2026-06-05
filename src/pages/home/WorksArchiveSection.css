@@ -457,6 +457,78 @@
   box-shadow: 0 0 34px rgba(25, 247, 241, 0.14);
 }
 
+.reading-mode .works-brief,
+.reading-mode .archive-view-status,
+.reading-mode .work-card {
+  border-color: rgba(47, 111, 120, 0.28);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(232, 222, 202, 0.48)),
+    rgba(255, 252, 244, 0.94);
+}
+
+.reading-mode .work-card-top span,
+.reading-mode .work-card-top em,
+.reading-mode .work-card-footer > span {
+  color: var(--mode-reading-cyan);
+  text-shadow: none;
+}
+
+.reading-mode .work-card h3 {
+  color: var(--mode-reading-heading);
+  text-shadow: none;
+}
+
+.reading-mode .work-card p,
+.reading-mode .work-recommender {
+  color: var(--mode-reading-muted);
+  text-shadow: none;
+}
+
+.reading-mode .work-tags span {
+  border-color: rgba(47, 111, 120, 0.3);
+  background: rgba(255, 252, 244, 0.7);
+  color: var(--mode-reading-link);
+  text-shadow: none;
+}
+
+.reading-mode .work-card-footer {
+  border-top-color: rgba(47, 111, 120, 0.2);
+  color: var(--mode-reading-cyan);
+}
+
+.reading-mode .work-detail-open,
+.reading-mode .work-card-link,
+.reading-mode .work-submit-open {
+  border-color: rgba(47, 111, 120, 0.48);
+  background: var(--mode-reading-cyan);
+  color: var(--mode-reading-contrast);
+  text-shadow: none;
+}
+
+.reading-mode .work-detail-open svg,
+.reading-mode .work-card-link svg,
+.reading-mode .work-submit-open svg {
+  color: var(--mode-reading-contrast);
+  stroke: currentColor;
+}
+
+.reading-mode .work-card-link:visited,
+.reading-mode .work-card-link:hover,
+.reading-mode .work-card-link:focus-visible,
+.reading-mode .work-detail-open:hover,
+.reading-mode .work-detail-open:focus-visible,
+.reading-mode .work-submit-open:hover,
+.reading-mode .work-submit-open:focus-visible {
+  border-color: rgba(47, 111, 120, 0.68);
+  background: #245f68;
+  color: var(--mode-reading-contrast);
+}
+
+.reading-mode .work-card-cue {
+  color: var(--mode-reading-cyan);
+  stroke: currentColor;
+}
+
 .work-detail-head {
   display: grid;
   grid-template-columns: 1fr auto;
