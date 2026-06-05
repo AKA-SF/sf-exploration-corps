@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { BookOpen, Monitor, Smartphone, TerminalSquare } from 'lucide-react';
 import './App.css';
@@ -54,6 +54,9 @@ function App() {
   const [siteMode, setSiteMode] = useState(() => getStorageItem('sf-site-mode', 'console'));
   const [viewMode, setViewMode] = useState(getInitialViewMode);
   const isAdminSurface = location.pathname.startsWith('/admin');
+  const isDeviceSurface = location.pathname.startsWith('/profile')
+    || location.pathname.startsWith('/badges')
+    || location.pathname.startsWith('/network');
   const isDesktopSurface = location.pathname === '/'
     || location.pathname.startsWith('/works')
     || location.pathname.startsWith('/media')
@@ -64,6 +67,12 @@ function App() {
     || location.pathname.startsWith('/badges')
     || location.pathname.startsWith('/admin');
   const isDesktopRequested = viewMode === 'desktop';
+
+  const handleMapNavigate = useCallback(() => {
+    if (!isMobileViewport()) return;
+    removeStorageItem(VIEW_MODE_STORAGE_KEY);
+    setViewMode('mobile');
+  }, []);
 
   useEffect(() => {
     setStorageItem('sf-site-mode', siteMode);
@@ -79,18 +88,20 @@ function App() {
     } else {
       setStorageItem(VIEW_MODE_STORAGE_KEY, viewMode);
     }
-    document.body.classList.toggle('desktop-view-requested', isDesktopRequested);
-    document.body.classList.toggle('mobile-compact-active', !isDesktopRequested);
+    document.body.classList.toggle('device-surface-active', isDeviceSurface);
+    document.body.classList.toggle('desktop-view-requested', !isDeviceSurface && isDesktopRequested);
+    document.body.classList.toggle('mobile-compact-active', !isDeviceSurface && !isDesktopRequested);
     return () => {
+      document.body.classList.remove('device-surface-active');
       document.body.classList.remove('desktop-view-requested');
       document.body.classList.remove('mobile-compact-active');
     };
-  }, [isDesktopRequested, viewMode]);
+  }, [isDesktopRequested, isDeviceSurface, viewMode]);
 
   return (
     <AuthProvider>
       <ActivityToastProvider>
-        <div className={`${isAdminSurface ? 'mobile-container desktop-admin' : isDesktopSurface ? 'mobile-container desktop-home' : 'mobile-container'} ${isAdminSurface ? 'admin-mode' : isReadingMode ? 'reading-mode' : 'console-mode'} ${isLowPowerSurface ? 'low-power-surface' : ''}`}>
+        <div className={`${isAdminSurface ? 'mobile-container desktop-admin' : isDesktopSurface ? 'mobile-container desktop-home' : isDeviceSurface ? 'mobile-container device-surface' : 'mobile-container'} ${isAdminSurface ? 'admin-mode' : isReadingMode ? 'reading-mode' : 'console-mode'} ${isLowPowerSurface ? 'low-power-surface' : ''}`}>
           <div className="app-wrapper">
             {!isAdminSurface && <InteractiveBackground lowPower={isLowPowerSurface} />}
             {isDesktopSurface && (
@@ -103,7 +114,7 @@ function App() {
                 <span>{isReadingMode ? 'Console Mode' : 'Reading Mode'}</span>
               </button>
             )}
-            {!isAdminSurface && (
+            {!isAdminSurface && !isDeviceSurface && (
               <button
                 className="viewport-mode-toggle"
                 onClick={() => setViewMode(isDesktopRequested ? 'mobile' : 'desktop')}
@@ -134,7 +145,7 @@ function App() {
                 </Routes>
               </Suspense>
             </div>
-            {!isAdminSurface && <Navbar />}
+            {!isAdminSurface && <Navbar onMapNavigate={handleMapNavigate} />}
           </div>
         </div>
       </ActivityToastProvider>

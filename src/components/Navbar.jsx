@@ -1,10 +1,14 @@
 import { NavLink } from 'react-router-dom';
 import { Award, Crosshair, User, Radio } from 'lucide-react';
 
-const Navbar = () => {
+const Navbar = ({ onMapNavigate }) => {
   return (
     <nav className="navbar">
-      <NavLink to="/" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+      <NavLink
+        to="/"
+        className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
+        onClick={onMapNavigate}
+      >
         <Crosshair />
         <span className="mono">MAP</span>
       </NavLink>

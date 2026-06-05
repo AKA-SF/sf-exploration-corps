@@ -107,6 +107,42 @@
   background: #f5f7fb;
 }
 
+.mobile-container.device-surface {
+  width: min(100vw, 450px);
+  height: 100%;
+  max-width: 450px;
+  max-height: 900px;
+  border: 1px solid var(--text-dark);
+  background: var(--bg-surface);
+  box-shadow: 0 0 50px rgba(0, 0, 0, 0.8);
+}
+
+body.device-surface-active {
+  width: 100vw;
+  min-width: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg-color);
+}
+
+body.device-surface-active #root {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+}
+
+body.device-surface-active .page-container {
+  height: 100%;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px;
+  padding-bottom: 96px;
+}
+
 .route-loader {
   display: grid;
   place-items: center;
@@ -815,6 +851,15 @@ body.reading-mode-active .work-archive-link svg {
   z-index: 50;
 }
 
+.device-surface .navbar,
+body.device-surface-active .navbar {
+  left: 0;
+  right: 0;
+  width: 100%;
+  justify-content: space-around;
+  gap: 0;
+}
+
 .nav-item {
   color: var(--text-muted);
   display: flex;
@@ -829,6 +874,13 @@ body.reading-mode-active .work-archive-link svg {
   transition: all 0.2s ease;
   border: 1px solid transparent;
   border-radius: 3px;
+}
+
+.device-surface .nav-item,
+body.device-surface-active .nav-item {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 96px;
 }
 
 .nav-item:hover, .nav-item.active {
