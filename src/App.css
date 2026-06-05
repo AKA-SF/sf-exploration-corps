@@ -901,3 +901,85 @@ body.device-surface-active .nav-item {
   width: 24px;
   height: 24px;
 }
+
+/* Reading mode final contrast guard.
+   These selectors intentionally sit at the end of the global stylesheet so
+   archive/coordinate action text stays readable even when section CSS loads
+   later in a different chunk order. */
+body.reading-mode-active .mobile-container.reading-mode .works-brief,
+body.reading-mode-active .mobile-container.reading-mode .archive-view-status,
+body.reading-mode-active .mobile-container.reading-mode .work-card,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-brief {
+  border-color: rgba(47, 111, 120, 0.3) !important;
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(232, 222, 202, 0.5)),
+    rgba(255, 252, 244, 0.96) !important;
+  text-shadow: none !important;
+}
+
+body.reading-mode-active .mobile-container.reading-mode .works-brief h3,
+body.reading-mode-active .mobile-container.reading-mode .works-brief dd,
+body.reading-mode-active .mobile-container.reading-mode .work-card h3,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-brief h3,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-recommend-route-list strong,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-route-item strong,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-work-item strong,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-board-item strong {
+  color: var(--mode-reading-heading) !important;
+  text-shadow: none !important;
+}
+
+body.reading-mode-active .mobile-container.reading-mode .works-brief p,
+body.reading-mode-active .mobile-container.reading-mode .work-card p,
+body.reading-mode-active .mobile-container.reading-mode .work-recommender,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-brief p,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-brief dd,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-recommend-route-list p,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-route-item em,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-work-item em,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-board-item em,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-log-trigger:disabled {
+  color: var(--mode-reading-muted) !important;
+  text-shadow: none !important;
+}
+
+body.reading-mode-active .mobile-container.reading-mode .works-brief > span,
+body.reading-mode-active .mobile-container.reading-mode .works-brief dt,
+body.reading-mode-active .mobile-container.reading-mode .archive-view-status,
+body.reading-mode-active .mobile-container.reading-mode .archive-view-status *,
+body.reading-mode-active .mobile-container.reading-mode .work-card-top span,
+body.reading-mode-active .mobile-container.reading-mode .work-card-top em,
+body.reading-mode-active .mobile-container.reading-mode .work-card-footer > span,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-brief > span,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-brief dt,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-panel-section > span {
+  color: var(--mode-reading-cyan) !important;
+  text-shadow: none !important;
+}
+
+body.reading-mode-active .mobile-container.reading-mode .work-tags span,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-recommend-route-list button,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-concept-list button {
+  border-color: rgba(47, 111, 120, 0.42) !important;
+  background: rgba(255, 252, 244, 0.96) !important;
+  color: var(--mode-reading-link) !important;
+  text-shadow: none !important;
+}
+
+body.reading-mode-active .mobile-container.reading-mode .work-detail-open,
+body.reading-mode-active .mobile-container.reading-mode .work-card-link,
+body.reading-mode-active .mobile-container.reading-mode .work-submit-open,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-log-trigger:not(:disabled) {
+  border-color: rgba(47, 111, 120, 0.55) !important;
+  background: var(--mode-reading-cyan) !important;
+  color: var(--mode-reading-contrast) !important;
+  text-shadow: none !important;
+}
+
+body.reading-mode-active .mobile-container.reading-mode .work-detail-open *,
+body.reading-mode-active .mobile-container.reading-mode .work-card-link *,
+body.reading-mode-active .mobile-container.reading-mode .work-submit-open *,
+body.reading-mode-active .mobile-container.reading-mode .coordinate-log-trigger:not(:disabled) * {
+  color: var(--mode-reading-contrast) !important;
+  stroke: currentColor !important;
+}
