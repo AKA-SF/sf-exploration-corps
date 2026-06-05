@@ -6,7 +6,8 @@ create table if not exists public.profiles (
   nickname text not null default '탐사 대원',
   public_code text,
   mileage integer not null default 0,
-  title text not null default '수습 대원',
+  title text not null default '탐사보조원',
+  title_override text,
   avatar_url text,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -82,6 +83,9 @@ create table if not exists public.crew_messages (
 
 alter table public.profiles
   add column if not exists public_code text;
+
+alter table public.profiles
+  add column if not exists title_override text;
 
 create unique index if not exists profiles_public_code_key
   on public.profiles (public_code);
@@ -294,24 +298,42 @@ create trigger on_auth_user_created_profile
   after insert on auth.users
   for each row execute function public.handle_new_user_profile();
 
+create or replace function public.profile_rank_title(points integer)
+returns text
+language sql
+immutable
+as $$
+  select case
+    when greatest(0, coalesce(points, 0)) >= 4500 then '포스트휴먼'
+    when greatest(0, coalesce(points, 0)) >= 3200 then '심우주 사령관'
+    when greatest(0, coalesce(points, 0)) >= 2300 then '함장'
+    when greatest(0, coalesce(points, 0)) >= 1600 then '부함장'
+    when greatest(0, coalesce(points, 0)) >= 1100 then '선임 항해사'
+    when greatest(0, coalesce(points, 0)) >= 700 then '항해사'
+    when greatest(0, coalesce(points, 0)) >= 400 then '분석사'
+    when greatest(0, coalesce(points, 0)) >= 220 then '연구원'
+    when greatest(0, coalesce(points, 0)) >= 100 then '탐사대원'
+    when greatest(0, coalesce(points, 0)) >= 30 then '수습 대원'
+    else '탐사보조원'
+  end;
+$$;
+
 create or replace function public.update_profile_mileage()
 returns trigger
 language plpgsql
 security definer
 set search_path = public
 as $$
+declare
+  next_mileage integer;
 begin
   update public.profiles
   set mileage = greatest(0, mileage + new.points),
-      title = case
-        when greatest(0, mileage + new.points) >= 1500 then '포스트휴먼'
-        when greatest(0, mileage + new.points) >= 700 then '함장'
-        when greatest(0, mileage + new.points) >= 300 then '선임 항해사'
-        when greatest(0, mileage + new.points) >= 100 then '항해사'
-        else '수습 대원'
-      end,
+      title = coalesce(nullif(trim(title_override), ''), public.profile_rank_title(greatest(0, mileage + new.points))),
       updated_at = now()
-  where id = new.user_id;
+  where id = new.user_id
+  returning mileage into next_mileage;
+
   return new;
 end;
 $$;

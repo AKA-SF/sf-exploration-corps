@@ -5,6 +5,9 @@
 -- Authentication > Users > 사용자 선택 > Raw app metadata에 아래처럼 추가
 -- { "role": "admin" }
 
+alter table public.profiles
+  add column if not exists title_override text;
+
 create or replace function public.current_user_is_admin()
 returns boolean
 language sql
@@ -207,6 +210,7 @@ begin
 
   update public.profiles
   set title = trim(next_title),
+      title_override = trim(next_title),
       updated_at = now()
   where id = target_user_id;
 
@@ -215,7 +219,7 @@ begin
     'profile',
     target_user_id::text,
     trim(next_title),
-    '{}'::jsonb
+    jsonb_build_object('title_override', true)
   );
 end;
 $$;

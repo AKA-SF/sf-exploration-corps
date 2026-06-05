@@ -19,7 +19,7 @@ const emptyProfileViewModel = buildProfileViewModel({
   workStatuses: [],
 });
 
-const profileFields = 'id,nickname,public_code,mileage,title,avatar_url,created_at,updated_at';
+const profileFields = 'id,nickname,public_code,mileage,title,title_override,avatar_url,created_at,updated_at';
 const legacyProfileFields = 'id,nickname,mileage,title,avatar_url,created_at,updated_at';
 
 async function selectProfileById(supabase, userId) {

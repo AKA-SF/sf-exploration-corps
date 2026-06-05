@@ -186,7 +186,11 @@ function getLatestTasteProfile(activities) {
 
 export function buildProfileViewModel({ activities, manualBadges = [], profile, selectedMissionRoute, workStatuses }) {
   const points = profile?.mileage ?? activities.reduce((sum, activity) => sum + (activity.points ?? 0), 0);
-  const rank = getRank(points);
+  const computedRank = getRank(points);
+  const displayTitle = String(profile?.title_override || profile?.title || '').trim();
+  const rank = displayTitle
+    ? { ...computedRank, current: { ...computedRank.current, title: displayTitle } }
+    : computedRank;
   const stats = getActivityStats(activities, workStatuses);
   const badges = mergeManualBadges(getBadges(stats), manualBadges);
   const missionTree = getMissionTree(stats, selectedMissionRoute);

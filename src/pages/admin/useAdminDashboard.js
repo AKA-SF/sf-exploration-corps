@@ -60,7 +60,7 @@ export function useAdminDashboard({ isAdmin, user }) {
         getOptionalCount(supabase, 'member_admin_notes', 'user_id'),
         supabase
           .from('profiles')
-          .select('id,nickname,title,mileage,created_at,updated_at')
+          .select('id,nickname,title,title_override,mileage,created_at,updated_at')
           .order('created_at', { ascending: false })
           .limit(200),
         supabase
