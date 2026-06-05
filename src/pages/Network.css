@@ -18,15 +18,27 @@
 .network-primer {
   flex: 0 0 auto;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr));
   gap: 12px;
-  align-items: center;
+  align-items: stretch;
   margin: 0 16px 0;
   padding: 12px;
   background:
     linear-gradient(90deg, rgba(0, 255, 255, 0.08), transparent 50%),
     rgba(0, 0, 0, 0.56);
   border-color: rgba(0, 255, 255, 0.24);
+}
+
+.network-control-deck {
+  overflow: visible;
+}
+
+.network-control-status {
+  grid-column: 1 / -1;
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 6px;
 }
 
 .network-primer span {
@@ -41,6 +53,10 @@
   font-size: 11px;
   line-height: 1.55;
   font-weight: 400;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 .network-device-readout {
@@ -420,11 +436,11 @@
   top: 14px;
   right: 14px;
   z-index: 25;
-  width: min(360px, calc(100% - 28px));
+  width: min(390px, calc(100% - 28px));
   height: calc(100% - 28px);
   max-height: calc(100% - 28px);
   display: grid;
-  grid-template-rows: auto minmax(0, 0.86fr) minmax(220px, 1.14fr);
+  grid-template-rows: auto minmax(0, 1fr);
   gap: 8px;
   overflow: hidden;
   padding: 12px;
@@ -449,6 +465,17 @@
   grid-template-columns: 1fr 1fr;
   gap: 6px;
   margin-bottom: 0;
+}
+
+.network-top-signal {
+  height: 100%;
+  min-height: 0;
+  margin-bottom: 0;
+  padding: 8px;
+}
+
+.network-top-signal strong {
+  font-size: 11px;
 }
 
 .relay-controls {
@@ -616,10 +643,18 @@
 .radio-reply-composer {
   display: grid;
   gap: 7px;
-  margin-bottom: 8px;
+  margin-bottom: 0;
   padding: 8px;
   border: 1px solid rgba(0, 255, 255, 0.16);
   background: rgba(0, 255, 255, 0.04);
+}
+
+.network-radio-dock {
+  min-width: 0;
+  min-height: 0;
+  display: grid;
+  gap: 7px;
+  overflow: hidden;
 }
 
 .radio-reply-composer {
@@ -633,11 +668,15 @@
   letter-spacing: 1px;
 }
 
+.network-radio-dock .radio-composer {
+  padding: 8px;
+}
+
 .radio-composer textarea,
 .radio-reply-composer textarea {
   width: 100%;
-  min-height: 44px;
-  max-height: 86px;
+  min-height: 42px;
+  max-height: 58px;
   resize: vertical;
   color: var(--text-main);
   border: 1px solid rgba(0, 255, 255, 0.2);
@@ -706,7 +745,7 @@
 }
 
 .radio-notice {
-  margin: -2px 0 8px;
+  margin: 0;
   color: var(--accent-amber);
   font-size: 10px;
   line-height: 1.45;
@@ -748,7 +787,7 @@
 
 .relay-stream {
   position: relative;
-  min-height: 220px;
+  min-height: 320px;
   height: 100%;
   max-height: none;
   overflow: hidden;
@@ -873,11 +912,16 @@
 }
 
 .relay-line-actions {
-  display: flex;
+  display: none;
   align-items: center;
   flex-wrap: wrap;
   gap: 5px;
   margin-top: 5px;
+}
+
+.relay-line:hover .relay-line-actions,
+.relay-line:focus-within .relay-line-actions {
+  display: flex;
 }
 
 .relay-track-button {
@@ -941,15 +985,15 @@
   .community-relay {
     top: 10px;
     right: 10px;
-    width: min(320px, calc(100% - 20px));
+    width: min(360px, calc(100% - 20px));
     height: calc(100% - 20px);
     max-height: calc(100% - 20px);
-    grid-template-rows: auto minmax(0, 0.82fr) minmax(160px, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
     padding: 10px;
   }
 
   .relay-stream {
-    min-height: 160px;
+    min-height: 260px;
     max-height: none;
   }
 
@@ -973,6 +1017,8 @@
   .network-primer {
     grid-template-columns: 1fr;
     margin: 0 10px;
+    max-height: none;
+    overflow: visible;
   }
 
   .network-device-readout {

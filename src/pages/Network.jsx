@@ -16,7 +16,6 @@ import {
   getActivitySignal,
   getBoardSignal,
   getDailyNetworkMission,
-  getNetworkMissionProgress,
   getSignalLine,
   getSignalColor,
   getUnknownSignalTarget,
@@ -234,13 +233,6 @@ const Network = () => {
 
   const dailyMission = useMemo(() => getDailyNetworkMission(), []);
 
-  const missionProgress = useMemo(() => getNetworkMissionProgress({
-    activitySignals,
-    dailyMission,
-    radioMessages,
-    user,
-  }), [activitySignals, dailyMission, radioMessages, user]);
-
   const unknownSignal = useMemo(
     () => getUnknownSignalTarget({ activitySignals, radioMessages, spatialLogs }),
     [activitySignals, radioMessages, spatialLogs],
@@ -321,7 +313,7 @@ const Network = () => {
       ...workCommentSignals.slice(0, 4),
       missionSignal,
       ...baseStream,
-    ].slice(0, 12);
+    ].slice(0, 22);
   }, [activitySignals, boardSignals, dailyMission, radioStream, spatialLogs, unknownSignal, userLogCount, workCommentSignals]);
 
   const handleNodeClick = (log) => {
@@ -446,24 +438,78 @@ const Network = () => {
         <p className="mono text-muted text-xs">탐사 장비: 기록, 감정, 섹터가 비슷한 신호를 수신하고 교신망으로 연결합니다.</p>
       </header>
 
-      <section className="network-primer panel">
-        <div>
-          <span className="mono">RECEIVER_FUNCTION</span>
-          <strong>탐사 기록이 무전 신호처럼 수신되고, 유사 감정/섹터/개념을 가진 로그와 연결됩니다.</strong>
+      <section className="network-primer network-control-deck panel">
+        <div className="network-control-status">
+          <div className="relay-header mono">
+            <MessageSquareText size={12} />
+            <span>EXPLORER_COMM_STREAM</span>
+          </div>
+          <strong>탐사자 활동, 커뮤니티 글, 작품 댓글, 무전 메시지가 하나의 공개 신호망으로 흐릅니다.</strong>
+          <div className="network-device-readout mono" aria-label="교신 장비 상태">
+            <span>
+              <b>ACTIVE</b>
+              <em>{Math.max(7, spatialLogs.length * 3 + radioMessages.length + activitySignals.length)}</em>
+            </span>
+            <span>
+              <b>NODES</b>
+              <em>{spatialLogs.length}</em>
+            </span>
+            <span>
+              <b>PACKETS</b>
+              <em>{edges.length * 2 + activitySignals.length + radioMessages.length}</em>
+            </span>
+          </div>
         </div>
-        <div className="network-device-readout mono" aria-label="교신 장비 상태">
-          <span>
-            <b>CHANNEL</b>
-            <em>SF-ARCHIVE</em>
-          </span>
-          <span>
-            <b>NODES</b>
-            <em>{spatialLogs.length}</em>
-          </span>
-          <span>
-            <b>PACKETS</b>
-            <em>{edges.length * 2 + activitySignals.length + radioMessages.length}</em>
-          </span>
+
+        <button className="unknown-signal-card network-top-signal" onClick={() => navigate(unknownSignal.href)} type="button">
+          <span className="mono">UNKNOWN_SIGNAL</span>
+          <strong>{unknownSignal.body}</strong>
+          <em className="mono">{unknownSignal.label}</em>
+        </button>
+
+        <div className="network-radio-dock">
+          <form className="radio-composer" onSubmit={submitRadioMessage}>
+            <label className="mono" htmlFor="radio-message">OPEN_RADIO_MESSAGE</label>
+            <textarea
+              id="radio-message"
+              maxLength={240}
+              onChange={event => setRadioBody(event.target.value)}
+              placeholder={user ? '현재 탐사 중인 좌표, 읽는 책, 감지한 신호를 짧게 남겨보세요.' : '로그인 후 무전 메시지를 송신할 수 있습니다.'}
+              value={radioBody}
+            />
+            <div className="radio-composer-bottom">
+              <span className="mono">{radioBody.length}/240</span>
+              <button className="mono" disabled={!user || isRadioSubmitting || !radioBody.trim()} type="submit">
+                송신 +4MP
+              </button>
+            </div>
+          </form>
+          {replyTarget && (
+            <form className="radio-reply-composer" onSubmit={submitRadioReply}>
+              <div className="radio-reply-target mono">
+                <span>REPLY_TO</span>
+                <strong>{replyTarget.author_name}</strong>
+                <button type="button" onClick={() => setReplyTarget(null)}>취소</button>
+              </div>
+              <textarea
+                maxLength={180}
+                onChange={event => setReplyBody(event.target.value)}
+                placeholder={`${replyTarget.author_name} 대원에게 공개 답신 보내기`}
+                value={replyBody}
+              />
+              <div className="radio-composer-bottom">
+                <span className="mono">{replyBody.length}/180</span>
+                <button className="mono" disabled={!user || isRadioSubmitting || !replyBody.trim()} type="submit">
+                  답신 +3MP
+                </button>
+              </div>
+            </form>
+          )}
+          {radioStatus === 'schema-missing' && (
+            <p className="radio-notice">무전 테이블 연결이 필요합니다. Supabase SQL 스키마를 다시 실행해주세요.</p>
+          )}
+          {radioNotice && radioStatus !== 'schema-missing' && <p className="radio-notice">{radioNotice}</p>}
+          {reactionNotice && <p className="radio-notice">{reactionNotice}</p>}
         </div>
       </section>
 
@@ -630,7 +676,7 @@ const Network = () => {
           <div className="relay-top">
             <div className="relay-header mono">
               <MessageSquareText size={12} />
-              <span>EXPLORER_COMM_STREAM</span>
+              <span>LIVE_SIGNAL_LOG</span>
             </div>
             <div className="relay-metrics">
               <div className="relay-metric mono">
@@ -644,74 +690,9 @@ const Network = () => {
             </div>
           </div>
 
-          <div className="relay-controls">
-            <div className="network-mission-card">
-              <div className="network-mission-card__meta mono">
-                <span style={{ color: getSignalColor(dailyMission.signal) }}>TODAY_MISSION</span>
-                <span>{missionProgress.completed ? 'COMPLETE' : dailyMission.reward}</span>
-              </div>
-              <strong>{dailyMission.title}</strong>
-              <p>{dailyMission.detail}</p>
-              <div className={`mission-progress mono ${missionProgress.completed ? 'is-complete' : ''}`}>
-                <span>{missionProgress.label}</span>
-                <b>{missionProgress.completed ? 'SYNCED' : 'IN_PROGRESS'}</b>
-              </div>
-              <button className="mono" onClick={() => navigate(dailyMission.href)} type="button">
-                임무 좌표 이동
-              </button>
-            </div>
-            <button className="unknown-signal-card" onClick={() => navigate(unknownSignal.href)} type="button">
-              <span className="mono">UNKNOWN_SIGNAL</span>
-              <strong>{unknownSignal.body}</strong>
-              <em className="mono">{unknownSignal.label}</em>
-            </button>
-            <form className="radio-composer" onSubmit={submitRadioMessage}>
-              <label className="mono" htmlFor="radio-message">OPEN_RADIO_MESSAGE</label>
-              <textarea
-                id="radio-message"
-                maxLength={240}
-                onChange={event => setRadioBody(event.target.value)}
-                placeholder={user ? '현재 탐사 중인 좌표, 읽는 책, 감지한 신호를 짧게 남겨보세요.' : '로그인 후 무전 메시지를 송신할 수 있습니다.'}
-                value={radioBody}
-              />
-              <div className="radio-composer-bottom">
-                <span className="mono">{radioBody.length}/240</span>
-                <button className="mono" disabled={!user || isRadioSubmitting || !radioBody.trim()} type="submit">
-                  송신 +4MP
-                </button>
-              </div>
-            </form>
-            {replyTarget && (
-              <form className="radio-reply-composer" onSubmit={submitRadioReply}>
-                <div className="radio-reply-target mono">
-                  <span>REPLY_TO</span>
-                  <strong>{replyTarget.author_name}</strong>
-                  <button type="button" onClick={() => setReplyTarget(null)}>취소</button>
-                </div>
-                <textarea
-                  maxLength={180}
-                  onChange={event => setReplyBody(event.target.value)}
-                  placeholder={`${replyTarget.author_name} 대원에게 공개 답신 보내기`}
-                  value={replyBody}
-                />
-                <div className="radio-composer-bottom">
-                  <span className="mono">{replyBody.length}/180</span>
-                  <button className="mono" disabled={!user || isRadioSubmitting || !replyBody.trim()} type="submit">
-                    답신 +3MP
-                  </button>
-                </div>
-              </form>
-            )}
-            {radioStatus === 'schema-missing' && (
-              <p className="radio-notice">무전 테이블 연결이 필요합니다. Supabase SQL 스키마를 다시 실행해주세요.</p>
-            )}
-            {radioNotice && radioStatus !== 'schema-missing' && <p className="radio-notice">{radioNotice}</p>}
-            {reactionNotice && <p className="radio-notice">{reactionNotice}</p>}
-          </div>
-
           <div
             className="relay-stream"
-            style={{ '--relay-duration': `${Math.max(26, transmissionStream.length * 4.2)}s` }}
+            style={{ '--relay-duration': `${Math.max(34, transmissionStream.length * 3.5)}s` }}
           >
             <div className="relay-stream-track">
               <div className="relay-stream-set">
