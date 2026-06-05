@@ -57,6 +57,10 @@ export function errorMessage(error) {
   return error?.message || '요청 처리 중 문제가 생겼습니다.';
 }
 
+export function memberDisplayTitle(member) {
+  return String(member?.title_override || member?.title || '').trim();
+}
+
 export async function getCount(supabase, table, column = 'id') {
   const { count, error } = await supabase
     .from(table)
@@ -103,14 +107,15 @@ function numericFilterPass(value, min, max) {
 export function filterMembers(members, filters) {
   const query = filters.query.trim().toLowerCase();
   const filtered = members.filter(member => {
+    const title = memberDisplayTitle(member);
     const text = [
       member.nickname,
-      member.title,
+      title,
       member.id,
     ].filter(Boolean).join(' ').toLowerCase();
 
     return (!query || text.includes(query))
-      && (filters.title === 'all' || member.title === filters.title)
+      && (filters.title === 'all' || title === filters.title)
       && numericFilterPass(member.mileage, filters.minMp, filters.maxMp);
   });
 

@@ -78,13 +78,17 @@ begin
       updated_at = now()
   where id = target_user_id;
 
-  perform public.admin_record_action(
-    'member_title_update',
-    'profile',
-    target_user_id::text,
-    trim(next_title),
-    jsonb_build_object('title_override', true)
-  );
+  begin
+    perform public.admin_record_action(
+      'member_title_update',
+      'profile',
+      target_user_id::text,
+      trim(next_title),
+      jsonb_build_object('title_override', true)
+    );
+  exception when others then
+    null;
+  end;
 end;
 $$;
 

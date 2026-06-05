@@ -26,6 +26,7 @@ import {
   hasAdminRole,
   initialMemberAction,
   initialMemberFilters,
+  memberDisplayTitle,
   shortId,
 } from './admin/adminUtils';
 import { useAdminDashboard } from './admin/useAdminDashboard';
@@ -71,7 +72,8 @@ export default function Admin() {
   const filteredMembers = useMemo(() => (
     filterMembers(members, memberFilters)
   ), [memberFilters, members]);
-  const memberActionTitle = memberAction.title || selectedMember?.title || rankTable[0].title;
+  const selectedMemberTitle = memberDisplayTitle(selectedMember) || rankTable[0].title;
+  const memberActionTitle = memberAction.title || selectedMemberTitle;
   const currentNoteValue = noteDraftMemberId === selectedMember?.id
     ? noteDraft
     : selectedMemberNote?.note ?? '';
@@ -369,14 +371,14 @@ export default function Admin() {
                 onClick={() => {
                   const note = memberNotes.find(item => item.user_id === member.id);
                   setSelectedMemberId(member.id);
-                  setMemberAction(current => ({ ...current, title: member.title || rankTable[0].title }));
+                  setMemberAction(current => ({ ...current, title: memberDisplayTitle(member) || rankTable[0].title }));
                   setNoteDraftMemberId(member.id);
                   setNoteDraft(note?.note ?? '');
                 }}
                 type="button"
               >
                 <strong>{member.nickname || '이름 없음'}</strong>
-                <span>{member.title} / {member.mileage} MP / {shortId(member.id)}</span>
+                <span>{memberDisplayTitle(member) || '등급 없음'} / {member.mileage} MP / {shortId(member.id)}</span>
               </button>
             ))}
             {status !== 'loading' && filteredMembers.length === 0 && <p className="admin-empty">검색 조건에 맞는 회원이 없습니다.</p>}
@@ -386,7 +388,7 @@ export default function Admin() {
             <div className="admin-member-editor">
               <div className="admin-editor-summary">
                 <strong>{selectedMember.nickname}</strong>
-                <span>{selectedMember.title} / {selectedMember.mileage} MP</span>
+                <span>{selectedMemberTitle} / {selectedMember.mileage} MP</span>
               </div>
 
               <label>
