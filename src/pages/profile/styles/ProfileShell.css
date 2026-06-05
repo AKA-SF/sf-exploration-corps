@@ -1,0 +1,302 @@
+/* Profile device shell and shared header controls. */
+.profile-container {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: auto !important;
+  padding-bottom: 120px !important;
+  overflow: visible;
+}
+
+.personal-terminal {
+  position: relative;
+  width: min(100%, 520px);
+  margin: 0 auto;
+  border: 1px solid rgba(0, 255, 255, 0.3);
+  padding: 12px;
+  background:
+    linear-gradient(135deg, rgba(0, 255, 255, 0.08), transparent 24%),
+    radial-gradient(circle at 50% 0%, rgba(0, 255, 255, 0.12), transparent 44%),
+    rgba(0, 7, 10, 0.88);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.03),
+    inset 0 0 38px rgba(0, 255, 255, 0.08),
+    0 22px 70px rgba(0, 0, 0, 0.45);
+}
+
+.personal-terminal::before,
+.personal-terminal::after {
+  content: "";
+  position: absolute;
+  width: 34px;
+  height: 34px;
+  border-color: var(--primary-cyan);
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+.personal-terminal::before {
+  top: -1px;
+  left: -1px;
+  border-top: 2px solid;
+  border-left: 2px solid;
+}
+
+.personal-terminal::after {
+  right: -1px;
+  bottom: -1px;
+  border-right: 2px solid;
+  border-bottom: 2px solid;
+}
+
+.terminal-topbar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  min-height: 28px;
+  border: 1px solid rgba(0, 255, 255, 0.16);
+  border-bottom: 0;
+  padding: 0 10px;
+  color: var(--text-muted);
+  background: rgba(0, 0, 0, 0.38);
+  font-size: 9px;
+  letter-spacing: 1.2px;
+}
+
+.terminal-topbar span:last-child {
+  text-align: right;
+}
+
+.terminal-topbar div {
+  display: inline-flex;
+  gap: 6px;
+}
+
+.terminal-topbar i {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--primary-cyan);
+  box-shadow: 0 0 10px rgba(0, 255, 255, 0.8);
+}
+
+.terminal-topbar i:nth-child(2) {
+  background: var(--accent-amber);
+  box-shadow: 0 0 10px rgba(255, 176, 0, 0.7);
+}
+
+.terminal-topbar i:nth-child(3) {
+  opacity: 0.36;
+}
+
+.terminal-screen {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border: 1px solid rgba(0, 255, 255, 0.18);
+  padding: 14px;
+  background:
+    linear-gradient(rgba(0, 255, 255, 0.025) 1px, transparent 1px),
+    radial-gradient(circle at 18% 12%, rgba(0, 255, 255, 0.08), transparent 26%),
+    rgba(0, 10, 13, 0.62);
+  background-size: 100% 7px, auto, auto;
+  overflow: hidden;
+}
+
+.terminal-screen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(0, 255, 255, 0.05), transparent);
+  opacity: 0.4;
+  pointer-events: none;
+}
+
+.terminal-screen > * {
+  position: relative;
+  z-index: 1;
+}
+
+.profile-page-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.profile-page-title {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: 6px;
+  white-space: nowrap;
+  font-size: clamp(15px, 3.8vw, 19px);
+  line-height: 1.2;
+}
+
+.profile-page-title svg {
+  flex: 0 0 auto;
+}
+
+.profile-page-title .text-xs {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 9px;
+  letter-spacing: 0.8px;
+}
+
+.profile-signout,
+.profile-nickname-form button,
+.profile-empty-state a,
+.profile-primary-link,
+.profile-secondary-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  border: 1px solid rgba(0, 255, 255, 0.26);
+  padding: 0 12px;
+  color: var(--primary-cyan);
+  background: rgba(0, 0, 0, 0.34);
+  font-size: 11px;
+  font-weight: 900;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.profile-primary-link {
+  min-height: 48px;
+  border-color: rgba(0, 255, 255, 0.52);
+  padding: 0 18px;
+  color: #001417;
+  background: var(--primary-cyan);
+}
+
+.profile-secondary-link {
+  min-height: 42px;
+  color: var(--accent-amber);
+  border-color: rgba(255, 176, 0, 0.32);
+  background: rgba(255, 176, 0, 0.06);
+}
+
+.profile-identity-card {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+}
+
+.crew-avatar {
+  width: 118px;
+  aspect-ratio: 9 / 11;
+  overflow: hidden;
+  border: 1px solid rgba(0, 255, 255, 0.36);
+  color: var(--primary-cyan);
+  background:
+    linear-gradient(rgba(0, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.035) 1px, transparent 1px),
+    rgba(0, 8, 12, 0.76);
+  background-size: 10px 10px;
+  box-shadow:
+    inset 0 0 22px rgba(0, 255, 255, 0.1),
+    0 0 26px rgba(0, 255, 255, 0.08);
+  image-rendering: pixelated;
+}
+
+.crew-avatar svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.crew-avatar-bg {
+  fill: rgba(0, 12, 16, 0.76);
+}
+
+.crew-avatar-frame {
+  fill: currentColor;
+  opacity: 0.32;
+}
+
+.crew-avatar-serial {
+  fill: currentColor;
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.profile-nickname-form {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: end;
+  width: 100%;
+  min-width: 0;
+}
+
+.profile-nickname-form label {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+}
+
+.profile-nickname-form input {
+  width: 100%;
+  min-width: 0;
+  min-height: 38px;
+  border: 1px solid rgba(0, 255, 255, 0.2);
+  padding: 0 10px;
+  color: var(--text-main);
+  background: rgba(0, 0, 0, 0.38);
+}
+
+.profile-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.profile-stat-grid .stat-block {
+  padding: 16px;
+}
+
+.profile-stat-grid strong {
+  color: var(--primary-cyan);
+  font-family: "Courier New", monospace;
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.profile-badge-section,
+.profile-activity,
+.profile-messages,
+.profile-launch-panel,
+.profile-badge-summary,
+.profile-badge-hero {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.profile-launch-panel,
+.profile-badge-summary,
+.profile-badge-hero {
+  grid-template-columns: 1fr auto;
+  align-items: center;
+}
+
+.profile-launch-panel p,
+.profile-badge-summary p,
+.profile-badge-hero p {
+  max-width: 620px;
+  margin: 6px 0 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.7;
+}

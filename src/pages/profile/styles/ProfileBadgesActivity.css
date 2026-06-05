@@ -1,0 +1,198 @@
+/* Badge vault, reading counters, activity feed, and reading-mode overrides. */
+.profile-badge-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.profile-badge-grid.is-vault {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.profile-reading-panel {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+}
+
+.profile-reading-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.profile-reading-grid article {
+  display: grid;
+  gap: 7px;
+  border: 1px solid rgba(0, 255, 255, 0.14);
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.profile-reading-grid svg {
+  width: 18px;
+  height: 18px;
+  color: var(--accent-amber);
+}
+
+.profile-reading-grid strong {
+  color: var(--text-main);
+  font-size: 24px;
+}
+
+.profile-reading-latest strong {
+  color: var(--primary-cyan);
+}
+
+.profile-badge {
+  display: grid;
+  gap: 8px;
+  border: 1px solid rgba(0, 255, 255, 0.15);
+  padding: 14px;
+  opacity: 0.45;
+  background: rgba(0, 0, 0, 0.28);
+}
+
+.profile-badge.is-unlocked {
+  opacity: 1;
+  border-color: rgba(255, 176, 0, 0.34);
+  background: rgba(255, 176, 0, 0.055);
+}
+
+.profile-badge svg {
+  color: var(--accent-amber);
+}
+
+.profile-badge strong {
+  color: var(--text-main);
+  font-size: 14px;
+}
+
+.profile-badge p,
+.profile-empty-state p,
+.profile-message {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  line-height: 1.65;
+}
+
+.badge-progress-label {
+  color: var(--primary-cyan);
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.profile-activity-row {
+  display: grid;
+  grid-template-columns: 112px minmax(0, 1fr) auto;
+  gap: 8px 12px;
+  align-items: start;
+  border: 1px solid rgba(0, 255, 255, 0.12);
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.24);
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.profile-activity-row:hover,
+.profile-activity-row:focus-visible {
+  border-color: rgba(0, 255, 255, 0.42);
+  background: rgba(0, 255, 255, 0.055);
+  transform: translateY(-1px);
+}
+
+.profile-activity-row span,
+.profile-activity-row em {
+  color: var(--primary-cyan);
+  font-family: "Courier New", monospace;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+}
+
+.profile-activity-row strong {
+  min-width: 0;
+  color: var(--text-main);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.profile-activity-row p {
+  grid-column: 2 / 3;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 10px;
+  line-height: 1.45;
+}
+
+.profile-activity-row em {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  min-width: 48px;
+  color: var(--accent-amber);
+}
+
+.profile-activity-row.is-amber span {
+  color: var(--accent-amber);
+}
+
+.profile-activity-row.is-violet span {
+  color: #b766ff;
+}
+
+.profile-empty-state {
+  display: grid;
+  gap: 12px;
+}
+
+.profile-message.is-error {
+  color: var(--accent-amber);
+}
+
+.reading-mode .personal-terminal {
+  border-color: rgba(46, 72, 77, 0.28);
+  background:
+    linear-gradient(135deg, rgba(47, 111, 120, 0.08), transparent 28%),
+    radial-gradient(circle at 50% 0%, rgba(47, 111, 120, 0.1), transparent 42%),
+    rgba(250, 247, 239, 0.96);
+  box-shadow: 0 18px 42px var(--mode-reading-shadow);
+}
+
+.reading-mode .personal-terminal::before,
+.reading-mode .personal-terminal::after {
+  border-color: var(--mode-reading-cyan);
+}
+
+.reading-mode .terminal-topbar,
+.reading-mode .terminal-screen {
+  border-color: rgba(46, 72, 77, 0.2);
+  background:
+    linear-gradient(rgba(47, 111, 120, 0.025) 1px, transparent 1px),
+    var(--mode-reading-panel-soft);
+  color: var(--mode-reading-muted);
+}
+
+.reading-mode .terminal-screen::after {
+  background: linear-gradient(90deg, transparent, rgba(47, 111, 120, 0.04), transparent);
+}
+
+.reading-mode .profile-onboarding-panel,
+.reading-mode .profile-hub-panel {
+  border-color: rgba(47, 111, 120, 0.24);
+  background:
+    radial-gradient(circle at 12% 18%, rgba(47, 111, 120, 0.08), transparent 32%),
+    rgba(255, 252, 244, 0.86);
+}
+
+.reading-mode .profile-onboarding-step,
+.reading-mode .profile-hub-grid article,
+.reading-mode .profile-reading-shelves article,
+.reading-mode .profile-dashboard-actions a,
+.reading-mode .profile-dashboard-actions span {
+  border-color: rgba(47, 111, 120, 0.18);
+  background: rgba(255, 255, 255, 0.52);
+}
