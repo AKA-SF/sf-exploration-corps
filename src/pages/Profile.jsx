@@ -75,6 +75,28 @@ export default function Profile() {
     );
   }
 
+  if (user && status === 'loading' && !profile) {
+    return (
+      <PageTransition className="profile-container profile-auth-state">
+        <div className="profile-card panel">
+          <h2 className="mono">프로필 동기화 중</h2>
+          <p>관리자 등급, MP, 배지 정보를 불러오고 있습니다.</p>
+        </div>
+      </PageTransition>
+    );
+  }
+
+  if (user && status === 'error' && !profile) {
+    return (
+      <PageTransition className="profile-container profile-auth-state">
+        <div className="profile-card panel">
+          <h2 className="mono">프로필 연결 오류</h2>
+          <p>{message || 'Supabase 프로필 정보를 불러오지 못했습니다.'}</p>
+        </div>
+      </PageTransition>
+    );
+  }
+
   return (
     <PageTransition className="profile-container">
       <div className="personal-terminal">

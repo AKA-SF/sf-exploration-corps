@@ -21,6 +21,7 @@ const emptyProfileViewModel = buildProfileViewModel({
 
 const profileFields = 'id,nickname,public_code,mileage,title,title_override,avatar_url,created_at,updated_at';
 const legacyProfileFields = 'id,nickname,mileage,title,avatar_url,created_at,updated_at';
+const PROFILE_SYNC_INTERVAL_MS = 8000;
 
 async function selectProfileById(supabase, userId) {
   const result = await supabase
@@ -222,6 +223,60 @@ export function useProfileData(user) {
     loadProfile();
     return () => {
       isMounted = false;
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return;
+    let isMounted = true;
+    let profileChannel = null;
+
+    async function refreshProfileRecord() {
+      const supabase = await getSupabaseClient();
+      if (!isMounted || !supabase) return;
+
+      const { data, error } = await selectProfileById(supabase, user.id);
+      if (!isMounted || error || !data) return;
+
+      setProfile(data);
+      setNickname(getProfileNickname(user, data, getFallbackNickname(user)));
+    }
+
+    function refreshWhenVisible() {
+      if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
+      void refreshProfileRecord();
+    }
+
+    const intervalId = window.setInterval(refreshWhenVisible, PROFILE_SYNC_INTERVAL_MS);
+    window.addEventListener('focus', refreshWhenVisible);
+    document.addEventListener('visibilitychange', refreshWhenVisible);
+
+    getSupabaseClient().then(supabase => {
+      if (!isMounted || !supabase) return;
+      profileChannel = supabase
+        .channel(`profile-sync-${user.id}`)
+        .on('postgres_changes', {
+          event: 'UPDATE',
+          filter: `id=eq.${user.id}`,
+          schema: 'public',
+          table: 'profiles',
+        }, payload => {
+          const nextProfile = payload.new;
+          if (!nextProfile) return;
+          setProfile(nextProfile);
+          setNickname(getProfileNickname(user, nextProfile, getFallbackNickname(user)));
+        })
+        .subscribe();
+    });
+
+    return () => {
+      isMounted = false;
+      window.clearInterval(intervalId);
+      window.removeEventListener('focus', refreshWhenVisible);
+      document.removeEventListener('visibilitychange', refreshWhenVisible);
+      if (profileChannel) {
+        void getSupabaseClient().then(supabase => supabase?.removeChannel(profileChannel));
+      }
     };
   }, [user]);
 
