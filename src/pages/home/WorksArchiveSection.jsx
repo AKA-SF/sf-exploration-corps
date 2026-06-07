@@ -11,6 +11,17 @@ function WorksArchiveSection({
   workCategoryCounts,
   worksCount,
 }) {
+  const renderTags = work => {
+    const visibleTags = (work.tags ?? []).slice(0, 2);
+    const hiddenCount = Math.max((work.tags?.length ?? 0) - visibleTags.length, 0);
+    return (
+      <>
+        {visibleTags.map(tag => <span key={tag}>{tag}</span>)}
+        {hiddenCount > 0 && <span>+{hiddenCount}</span>}
+      </>
+    );
+  };
+
   return (
     <section className="works-archive-section" id="works-archive">
       <div className="section-shell">
@@ -89,7 +100,7 @@ function WorksArchiveSection({
                   <p>{work.subtitle}</p>
                   {work.recommender && <span className="work-recommender">추천자 {work.recommender}</span>}
                   <div className="work-tags">
-                    {work.tags.map(tag => <span key={tag}>{tag}</span>)}
+                    {renderTags(work)}
                   </div>
                   <div className="work-card-footer">
                     <span>ARCHIVE ACTIONS</span>

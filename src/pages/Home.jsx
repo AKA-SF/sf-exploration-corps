@@ -9,6 +9,7 @@ import ConceptDictionarySection from './home/ConceptDictionarySection';
 import ContactSection from './home/ContactSection';
 import CoordinatesSection from './home/CoordinatesSection';
 import HeroSection from './home/HeroSection';
+import HomeGuideSection from './home/HomeGuideSection';
 import HomeTopBar from './home/HomeTopBar';
 import MediaArchiveSection from './home/MediaArchiveSection';
 import TasteTestSection from './home/TasteTestSection';
@@ -37,6 +38,7 @@ import useWorkArchiveInteractions from './home/useWorkArchiveInteractions';
 import useWorksArchivePreview from './home/useWorksArchivePreview';
 import './Home.css';
 import './home/HeroSection.css';
+import './home/HomeGuideSection.css';
 import './home/ArchiveDock.css';
 import './home/WorksArchiveSection.css';
 import './home/MediaArchiveSection.css';
@@ -309,6 +311,13 @@ export default function Home() {
 
       <ArchiveDock archiveCards={archiveCards} metrics={metrics} onResetCoordinateMap={resetCoordinateMap} />
 
+      <HomeGuideSection
+        concepts={visibleConcepts}
+        mediaItems={previewMedia}
+        questions={dashboard.questions}
+        works={displayedWorks}
+      />
+
       <TasteTestSection
         onAnswer={updateTasteAnswer}
         onReset={resetTasteTest}
@@ -350,6 +359,7 @@ export default function Home() {
         onConceptSelect={selectConcept}
         onLogOpen={openCoordinateLogModal}
         onNodeSelect={handleGenreNodeClick}
+        onOpenWorkDetail={openWorkDetail}
         onReset={resetCoordinateMap}
         onViewChange={setMapView}
         relatedCoordinateIds={relatedCoordinateIds}

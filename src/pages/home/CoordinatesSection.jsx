@@ -54,6 +54,7 @@ function CoordinatesSection({
   onConceptSelect,
   onLogOpen,
   onNodeSelect,
+  onOpenWorkDetail,
   onReset,
   onViewChange,
   relatedCoordinateIds,
@@ -165,6 +166,44 @@ function CoordinatesSection({
               <Send size={16} />
               탐사 로그 작성
             </button>
+            <div className="coordinate-panel-section coordinate-signal-links">
+              <span>NODE SIGNAL LINKS</span>
+              <div className="coordinate-signal-grid">
+                <article>
+                  <strong>관련 작품</strong>
+                  {selectedCoordinateWorks.slice(0, 3).map(work => (
+                    <button key={work.code} onClick={() => onOpenWorkDetail?.(work)} type="button">
+                      <span>{work.title}</span>
+                      <em>{work.medium}</em>
+                    </button>
+                  ))}
+                  {selectedCoordinateWorks.length === 0 && <p>연결된 작품 신호가 아직 없습니다.</p>}
+                </article>
+                <article>
+                  <strong>관련 개념</strong>
+                  {selectedCoordinateConcepts.slice(0, 2).map(concept => (
+                    <button key={concept.code || concept.term} onClick={() => concept.code && onConceptSelect(concept.code)} type="button">
+                      <span>{concept.term}</span>
+                      <em>{concept.english || concept.category}</em>
+                    </button>
+                  ))}
+                  {selectedCoordinateConcepts.length === 0 && <p>연결된 개념 신호가 아직 없습니다.</p>}
+                </article>
+                <article>
+                  <strong>게시글</strong>
+                  {selectedCoordinateBoardQuestions.slice(0, 2).map(question => (
+                    <Link
+                      key={question.id || question.title}
+                      to={question.id ? `/questions/${question.id}` : '/questions'}
+                    >
+                      <span>{question.title}</span>
+                      <em>{question.category || '커뮤니티'}</em>
+                    </Link>
+                  ))}
+                  {selectedCoordinateBoardQuestions.length === 0 && <p>연결된 게시글이 아직 없습니다.</p>}
+                </article>
+              </div>
+            </div>
             <div className="coordinate-panel-section">
               <span>RECOMMENDED ROUTES</span>
               <div className="coordinate-recommend-route-list">

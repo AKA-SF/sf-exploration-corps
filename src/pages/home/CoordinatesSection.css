@@ -821,6 +821,88 @@
   letter-spacing: 1.5px;
 }
 
+.coordinate-signal-links {
+  margin-top: 18px;
+}
+
+.coordinate-signal-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.coordinate-signal-grid article {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  border: 1px solid rgba(25, 247, 241, 0.14);
+  padding: 10px;
+  background: rgba(0, 16, 22, 0.42);
+}
+
+.coordinate-signal-grid article > strong {
+  color: #effdff;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.coordinate-signal-grid button,
+.coordinate-signal-grid a {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid rgba(25, 247, 241, 0.18);
+  padding: 8px 9px;
+  color: inherit;
+  background: rgba(0, 18, 24, 0.56);
+  font: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.coordinate-signal-grid button:hover,
+.coordinate-signal-grid button:focus-visible,
+.coordinate-signal-grid a:hover,
+.coordinate-signal-grid a:focus-visible {
+  border-color: rgba(25, 247, 241, 0.62);
+  background: rgba(25, 247, 241, 0.08);
+}
+
+.coordinate-signal-grid button span,
+.coordinate-signal-grid a span {
+  min-width: 0;
+  color: #effdff;
+  font-size: 12px;
+  font-weight: 900;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coordinate-signal-grid button em,
+.coordinate-signal-grid a em {
+  max-width: 92px;
+  color: #8fdde2;
+  font-family: "Courier New", monospace;
+  font-size: 8px;
+  font-style: normal;
+  font-weight: 900;
+  overflow: hidden;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coordinate-signal-grid p {
+  margin: 0;
+  color: #8fb0bc;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
 .coordinate-work-list,
 .coordinate-route-list,
 .coordinate-board-list {
@@ -1048,6 +1130,9 @@
 }
 
 .reading-mode .coordinate-recommend-route-list article,
+.reading-mode .coordinate-signal-grid article,
+.reading-mode .coordinate-signal-grid button,
+.reading-mode .coordinate-signal-grid a,
 .reading-mode .coordinate-route-item,
 .reading-mode .coordinate-work-item,
 .reading-mode .coordinate-board-item,
@@ -1058,6 +1143,9 @@
 }
 
 .reading-mode .coordinate-recommend-route-list strong,
+.reading-mode .coordinate-signal-grid article > strong,
+.reading-mode .coordinate-signal-grid button span,
+.reading-mode .coordinate-signal-grid a span,
 .reading-mode .coordinate-route-item strong,
 .reading-mode .coordinate-work-item strong,
 .reading-mode .coordinate-board-item strong {
@@ -1066,6 +1154,9 @@
 }
 
 .reading-mode .coordinate-recommend-route-list p,
+.reading-mode .coordinate-signal-grid p,
+.reading-mode .coordinate-signal-grid button em,
+.reading-mode .coordinate-signal-grid a em,
 .reading-mode .coordinate-route-item em,
 .reading-mode .coordinate-work-item em,
 .reading-mode .coordinate-board-item em {
@@ -1074,6 +1165,8 @@
 }
 
 .reading-mode .coordinate-recommend-route-list button,
+.reading-mode .coordinate-signal-grid button,
+.reading-mode .coordinate-signal-grid a,
 .reading-mode .coordinate-concept-list button {
   border-color: rgba(47, 111, 120, 0.4);
   background: rgba(255, 252, 244, 0.94);
@@ -1083,6 +1176,10 @@
 
 .reading-mode .coordinate-recommend-route-list button:hover,
 .reading-mode .coordinate-recommend-route-list button:focus-visible,
+.reading-mode .coordinate-signal-grid button:hover,
+.reading-mode .coordinate-signal-grid button:focus-visible,
+.reading-mode .coordinate-signal-grid a:hover,
+.reading-mode .coordinate-signal-grid a:focus-visible,
 .reading-mode .coordinate-concept-list button:hover,
 .reading-mode .coordinate-concept-list button:focus-visible {
   border-color: rgba(47, 111, 120, 0.68);
