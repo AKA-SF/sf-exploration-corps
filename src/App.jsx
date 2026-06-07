@@ -63,9 +63,11 @@ function App() {
     || location.pathname === '/exploration-log'
     || location.pathname.startsWith('/questions');
   const isReadingMode = siteMode === 'reading';
+  const isMobileCompactSurface = !isDeviceSurface && !isDesktopRequested;
   const isLowPowerSurface = location.pathname.startsWith('/profile')
     || location.pathname.startsWith('/badges')
-    || location.pathname.startsWith('/admin');
+    || location.pathname.startsWith('/admin')
+    || isMobileCompactSurface;
   const isDesktopRequested = viewMode === 'desktop';
 
   const handleMapNavigate = useCallback(() => {

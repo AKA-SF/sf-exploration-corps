@@ -164,7 +164,7 @@ const Network = () => {
 
   // Generate spatial coordinates and types for logs
   const spatialLogs = useMemo(() => {
-    const nodeLimit = motionProfile.reduced ? 42 : motionProfile.compact ? 56 : MAX_VISIBLE_NODES;
+    const nodeLimit = motionProfile.reduced ? 32 : motionProfile.compact ? 38 : MAX_VISIBLE_NODES;
     return networkLogs.slice(0, nodeLimit).map((log) => {
       // Deterministic pseudo-random placement based on index/id
       const hash = log.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
@@ -187,8 +187,8 @@ const Network = () => {
   // Generate edges between similar logs (same genre or emotion)
   const edges = useMemo(() => {
     const lines = [];
-    const compareWindow = motionProfile.reduced ? 12 : motionProfile.compact ? 18 : MAX_EDGE_COMPARE_WINDOW;
-    const edgeLimit = motionProfile.reduced ? 54 : motionProfile.compact ? 92 : MAX_VISIBLE_EDGES;
+    const compareWindow = motionProfile.reduced ? 10 : motionProfile.compact ? 12 : MAX_EDGE_COMPARE_WINDOW;
+    const edgeLimit = motionProfile.reduced ? 36 : motionProfile.compact ? 52 : MAX_VISIBLE_EDGES;
     for (let i = 0; i < spatialLogs.length; i++) {
       const maxJ = Math.min(spatialLogs.length, i + 1 + compareWindow);
       for (let j = i + 1; j < maxJ; j++) {
@@ -322,7 +322,7 @@ const Network = () => {
     }
   };
 
-  const animatedEdgeLimit = motionProfile.reduced ? 0 : motionProfile.compact ? 28 : MAX_ANIMATED_EDGES;
+  const animatedEdgeLimit = motionProfile.reduced ? 0 : motionProfile.compact ? 10 : MAX_ANIMATED_EDGES;
 
   const reactToSignal = async (signal, reaction) => {
     if (!user) {

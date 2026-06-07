@@ -1,5 +1,5 @@
 import { getNotionConfig, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
-import { getCachedJson } from './_apiCache.js';
+import { getDurableCachedJson } from './_persistentCache.js';
 import { multiSelect, pick, plainText } from './_notionProperties.js';
 
 const DEFAULT_MEDIA_DATABASE_ID = '36898dbef69d80fc98caf262593fc53b';
@@ -98,7 +98,7 @@ export default async function handler(request, response) {
   let cache;
   let media;
   try {
-    const cached = await getCachedJson(`media:${databaseId}`, MEDIA_CACHE_TTL_MS, async () => {
+    const cached = await getDurableCachedJson(`media:${databaseId}`, MEDIA_CACHE_TTL_MS, async () => {
       const results = await queryNotionDatabaseAll(token, databaseId);
       return results
         .map(mapPageToMedia)

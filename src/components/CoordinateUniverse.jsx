@@ -408,7 +408,7 @@ export default function CoordinateUniverse({
     if (!canvas || !isRenderable) return undefined;
     const context = canvas.getContext('2d');
     if (!seedsRef.current) {
-      const seedCount = motionProfile.reduced ? 20 : motionProfile.compact ? 30 : 72;
+      const seedCount = motionProfile.reduced ? 16 : motionProfile.compact ? 22 : 72;
       seedsRef.current = {
         starSeeds: Array.from({ length: seedCount }, (_, index) => ({
           x: ((index * 73) % 997) / 997,
@@ -429,8 +429,8 @@ export default function CoordinateUniverse({
     }
 
     const { dustSeeds, starSeeds } = seedsRef.current;
-    const frameInterval = motionProfile.reduced ? 120 : motionProfile.compact ? 64 : 32;
-    const autoYawScale = motionProfile.reduced ? 0 : motionProfile.compact ? 0.35 : 1;
+    const frameInterval = motionProfile.reduced ? 140 : motionProfile.compact ? 96 : 32;
+    const autoYawScale = motionProfile.reduced ? 0 : motionProfile.compact ? 0.22 : 1;
 
     const render = time => {
       if (time - lastFrameRef.current < frameInterval) {
@@ -487,7 +487,7 @@ export default function CoordinateUniverse({
 
       const nodeMap = new Map(projectedNodes.map(item => [item.node.id, item]));
       const visibleConnections = motionProfile.compact && !selectedId
-        ? connections.slice(0, 48)
+        ? connections.slice(0, 28)
         : connections;
       visibleConnections.forEach(([from, to], index) => {
         const start = nodeMap.get(from);

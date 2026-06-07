@@ -4,6 +4,7 @@ import {
   sendNotionError,
 } from './_notion.js';
 import { readJsonBody } from './_notionWrite.js';
+import { clearDurableCachePrefix, getDurableCachedJson } from './_persistentCache.js';
 import { getCachedAladinCover, mapWithConcurrency } from './_worksAladin.js';
 import { createNotionWork, mapPageToWork, splitTags } from './_worksNotion.js';
 
@@ -28,6 +29,24 @@ function clearWorksCache() {
 }
 
 async function getWorksWithoutCovers(token, databaseId, shouldRefresh = false) {
+  const durableKey = `works:${databaseId}:base`;
+  if (!shouldRefresh) {
+    const durable = await getDurableCachedJson(durableKey, WORKS_CACHE_TTL_MS, async () => {
+      const results = await queryNotionDatabaseAll(token, databaseId);
+      return results
+        .map(mapPageToWork)
+        .filter(work => work.title)
+        .map((work, index) => ({
+          ...work,
+          code: work.code.startsWith('SFA-') ? `SFA-${String(index + 1).padStart(3, '0')}` : work.code,
+          cover: '',
+        }));
+    });
+    apiCache.worksWithoutCovers = durable.value;
+    apiCache.worksWithoutCoversExpiresAt = Date.now() + WORKS_CACHE_TTL_MS;
+    return { works: durable.value, cache: durable.cache };
+  }
+
   if (!shouldRefresh && apiCache.worksWithoutCovers && apiCache.worksWithoutCoversExpiresAt > Date.now()) {
     return { works: apiCache.worksWithoutCovers, cache: 'HIT' };
   }
@@ -36,15 +55,18 @@ async function getWorksWithoutCovers(token, databaseId, shouldRefresh = false) {
     return { works: await apiCache.pendingWorksWithoutCovers, cache: 'PENDING' };
   }
 
-  const promise = queryNotionDatabaseAll(token, databaseId)
-    .then(results => results
+  const promise = getDurableCachedJson(durableKey, WORKS_CACHE_TTL_MS, async () => {
+    const results = await queryNotionDatabaseAll(token, databaseId);
+    return results
       .map(mapPageToWork)
       .filter(work => work.title)
       .map((work, index) => ({
         ...work,
         code: work.code.startsWith('SFA-') ? `SFA-${String(index + 1).padStart(3, '0')}` : work.code,
         cover: '',
-      })))
+      }));
+  }, { refresh: shouldRefresh })
+    .then(({ value }) => value)
     .then(works => {
       apiCache.worksWithoutCovers = works;
       apiCache.worksWithoutCoversExpiresAt = Date.now() + WORKS_CACHE_TTL_MS;
@@ -59,6 +81,20 @@ async function getWorksWithoutCovers(token, databaseId, shouldRefresh = false) {
 }
 
 async function getWorksWithCovers(token, databaseId, aladinApiKey, shouldRefresh = false) {
+  const durableKey = `works:${databaseId}:covers:${aladinApiKey ? 'enabled' : 'disabled'}`;
+  if (!shouldRefresh) {
+    const durable = await getDurableCachedJson(durableKey, WORKS_CACHE_TTL_MS, async () => {
+      const { works } = await getWorksWithoutCovers(token, databaseId, shouldRefresh);
+      return mapWithConcurrency(works, 4, async work => ({
+        ...work,
+        cover: await getCachedAladinCover(work, aladinApiKey),
+      }));
+    });
+    apiCache.worksWithCovers = durable.value;
+    apiCache.worksWithCoversExpiresAt = Date.now() + WORKS_CACHE_TTL_MS;
+    return { works: durable.value, cache: durable.cache };
+  }
+
   if (!shouldRefresh && apiCache.worksWithCovers && apiCache.worksWithCoversExpiresAt > Date.now()) {
     return { works: apiCache.worksWithCovers, cache: 'HIT' };
   }
@@ -67,11 +103,14 @@ async function getWorksWithCovers(token, databaseId, aladinApiKey, shouldRefresh
     return { works: await apiCache.pendingWorksWithCovers, cache: 'PENDING' };
   }
 
-  const promise = getWorksWithoutCovers(token, databaseId, shouldRefresh)
-    .then(({ works }) => mapWithConcurrency(works, 4, async work => ({
+  const promise = getDurableCachedJson(durableKey, WORKS_CACHE_TTL_MS, async () => {
+    const { works } = await getWorksWithoutCovers(token, databaseId, shouldRefresh);
+    return mapWithConcurrency(works, 4, async work => ({
       ...work,
       cover: await getCachedAladinCover(work, aladinApiKey),
-    })))
+    }));
+  }, { refresh: shouldRefresh })
+    .then(({ value }) => value)
     .then(works => {
       apiCache.worksWithCovers = works;
       apiCache.worksWithCoversExpiresAt = Date.now() + WORKS_CACHE_TTL_MS;
@@ -122,6 +161,7 @@ export default async function handler(request, response) {
     try {
       const page = await createNotionWork(token, databaseId, body);
       clearWorksCache();
+      await clearDurableCachePrefix(`works:${databaseId}:`);
       return response.status(201).json({
         ok: true,
         pageId: page.id,

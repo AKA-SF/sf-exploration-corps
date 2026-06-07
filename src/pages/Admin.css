@@ -317,6 +317,43 @@
   font-weight: 800;
 }
 
+.admin-profile-diagnostics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  border: 1px solid #ccfbf1;
+  border-radius: 12px;
+  padding: 12px;
+  background:
+    linear-gradient(135deg, rgba(236, 254, 255, 0.86), rgba(248, 250, 252, 0.92));
+}
+
+.admin-profile-diagnostics div {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+  border: 1px solid rgba(15, 118, 110, 0.12);
+  border-radius: 9px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.68);
+}
+
+.admin-profile-diagnostics span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.admin-profile-diagnostics strong {
+  overflow: hidden;
+  color: #0f172a;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .admin-member-editor label {
   display: grid;
   gap: 7px;
@@ -581,7 +618,8 @@
   .admin-badge-row,
   .admin-form-row,
   .admin-grid,
-  .admin-check-grid {
+  .admin-check-grid,
+  .admin-profile-diagnostics {
     grid-template-columns: 1fr;
   }
 

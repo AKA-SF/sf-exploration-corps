@@ -367,6 +367,21 @@ body.device-surface-active .page-container {
 .reading-mode .questions-page {
   --cyan: var(--mode-reading-cyan);
   --line: var(--mode-reading-line);
+  --ui-page-bg: var(--mode-reading-bg);
+  --ui-panel-bg: var(--mode-reading-panel-soft);
+  --ui-panel-bg-soft: var(--mode-reading-panel-wash);
+  --ui-control-bg: rgba(255, 252, 244, 0.8);
+  --ui-control-bg-strong: var(--mode-reading-cyan);
+  --ui-border: rgba(46, 72, 77, 0.22);
+  --ui-border-strong: rgba(47, 111, 120, 0.55);
+  --ui-text: var(--mode-reading-text);
+  --ui-heading: var(--mode-reading-heading);
+  --ui-muted: var(--mode-reading-muted);
+  --ui-accent: var(--mode-reading-cyan);
+  --ui-accent-contrast: var(--mode-reading-contrast);
+  --ui-link: var(--mode-reading-link);
+  --ui-tag-bg: rgba(47, 111, 120, 0.08);
+  --ui-shadow: var(--mode-reading-shadow);
   background: var(--mode-reading-bg);
   color: var(--mode-reading-text);
 }
@@ -914,6 +929,75 @@ body.reading-mode-active .mobile-container.reading-mode .coordinate-brief {
   background:
     linear-gradient(135deg, rgba(255, 255, 255, 0.78), rgba(232, 222, 202, 0.5)),
     rgba(255, 252, 244, 0.96) !important;
+  text-shadow: none !important;
+}
+
+body.reading-mode-active .mobile-container.reading-mode :where(
+  input,
+  textarea,
+  select,
+  .question-form input,
+  .question-form textarea,
+  .question-form select,
+  .community-inline-form input,
+  .community-inline-form textarea,
+  .community-inline-form select,
+  .work-submit-modal input,
+  .work-submit-modal textarea,
+  .work-submit-modal select
+) {
+  border-color: var(--ui-border-strong) !important;
+  background: var(--ui-control-bg) !important;
+  color: var(--ui-text) !important;
+  text-shadow: none !important;
+}
+
+body.reading-mode-active .mobile-container.reading-mode :where(input, textarea)::placeholder {
+  color: rgba(52, 68, 75, 0.58) !important;
+}
+
+body.reading-mode-active .mobile-container.reading-mode :where(
+  .work-detail-open,
+  .work-card-link,
+  .work-submit-open,
+  .coordinate-log-trigger:not(:disabled),
+  .question-submit,
+  .question-write-button,
+  .community-submit-button,
+  .comment-submit,
+  .modal-submit
+) {
+  border-color: var(--ui-border-strong) !important;
+  background: var(--ui-control-bg-strong) !important;
+  color: var(--ui-accent-contrast) !important;
+  text-shadow: none !important;
+}
+
+body.reading-mode-active .mobile-container.reading-mode :where(
+  .work-detail-open,
+  .work-card-link,
+  .work-submit-open,
+  .coordinate-log-trigger:not(:disabled),
+  .question-submit,
+  .question-write-button,
+  .community-submit-button,
+  .comment-submit,
+  .modal-submit
+) * {
+  color: currentColor !important;
+  stroke: currentColor !important;
+}
+
+body.reading-mode-active .mobile-container.reading-mode :where(
+  .work-tags span,
+  .media-tags span,
+  .question-category-pill,
+  .coordinate-recommend-route-list button,
+  .coordinate-concept-list button
+) {
+  border-color: var(--ui-border-strong) !important;
+  background: var(--ui-tag-bg) !important;
+  color: var(--ui-link) !important;
   text-shadow: none !important;
 }
 

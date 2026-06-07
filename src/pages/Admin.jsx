@@ -27,6 +27,7 @@ import {
   initialMemberAction,
   initialMemberFilters,
   memberDisplayTitle,
+  memberTitleDiagnostics,
   shortId,
 } from './admin/adminUtils';
 import { useAdminDashboard } from './admin/useAdminDashboard';
@@ -69,10 +70,13 @@ export default function Admin() {
   const selectedMemberNote = useMemo(() => (
     memberNotes.find(note => note.user_id === selectedMember?.id) ?? null
   ), [memberNotes, selectedMember?.id]);
+  const selectedMemberDiagnostics = useMemo(() => (
+    memberTitleDiagnostics(selectedMember, rankTable)
+  ), [selectedMember]);
   const filteredMembers = useMemo(() => (
     filterMembers(members, memberFilters)
   ), [memberFilters, members]);
-  const selectedMemberTitle = memberDisplayTitle(selectedMember) || rankTable[0].title;
+  const selectedMemberTitle = selectedMemberDiagnostics.displayTitle;
   const memberActionTitle = memberAction.title || selectedMemberTitle;
   const currentNoteValue = noteDraftMemberId === selectedMember?.id
     ? noteDraft
@@ -389,6 +393,33 @@ export default function Admin() {
               <div className="admin-editor-summary">
                 <strong>{selectedMember.nickname}</strong>
                 <span>{selectedMemberTitle} / {selectedMember.mileage} MP</span>
+              </div>
+
+              <div className="admin-profile-diagnostics" aria-label="프로필 등급 진단">
+                <div>
+                  <span>프로필 표시 예상</span>
+                  <strong>{selectedMemberDiagnostics.displayTitle}</strong>
+                </div>
+                <div>
+                  <span>DB 저장 등급</span>
+                  <strong>{selectedMemberDiagnostics.dbTitle || '없음'}</strong>
+                </div>
+                <div>
+                  <span>수동 등급</span>
+                  <strong>{selectedMemberDiagnostics.manualTitle || '없음'}</strong>
+                </div>
+                <div>
+                  <span>MP 자동 등급</span>
+                  <strong>{selectedMemberDiagnostics.autoTitle}</strong>
+                </div>
+                <div>
+                  <span>마지막 DB 갱신</span>
+                  <strong>{selectedMember.updated_at ? formatDate(selectedMember.updated_at) : 'UNKNOWN'}</strong>
+                </div>
+                <div>
+                  <span>동기화 규칙</span>
+                  <strong>{selectedMemberDiagnostics.hasManualOverride ? '수동 등급 우선' : 'MP 자동 등급'}</strong>
+                </div>
               </div>
 
               <label>

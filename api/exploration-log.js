@@ -1,5 +1,5 @@
 import { getNotionConfig, notionRequest, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
-import { clearApiCache, getCachedJson } from './_apiCache.js';
+import { clearDurableCache, getDurableCachedJson } from './_persistentCache.js';
 import { multiSelect, pick, plainText } from './_notionProperties.js';
 import {
   findPropertyName,
@@ -124,7 +124,7 @@ export default async function handler(request, response) {
       });
     }
 
-    clearApiCache(`logs:${databaseId}`);
+    await clearDurableCache(`logs:${databaseId}`);
     return response.status(201).json({
       ok: true,
       id: createdPage.id,
@@ -143,7 +143,7 @@ export default async function handler(request, response) {
   let cache;
   let logs;
   try {
-    const cached = await getCachedJson(`logs:${databaseId}`, LOG_CACHE_TTL_MS, async () => {
+    const cached = await getDurableCachedJson(`logs:${databaseId}`, LOG_CACHE_TTL_MS, async () => {
       const results = await queryNotionDatabaseAll(token, databaseId);
       return results
         .map(mapPageToLog)

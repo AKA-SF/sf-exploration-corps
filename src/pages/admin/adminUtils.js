@@ -61,6 +61,36 @@ export function memberDisplayTitle(member) {
   return String(member?.title_override || member?.title || '').trim();
 }
 
+export function rankTitleForMileage(rankTable, mileage) {
+  const points = Number(mileage ?? 0);
+  return [...rankTable]
+    .sort((a, b) => b.min - a.min)
+    .find(rank => points >= rank.min)?.title ?? rankTable[0]?.title ?? '등급 없음';
+}
+
+export function memberTitleDiagnostics(member, rankTable) {
+  if (!member) {
+    return {
+      autoTitle: rankTable[0]?.title ?? '등급 없음',
+      dbTitle: '',
+      displayTitle: rankTable[0]?.title ?? '등급 없음',
+      hasManualOverride: false,
+      manualTitle: '',
+    };
+  }
+
+  const dbTitle = String(member.title ?? '').trim();
+  const manualTitle = String(member.title_override ?? '').trim();
+  const autoTitle = rankTitleForMileage(rankTable, member.mileage);
+  return {
+    autoTitle,
+    dbTitle,
+    displayTitle: manualTitle || dbTitle || autoTitle,
+    hasManualOverride: Boolean(manualTitle),
+    manualTitle,
+  };
+}
+
 export async function getCount(supabase, table, column = 'id') {
   const { count, error } = await supabase
     .from(table)

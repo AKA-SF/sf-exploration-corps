@@ -1,5 +1,5 @@
 import { getNotionConfig, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
-import { getCachedJson } from './_apiCache.js';
+import { getDurableCachedJson } from './_persistentCache.js';
 import { multiSelect, pick, plainText, textList } from './_notionProperties.js';
 
 const CONCEPTS_CACHE_TTL_MS = 10 * 60 * 1000;
@@ -50,7 +50,7 @@ export default async function handler(request, response) {
   let cache;
   let concepts;
   try {
-    const cached = await getCachedJson(`concepts:${databaseId}`, CONCEPTS_CACHE_TTL_MS, async () => {
+    const cached = await getDurableCachedJson(`concepts:${databaseId}`, CONCEPTS_CACHE_TTL_MS, async () => {
       const results = await queryNotionDatabaseAll(token, databaseId);
       return results
         .map(mapPageToConcept)

@@ -40,6 +40,23 @@
   --mode-reading-muted: #34444b;
   --mode-reading-shadow: rgba(36, 28, 15, 0.14);
   --mode-reading-contrast: #fffdf6;
+
+  /* Shared component tokens. Pages should prefer these over one-off colors. */
+  --ui-page-bg: var(--mode-console-bg);
+  --ui-panel-bg: rgba(2, 18, 28, 0.86);
+  --ui-panel-bg-soft: rgba(4, 24, 33, 0.72);
+  --ui-control-bg: rgba(2, 18, 28, 0.68);
+  --ui-control-bg-strong: var(--mode-console-cyan);
+  --ui-border: var(--mode-console-line);
+  --ui-border-strong: rgba(25, 247, 241, 0.58);
+  --ui-text: #eafcff;
+  --ui-heading: #ffffff;
+  --ui-muted: var(--mode-console-muted);
+  --ui-accent: var(--mode-console-cyan);
+  --ui-accent-contrast: #00161a;
+  --ui-link: #9ffcf8;
+  --ui-tag-bg: rgba(25, 247, 241, 0.08);
+  --ui-shadow: rgba(0, 255, 255, 0.16);
   
   /* Typography */
   --font-main: 'Outfit', sans-serif;
