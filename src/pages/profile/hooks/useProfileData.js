@@ -21,7 +21,13 @@ const emptyProfileViewModel = buildProfileViewModel({
 
 const profileFields = 'id,nickname,public_code,mileage,title,title_override,avatar_url,created_at,updated_at';
 const legacyProfileFields = 'id,nickname,mileage,title,avatar_url,created_at,updated_at';
-const PROFILE_SYNC_INTERVAL_MS = 8000;
+const PROFILE_SYNC_INTERVAL_MS = 30000;
+const PROFILE_ACTIVITY_LIMIT = 180;
+const PROFILE_WORK_STATUS_LIMIT = 160;
+const PROFILE_BADGE_LIMIT = 80;
+const PROFILE_WORK_COMMENT_LIMIT = 60;
+const PROFILE_COMMENT_COUNT_LIMIT = 500;
+const PROFILE_COMMUNITY_LIMIT = 20;
 
 async function selectProfileById(supabase, userId) {
   const result = await supabase
@@ -123,6 +129,26 @@ export function useProfileData(user) {
         }
       }
 
+      const lockedNickname = getProfileNickname(user, nextProfile, fallbackNickname);
+
+      if (nextProfile && !nextProfile.nickname) {
+        await supabase
+          .from('profiles')
+          .update({ nickname: lockedNickname })
+          .eq('id', user.id)
+          .select('id');
+        const repairedProfile = await selectProfileAfterWrite(supabase, user.id);
+        nextProfile = repairedProfile ?? { ...nextProfile, nickname: lockedNickname };
+      }
+
+      if (isMounted) {
+        setProfile(nextProfile);
+        setNickname(lockedNickname);
+        setSelectedMissionRoute(getSelectedMissionRoute(user.id));
+        setStatus('loading');
+        setMessage('');
+      }
+
       const [
         { data: activityData, error: activityError },
         { data: statusData, error: statusError },
@@ -134,25 +160,25 @@ export function useProfileData(user) {
           .select('id,action_type,points,genre,metadata,created_at')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
-          .limit(500),
+          .limit(PROFILE_ACTIVITY_LIMIT),
         supabase
           .from('work_statuses')
           .select('work_code,work_title,status,updated_at')
           .eq('user_id', user.id)
           .order('updated_at', { ascending: false })
-          .limit(500),
+          .limit(PROFILE_WORK_STATUS_LIMIT),
         supabase
           .from('user_badges')
           .select('badge_id,awarded_at,badges(title,description)')
           .eq('user_id', user.id)
           .order('awarded_at', { ascending: false })
-          .limit(200),
+          .limit(PROFILE_BADGE_LIMIT),
         supabase
           .from('work_comments')
           .select('id,work_code,work_title,body,created_at')
           .eq('user_id', user.id)
           .order('created_at', { ascending: false })
-          .limit(100),
+          .limit(PROFILE_WORK_COMMENT_LIMIT),
       ]);
 
       const nextActivities = activityError ? [] : activityData ?? [];
@@ -169,7 +195,7 @@ export function useProfileData(user) {
           .from('work_comments')
           .select('work_code')
           .in('work_code', workCodes)
-          .limit(1000);
+          .limit(PROFILE_COMMENT_COUNT_LIMIT);
         workCommentCounts = (commentCountData ?? []).reduce((result, item) => {
           result[item.work_code] = (result[item.work_code] ?? 0) + 1;
           return result;
@@ -182,23 +208,11 @@ export function useProfileData(user) {
           auth: true,
           includeCommentCounts: 1,
           mineOnly: 1,
-          pageSize: 40,
+          pageSize: PROFILE_COMMUNITY_LIMIT,
         });
         communityQuestions = Array.isArray(data.questions) ? data.questions : [];
       } catch {
         communityQuestions = [];
-      }
-
-      const lockedNickname = getProfileNickname(user, nextProfile, fallbackNickname);
-
-      if (nextProfile && !nextProfile.nickname) {
-        await supabase
-          .from('profiles')
-          .update({ nickname: lockedNickname })
-          .eq('id', user.id)
-          .select('id');
-        const repairedProfile = await selectProfileAfterWrite(supabase, user.id);
-        nextProfile = repairedProfile ?? { ...nextProfile, nickname: lockedNickname };
       }
 
       if (isMounted) {
