@@ -5,6 +5,7 @@ import {
 } from './_notion.js';
 import { readJsonBody } from './_notionWrite.js';
 import { clearDurableCachePrefix, getDurableCachedJson } from './_persistentCache.js';
+import { requireAuthenticatedUser } from './_adminAuth.js';
 import { getCachedAladinCover, mapWithConcurrency } from './_worksAladin.js';
 import { createNotionWork, mapPageToWork, splitTags } from './_worksNotion.js';
 
@@ -125,12 +126,15 @@ async function getWorksWithCovers(token, databaseId, aladinApiKey, shouldRefresh
 }
 
 export default async function handler(request, response) {
-  response.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=3600');
-
   if (!['GET', 'POST'].includes(request.method)) {
     response.setHeader('Allow', 'GET, POST');
     return response.status(405).json({ error: 'Method not allowed' });
   }
+
+  response.setHeader(
+    'Cache-Control',
+    request.method === 'POST' ? 'no-store' : 'public, s-maxage=600, stale-while-revalidate=3600',
+  );
 
   const { token, databaseId, missing } = getNotionConfig('NOTION_WORKS_DATABASE_ID');
   const aladinApiKey = process.env.ALADIN_TTB_KEY || process.env.VITE_ALADIN_TTB_KEY;
@@ -147,6 +151,9 @@ export default async function handler(request, response) {
   }
 
   if (request.method === 'POST') {
+    const user = await requireAuthenticatedUser(request, response);
+    if (!user) return;
+
     let body;
     try {
       body = await readJsonBody(request);

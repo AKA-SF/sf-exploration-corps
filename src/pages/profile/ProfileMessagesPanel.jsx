@@ -48,33 +48,43 @@ export default function ProfileMessagesPanel({ profile, user }) {
 
     loadMessages();
 
-    const channel = supabase
-      .channel(`crew-messages-${user.id}`)
+    const upsertMessage = nextMessage => {
+      if (!nextMessage) return;
+      setMessages(current => {
+        const existingIndex = current.findIndex(message => message.id === nextMessage.id);
+        if (existingIndex < 0) return [nextMessage, ...current].slice(0, 24);
+        return current.map(message => (
+          message.id === nextMessage.id ? { ...message, ...nextMessage } : message
+        ));
+      });
+    };
+
+    const subscribeToMessages = (direction, filter) => supabase
+      .channel(`crew-messages-${direction}-${user.id}`)
       .on('postgres_changes', {
         event: 'INSERT',
+        filter,
         schema: 'public',
         table: 'crew_messages',
-      }, payload => {
-        if (payload.new?.sender_id !== user.id && payload.new?.recipient_id !== user.id) return;
-        setMessages(current => {
-          if (current.some(message => message.id === payload.new.id)) return current;
-          return [payload.new, ...current].slice(0, 24);
-        });
-      })
+      }, payload => upsertMessage(payload.new))
       .on('postgres_changes', {
         event: 'UPDATE',
+        filter,
         schema: 'public',
         table: 'crew_messages',
-      }, payload => {
-        setMessages(current => current.map(message => (
-          message.id === payload.new.id ? { ...message, ...payload.new } : message
-        )));
-      })
+      }, payload => upsertMessage(payload.new))
       .subscribe();
+
+    const channels = [
+      subscribeToMessages('inbox', `recipient_id=eq.${user.id}`),
+      subscribeToMessages('outbox', `sender_id=eq.${user.id}`),
+    ];
 
     return () => {
       isMounted = false;
-      supabase.removeChannel(channel);
+      channels.forEach(channel => {
+        supabase.removeChannel(channel);
+      });
     };
   }, [user]);
 

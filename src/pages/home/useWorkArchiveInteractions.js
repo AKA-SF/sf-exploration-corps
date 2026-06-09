@@ -131,6 +131,11 @@ export default function useWorkArchiveInteractions({
 
   const submitWorkArchive = async event => {
     event.preventDefault();
+    if (!user) {
+      setWorkSubmitStatus('error');
+      setWorkSubmitMessage('작품을 저장하려면 먼저 로그인해주세요.');
+      return;
+    }
     if (!workSubmitForm.title.trim()) {
       setWorkSubmitStatus('error');
       setWorkSubmitMessage('작품 제목을 입력해주세요.');
@@ -141,9 +146,19 @@ export default function useWorkArchiveInteractions({
     setWorkSubmitMessage('');
 
     try {
+      const supabase = await getSupabaseClient();
+      const { data: sessionData } = supabase ? await supabase.auth.getSession() : { data: {} };
+      const token = sessionData?.session?.access_token;
+      if (!token) {
+        throw new Error('로그인 세션을 다시 확인해주세요.');
+      }
+
       const response = await fetch('/api/works', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify(workSubmitForm),
       });
       const data = await response.json().catch(() => ({}));

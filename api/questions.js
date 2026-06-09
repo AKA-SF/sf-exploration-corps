@@ -3,6 +3,7 @@ import { getOptionalUser, requireAdminUser, requireAuthenticatedUser } from './_
 import { supabaseRestRequest, supabaseRpcRequest } from './_supabaseRest.js';
 
 const DEFAULT_QUESTIONS_PAGE_SIZE = 40;
+const COMMUNITY_BODY_MAX_BYTES = 128 * 1024;
 const QUESTIONS_LIST_CACHE_TTL_MS = 20 * 1000;
 const COMMUNITY_CATEGORIES = ['자유글', '작품추천', '질문', '토론'];
 
@@ -76,9 +77,19 @@ function mapComment(row, user) {
 
 function parseJsonBody(request) {
   if (request.body && typeof request.body === 'object') {
+    if (Buffer.byteLength(JSON.stringify(request.body), 'utf8') > COMMUNITY_BODY_MAX_BYTES) {
+      const error = new Error('요청 본문이 너무 큽니다.');
+      error.status = 413;
+      return Promise.reject(error);
+    }
     return Promise.resolve(request.body);
   }
   if (typeof request.body === 'string') {
+    if (Buffer.byteLength(request.body, 'utf8') > COMMUNITY_BODY_MAX_BYTES) {
+      const error = new Error('요청 본문이 너무 큽니다.');
+      error.status = 413;
+      return Promise.reject(error);
+    }
     try {
       return Promise.resolve(JSON.parse(request.body));
     } catch (error) {
@@ -89,10 +100,20 @@ function parseJsonBody(request) {
 
   return new Promise((resolve, reject) => {
     let raw = '';
+    let rejected = false;
     request.on('data', chunk => {
+      if (rejected) return;
       raw += chunk;
+      if (Buffer.byteLength(raw, 'utf8') > COMMUNITY_BODY_MAX_BYTES) {
+        rejected = true;
+        const error = new Error('요청 본문이 너무 큽니다.');
+        error.status = 413;
+        reject(error);
+        request.destroy?.();
+      }
     });
     request.on('end', () => {
+      if (rejected) return;
       if (!raw) {
         resolve({});
         return;
@@ -178,9 +199,13 @@ async function listQuestions(request, response, query) {
   const adminUser = wantsAdminList ? await requireAdminUser(request, response) : null;
   if (wantsAdminList && !adminUser) return;
 
-  const user = wantsMineOnly || request.headers.authorization || request.headers.Authorization
-    ? await getOptionalUser(request)
-    : null;
+  let user = null;
+  if (wantsMineOnly) {
+    user = await requireAuthenticatedUser(request, response);
+    if (!user) return;
+  } else if (request.headers.authorization || request.headers.Authorization) {
+    user = await getOptionalUser(request);
+  }
 
   const cacheKey = `questions:list:${JSON.stringify({
     admin: wantsAdminList,

@@ -79,158 +79,168 @@ export function useProfileData(user) {
 
     async function loadProfile() {
       setStatus('loading');
-      const supabase = await getSupabaseClient();
-      if (!isMounted) return;
-      if (!supabase) {
-        if (isMounted) {
-          setStatus('error');
-          setMessage('Supabase 연결 정보를 찾지 못했습니다.');
-        }
-        return;
-      }
-      const fallbackNickname = getFallbackNickname(user);
-      const { data: profileData, error: profileError } = await selectProfileById(supabase, user.id);
+      let hasLoadedBaseProfile = false;
 
-      if (profileError && profileError.code !== 'PGRST116') {
-        if (isMounted) {
-          setStatus('error');
-          setMessage(profileError.message);
+      try {
+        const supabase = await getSupabaseClient();
+        if (!isMounted) return;
+        if (!supabase) {
+          if (isMounted) {
+            setStatus('error');
+            setMessage('Supabase 연결 정보를 찾지 못했습니다.');
+          }
+          return;
         }
-        return;
-      }
+        const fallbackNickname = getFallbackNickname(user);
+        const { data: profileData, error: profileError } = await selectProfileById(supabase, user.id);
 
-      let nextProfile = profileData;
-      if (!nextProfile) {
-        const { data: createdProfile, error: createError } = await supabase
-          .from('profiles')
-          .insert({ id: user.id, nickname: fallbackNickname })
-          .select(profileFields)
-          .single();
-        if (createError) {
-          if (createError.code === '42703') {
-            const { data: legacyCreatedProfile, error: legacyCreateError } = await supabase
-              .from('profiles')
-              .insert({ id: user.id, nickname: fallbackNickname })
-              .select(legacyProfileFields)
-              .single();
-            if (!legacyCreateError) {
-              nextProfile = legacyCreatedProfile;
+        if (profileError && profileError.code !== 'PGRST116') {
+          if (isMounted) {
+            setStatus('error');
+            setMessage(profileError.message);
+          }
+          return;
+        }
+
+        let nextProfile = profileData;
+        if (!nextProfile) {
+          const { data: createdProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert({ id: user.id, nickname: fallbackNickname })
+            .select(profileFields)
+            .single();
+          if (createError) {
+            if (createError.code === '42703') {
+              const { data: legacyCreatedProfile, error: legacyCreateError } = await supabase
+                .from('profiles')
+                .insert({ id: user.id, nickname: fallbackNickname })
+                .select(legacyProfileFields)
+                .single();
+              if (!legacyCreateError) {
+                nextProfile = legacyCreatedProfile;
+              } else if (isMounted) {
+                setStatus('error');
+                setMessage(legacyCreateError.message);
+              }
             } else if (isMounted) {
               setStatus('error');
-              setMessage(legacyCreateError.message);
+              setMessage(createError.message);
             }
-          } else if (isMounted) {
-            setStatus('error');
-            setMessage(createError.message);
+            if (!nextProfile) return;
+          } else {
+            nextProfile = createdProfile;
           }
-          if (!nextProfile) return;
-        } else {
-          nextProfile = createdProfile;
         }
-      }
 
-      const lockedNickname = getProfileNickname(user, nextProfile, fallbackNickname);
+        const lockedNickname = getProfileNickname(user, nextProfile, fallbackNickname);
 
-      if (nextProfile && !nextProfile.nickname) {
-        await supabase
-          .from('profiles')
-          .update({ nickname: lockedNickname })
-          .eq('id', user.id)
-          .select('id');
-        const repairedProfile = await selectProfileAfterWrite(supabase, user.id);
-        nextProfile = repairedProfile ?? { ...nextProfile, nickname: lockedNickname };
-      }
+        if (nextProfile && !nextProfile.nickname) {
+          await supabase
+            .from('profiles')
+            .update({ nickname: lockedNickname })
+            .eq('id', user.id)
+            .select('id');
+          const repairedProfile = await selectProfileAfterWrite(supabase, user.id);
+          nextProfile = repairedProfile ?? { ...nextProfile, nickname: lockedNickname };
+        }
 
-      if (isMounted) {
-        setProfile(nextProfile);
-        setNickname(lockedNickname);
-        setSelectedMissionRoute(getSelectedMissionRoute(user.id));
-        setStatus('loading');
-        setMessage('');
-      }
+        if (isMounted) {
+          hasLoadedBaseProfile = true;
+          setProfile(nextProfile);
+          setNickname(lockedNickname);
+          setSelectedMissionRoute(getSelectedMissionRoute(user.id));
+          setStatus('loading');
+          setMessage('');
+        }
 
-      const [
-        { data: activityData, error: activityError },
-        { data: statusData, error: statusError },
-        { data: badgeData, error: badgeError },
-        { data: workCommentData, error: workCommentError },
-      ] = await Promise.all([
-        supabase
-          .from('activity_logs')
-          .select('id,action_type,points,genre,metadata,created_at')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(PROFILE_ACTIVITY_LIMIT),
-        supabase
-          .from('work_statuses')
-          .select('work_code,work_title,status,updated_at')
-          .eq('user_id', user.id)
-          .order('updated_at', { ascending: false })
-          .limit(PROFILE_WORK_STATUS_LIMIT),
-        supabase
-          .from('user_badges')
-          .select('badge_id,awarded_at,badges(title,description)')
-          .eq('user_id', user.id)
-          .order('awarded_at', { ascending: false })
-          .limit(PROFILE_BADGE_LIMIT),
-        supabase
-          .from('work_comments')
-          .select('id,work_code,work_title,body,created_at')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false })
-          .limit(PROFILE_WORK_COMMENT_LIMIT),
-      ]);
+        const [
+          { data: activityData, error: activityError },
+          { data: statusData, error: statusError },
+          { data: badgeData, error: badgeError },
+          { data: workCommentData, error: workCommentError },
+        ] = await Promise.all([
+          supabase
+            .from('activity_logs')
+            .select('id,action_type,points,genre,metadata,created_at')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(PROFILE_ACTIVITY_LIMIT),
+          supabase
+            .from('work_statuses')
+            .select('work_code,work_title,status,updated_at')
+            .eq('user_id', user.id)
+            .order('updated_at', { ascending: false })
+            .limit(PROFILE_WORK_STATUS_LIMIT),
+          supabase
+            .from('user_badges')
+            .select('badge_id,awarded_at,badges(title,description)')
+            .eq('user_id', user.id)
+            .order('awarded_at', { ascending: false })
+            .limit(PROFILE_BADGE_LIMIT),
+          supabase
+            .from('work_comments')
+            .select('id,work_code,work_title,body,created_at')
+            .eq('user_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(PROFILE_WORK_COMMENT_LIMIT),
+        ]);
 
-      const nextActivities = activityError ? [] : activityData ?? [];
-      const nextWorkStatuses = statusError ? mapLocalWorkStatuses(user.id) : statusData ?? [];
-      const nextWorkComments = workCommentError ? [] : workCommentData ?? [];
-      const workCodes = Array.from(new Set([
-        ...nextWorkStatuses.map(item => item.work_code),
-        ...nextWorkComments.map(item => item.work_code),
-        ...nextActivities.map(item => item.metadata?.work_code),
-      ].filter(Boolean)));
-      let workCommentCounts = {};
-      if (workCodes.length > 0) {
-        const { data: commentCountData } = await supabase
-          .from('work_comments')
-          .select('work_code')
-          .in('work_code', workCodes)
-          .limit(PROFILE_COMMENT_COUNT_LIMIT);
-        workCommentCounts = (commentCountData ?? []).reduce((result, item) => {
-          result[item.work_code] = (result[item.work_code] ?? 0) + 1;
-          return result;
-        }, {});
-      }
+        const nextActivities = activityError ? [] : activityData ?? [];
+        const nextWorkStatuses = statusError ? mapLocalWorkStatuses(user.id) : statusData ?? [];
+        const nextWorkComments = workCommentError ? [] : workCommentData ?? [];
+        const workCodes = Array.from(new Set([
+          ...nextWorkStatuses.map(item => item.work_code),
+          ...nextWorkComments.map(item => item.work_code),
+          ...nextActivities.map(item => item.metadata?.work_code),
+        ].filter(Boolean)));
+        let workCommentCounts = {};
+        if (workCodes.length > 0) {
+          const { data: commentCountData } = await supabase
+            .from('work_comments')
+            .select('work_code')
+            .in('work_code', workCodes)
+            .limit(PROFILE_COMMENT_COUNT_LIMIT);
+          workCommentCounts = (commentCountData ?? []).reduce((result, item) => {
+            result[item.work_code] = (result[item.work_code] ?? 0) + 1;
+            return result;
+          }, {});
+        }
 
-      let communityQuestions;
-      try {
-        const data = await fetchCommunityQuestions({
-          auth: true,
-          includeCommentCounts: 1,
-          mineOnly: 1,
-          pageSize: PROFILE_COMMUNITY_LIMIT,
-        });
-        communityQuestions = Array.isArray(data.questions) ? data.questions : [];
-      } catch {
-        communityQuestions = [];
-      }
+        let communityQuestions;
+        try {
+          const data = await fetchCommunityQuestions({
+            auth: true,
+            includeCommentCounts: 1,
+            mineOnly: 1,
+            pageSize: PROFILE_COMMUNITY_LIMIT,
+          });
+          communityQuestions = Array.isArray(data.questions) ? data.questions : [];
+        } catch {
+          communityQuestions = [];
+        }
 
-      if (isMounted) {
-        setProfile(nextProfile);
-        setNickname(lockedNickname);
-        setActivities(nextActivities);
-        setWorkStatuses(nextWorkStatuses);
-        setNetworkSignals(buildProfileNetworkSignals({
-          activities: nextActivities,
-          communityQuestions,
-          workCommentCounts,
-          workComments: nextWorkComments,
-          workStatuses: nextWorkStatuses,
-        }));
-        setManualBadges(badgeError ? [] : badgeData ?? []);
-        setSelectedMissionRoute(getSelectedMissionRoute(user.id));
-        setStatus(activityError ? 'partial' : 'ready');
-        setMessage(activityError ? activityError.message : '');
+        if (isMounted) {
+          setProfile(nextProfile);
+          setNickname(lockedNickname);
+          setActivities(nextActivities);
+          setWorkStatuses(nextWorkStatuses);
+          setNetworkSignals(buildProfileNetworkSignals({
+            activities: nextActivities,
+            communityQuestions,
+            workCommentCounts,
+            workComments: nextWorkComments,
+            workStatuses: nextWorkStatuses,
+          }));
+          setManualBadges(badgeError ? [] : badgeData ?? []);
+          setSelectedMissionRoute(getSelectedMissionRoute(user.id));
+          setStatus(activityError ? 'partial' : 'ready');
+          setMessage(activityError ? activityError.message : '');
+        }
+      } catch (error) {
+        if (isMounted) {
+          setStatus(hasLoadedBaseProfile ? 'partial' : 'error');
+          setMessage(error?.message || '프로필 데이터를 불러오지 못했습니다.');
+        }
       }
     }
 
