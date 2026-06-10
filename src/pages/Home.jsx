@@ -91,6 +91,14 @@ function getRelatedItemsForWork(work, items, limit = 4) {
     .slice(0, limit);
 }
 
+function withTimeout(promise, timeoutMs, message) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => window.clearTimeout(timeoutId));
+}
+
 export default function Home() {
   const { user } = useAuth();
   const { showActivityToast } = useActivityToast();
@@ -155,22 +163,28 @@ export default function Home() {
     if (!user) return { ok: false, error: new Error('로그인이 필요합니다.') };
     const storageKey = `sf-mission-signal:${user.id}:${signalKey}`;
     if (!options.force && getStorageItem(storageKey, '')) return { ok: true, skipped: true };
-    const { recordUserActivity } = await import('../lib/activityLogger');
-    const result = await recordUserActivity(user, {
-      ...activity,
-      dedupeKey: activity.dedupeKey || signalKey,
-    });
-    if (result?.ok) {
-      setStorageItem(storageKey, '1');
-      if (!result.skipped) {
-        showActivityToast({
-          detail: `${activity.metadata?.title || activity.genre || '탐사 활동'} 신호가 기록되었습니다.`,
-          points: activity.points ?? 0,
-          title: '탐사 기록 갱신',
-        });
+
+    try {
+      const { recordUserActivity } = await import('../lib/activityLogger');
+      const result = await withTimeout(recordUserActivity(user, {
+        ...activity,
+        dedupeKey: activity.dedupeKey || signalKey,
+      }), options.timeoutMs ?? 12000, '저장 응답 시간이 너무 오래 걸립니다.');
+
+      if (result?.ok) {
+        setStorageItem(storageKey, '1');
+        if (!result.skipped) {
+          showActivityToast({
+            detail: `${activity.metadata?.title || activity.genre || '탐사 활동'} 신호가 기록되었습니다.`,
+            points: activity.points ?? 0,
+            title: '탐사 기록 갱신',
+          });
+        }
       }
+      return result;
+    } catch (error) {
+      return { ok: false, error };
     }
-    return result;
   }, [showActivityToast, user]);
 
   const coordinateControls = useCoordinateMap({
@@ -235,29 +249,39 @@ export default function Home() {
       setTasteSaveMessage('');
     }
 
-    const result = await recordMissionSignal(`taste:${tasteProfileResult.code}`, {
-      actionType: 'taste_test',
-      points: 10,
-      genre: tasteProfileResult.genre,
-      metadata: {
-        title: '나의 SF 성향 테스트 완료',
-        taste_code: tasteProfileResult.code,
-        taste_title: tasteProfileResult.title,
-        node: 'taste-test',
-      },
-    }, { force: isManualSave });
+    try {
+      const result = await recordMissionSignal(`taste:${tasteProfileResult.code}`, {
+        actionType: 'taste_test',
+        points: 10,
+        genre: tasteProfileResult.genre,
+        metadata: {
+          title: '나의 SF 성향 테스트 완료',
+          taste_code: tasteProfileResult.code,
+          taste_title: tasteProfileResult.title,
+          node: 'taste-test',
+        },
+      }, { force: isManualSave, timeoutMs: 12000 });
 
-    if (result?.ok) {
-      setTasteSaveStatus('saved');
-      setTasteSaveMessage(result.skipped
-        ? '이미 저장된 성향 결과입니다. 프로필 미션에 반영됩니다.'
-        : '테스트 결과가 프로필에 저장되었습니다. 기본 훈련 미션에 반영됩니다.');
-    } else if (isManualSave) {
-      setTasteSaveStatus('error');
-      setTasteSaveMessage('저장에 실패했습니다. 잠시 후 다시 눌러주세요.');
+      if (result?.ok) {
+        setTasteSaveStatus('saved');
+        setTasteSaveMessage(result.skipped
+          ? '이미 저장된 성향 결과입니다. 프로필 미션에 반영됩니다.'
+          : '테스트 결과가 프로필에 저장되었습니다. 기본 훈련 미션에 반영됩니다.');
+      } else if (isManualSave) {
+        setTasteSaveStatus('error');
+        setTasteSaveMessage(result?.error?.message === '저장 응답 시간이 너무 오래 걸립니다.'
+          ? '저장 응답이 지연되고 있습니다. 잠시 후 다시 눌러주세요.'
+          : '저장에 실패했습니다. 잠시 후 다시 눌러주세요.');
+      }
+
+      return result;
+    } catch (error) {
+      if (isManualSave) {
+        setTasteSaveStatus('error');
+        setTasteSaveMessage('저장 중 문제가 생겼습니다. 잠시 후 다시 눌러주세요.');
+      }
+      return { ok: false, error };
     }
-
-    return result;
   }, [recordMissionSignal, user]);
   const recordConceptRead = useCallback((code, concept) => recordMissionSignal(`concept:${code}`, {
     actionType: 'concept_read',
