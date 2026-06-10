@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useMemo } from 'react';
+import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
 import PageTransition from '../components/PageTransition';
 import { useActivityToast } from '../context/activityToastContextValue';
 import { useAuth } from '../context/authContextValue';
@@ -94,6 +94,8 @@ function getRelatedItemsForWork(work, items, limit = 4) {
 export default function Home() {
   const { user } = useAuth();
   const { showActivityToast } = useActivityToast();
+  const [tasteSaveStatus, setTasteSaveStatus] = useState('idle');
+  const [tasteSaveMessage, setTasteSaveMessage] = useState('');
   const dailySignalKey = useDailySignalKey();
   const archiveMode = 'random';
   const {
@@ -149,10 +151,10 @@ export default function Home() {
     selectedWork,
   } = workArchiveControls;
 
-  const recordMissionSignal = useCallback(async (signalKey, activity) => {
-    if (!user) return;
+  const recordMissionSignal = useCallback(async (signalKey, activity, options = {}) => {
+    if (!user) return { ok: false, error: new Error('로그인이 필요합니다.') };
     const storageKey = `sf-mission-signal:${user.id}:${signalKey}`;
-    if (getStorageItem(storageKey, '')) return;
+    if (!options.force && getStorageItem(storageKey, '')) return { ok: true, skipped: true };
     const { recordUserActivity } = await import('../lib/activityLogger');
     const result = await recordUserActivity(user, {
       ...activity,
@@ -168,6 +170,7 @@ export default function Home() {
         });
       }
     }
+    return result;
   }, [showActivityToast, user]);
 
   const coordinateControls = useCoordinateMap({
@@ -215,17 +218,47 @@ export default function Home() {
   const shouldRenderHomeModals = modalProps.coordinateLog.isOpen
     || modalProps.workArchive.isSubmitOpen
     || Boolean(modalProps.workArchive.selectedWork);
-  const recordTasteComplete = useCallback((tasteProfileResult) => recordMissionSignal(`taste:${tasteProfileResult.code}`, {
-    actionType: 'taste_test',
-    points: 10,
-    genre: tasteProfileResult.genre,
-    metadata: {
-      title: '나의 SF 성향 테스트 완료',
-      taste_code: tasteProfileResult.code,
-      taste_title: tasteProfileResult.title,
-      node: 'taste-test',
-    },
-  }), [recordMissionSignal]);
+  const recordTasteComplete = useCallback(async (tasteProfileResult, options = {}) => {
+    if (!tasteProfileResult) return { ok: false };
+    const isManualSave = Boolean(options.manual);
+
+    if (!user) {
+      if (isManualSave) {
+        setTasteSaveStatus('error');
+        setTasteSaveMessage('로그인 후 테스트 결과를 저장하면 프로필 미션이 완료됩니다.');
+      }
+      return { ok: false, error: new Error('로그인이 필요합니다.') };
+    }
+
+    if (isManualSave) {
+      setTasteSaveStatus('saving');
+      setTasteSaveMessage('');
+    }
+
+    const result = await recordMissionSignal(`taste:${tasteProfileResult.code}`, {
+      actionType: 'taste_test',
+      points: 10,
+      genre: tasteProfileResult.genre,
+      metadata: {
+        title: '나의 SF 성향 테스트 완료',
+        taste_code: tasteProfileResult.code,
+        taste_title: tasteProfileResult.title,
+        node: 'taste-test',
+      },
+    }, { force: isManualSave });
+
+    if (result?.ok) {
+      setTasteSaveStatus('saved');
+      setTasteSaveMessage(result.skipped
+        ? '이미 저장된 성향 결과입니다. 프로필 미션에 반영됩니다.'
+        : '테스트 결과가 프로필에 저장되었습니다. 기본 훈련 미션에 반영됩니다.');
+    } else if (isManualSave) {
+      setTasteSaveStatus('error');
+      setTasteSaveMessage('저장에 실패했습니다. 잠시 후 다시 눌러주세요.');
+    }
+
+    return result;
+  }, [recordMissionSignal, user]);
   const recordConceptRead = useCallback((code, concept) => recordMissionSignal(`concept:${code}`, {
     actionType: 'concept_read',
     points: 5,
@@ -247,6 +280,11 @@ export default function Home() {
     works,
     onComplete: recordTasteComplete,
   });
+  const resetTasteTestWithSaveState = useCallback(() => {
+    setTasteSaveStatus('idle');
+    setTasteSaveMessage('');
+    resetTasteTest();
+  }, [resetTasteTest]);
   const {
     activeMediaArchivePath,
     activeMediaCategory,
@@ -326,7 +364,10 @@ export default function Home() {
 
       <TasteTestSection
         onAnswer={updateTasteAnswer}
-        onReset={resetTasteTest}
+        onReset={resetTasteTestWithSaveState}
+        onSaveResult={(result) => recordTasteComplete(result, { manual: true })}
+        saveMessage={tasteSaveMessage}
+        saveStatus={tasteSaveStatus}
         tasteAnswers={tasteAnswers}
         tasteProfile={tasteProfile}
         tasteQuestionSet={tasteQuestionSet}

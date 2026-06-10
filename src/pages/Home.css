@@ -375,7 +375,7 @@
 
 .taste-result-actions {
   display: grid;
-  grid-template-columns: 1fr auto;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
   gap: 10px;
   margin-top: 18px;
 }
@@ -399,6 +399,50 @@
 .taste-result-actions a {
   color: #061316;
   background: var(--cyan);
+}
+
+.taste-result-actions button.is-primary {
+  color: #061316;
+  border-color: rgba(255, 210, 92, 0.78);
+  background: linear-gradient(135deg, #ffd25c, #19f7f1);
+  box-shadow: 0 0 18px rgba(25, 247, 241, 0.18);
+}
+
+.taste-result-actions button:disabled {
+  cursor: progress;
+  opacity: 0.74;
+}
+
+.taste-save-message {
+  margin-top: 12px;
+  color: rgba(201, 244, 246, 0.82);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.taste-save-message.is-error {
+  color: #ffd25c;
+}
+
+.reading-mode .taste-result-actions a,
+.reading-mode .taste-result-actions button {
+  color: var(--reading-text);
+  border-color: var(--reading-border);
+  background: var(--reading-panel-strong);
+}
+
+.reading-mode .taste-result-actions button.is-primary {
+  color: #fffaf0;
+  border-color: #2f6f78;
+  background: linear-gradient(135deg, #2f6f78, #203d48);
+}
+
+.reading-mode .taste-save-message {
+  color: var(--reading-muted);
+}
+
+.reading-mode .taste-save-message.is-error {
+  color: #8a5c1f;
 }
 
 .contact-section {

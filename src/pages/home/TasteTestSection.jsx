@@ -3,11 +3,17 @@ import { useState } from 'react';
 function TasteTestContent({
   onAnswer,
   onReset,
+  onSaveResult,
+  saveMessage,
+  saveStatus,
   tasteAnswers,
   tasteProfile,
   tasteQuestionSet,
   tasteRecommendations,
 }) {
+  const isSaving = saveStatus === 'saving';
+  const isSaved = saveStatus === 'saved';
+
   return (
     <div className="taste-test-layout">
       <div className="taste-questions">
@@ -69,11 +75,24 @@ function TasteTestContent({
               })}
             </div>
             <div className="taste-result-actions">
+              <button
+                className="is-primary"
+                disabled={isSaving}
+                onClick={() => onSaveResult?.(tasteProfile)}
+                type="button"
+              >
+                {isSaving ? '저장 중' : isSaved ? '저장 완료' : '테스트 결과 저장'}
+              </button>
               <a href="#works-archive">작품 아카이브로 이동</a>
               <button type="button" onClick={onReset}>
                 다시 테스트
               </button>
             </div>
+            {saveMessage && (
+              <p className={`taste-save-message ${saveStatus === 'error' ? 'is-error' : ''}`}>
+                {saveMessage}
+              </p>
+            )}
           </>
         )}
       </aside>
@@ -84,6 +103,9 @@ function TasteTestContent({
 export default function TasteTestSection({
   onAnswer,
   onReset,
+  onSaveResult,
+  saveMessage,
+  saveStatus,
   tasteAnswers,
   tasteProfile,
   tasteQuestionSet,
@@ -93,6 +115,9 @@ export default function TasteTestSection({
   const contentProps = {
     onAnswer,
     onReset,
+    onSaveResult,
+    saveMessage,
+    saveStatus,
     tasteAnswers,
     tasteProfile,
     tasteQuestionSet,
