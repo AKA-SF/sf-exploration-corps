@@ -186,7 +186,7 @@ function HeroSection({
             <div>
               <span className="mono">TODAY'S SIGNAL</span>
               <strong>{todaySignal?.title ?? '오늘의 탐사 신호 대기 중'}</strong>
-              <p>{todaySignal ? `${todaySignal.label} / ${todaySignal.meta}` : '작품, 개념, 미디어, 커뮤니티 신호가 연결되면 자동으로 표시됩니다.'}</p>
+              <p>{todaySignal ? `${todaySignal.label} / ${todaySignal.meta}` : '오늘의 SF 소설 신호가 연결되면 자동으로 표시됩니다.'}</p>
             </div>
             <a href={todaySignal?.href ?? '#works-archive'}>
               신호 확인 <ChevronRight aria-hidden="true" />

@@ -1,4 +1,13 @@
 import { getDailyItem } from './homeUtils';
+import { getWorkCategorySlug } from '../../data/workArchive';
+
+function isNovelWork(work) {
+  return getWorkCategorySlug(`${work.medium ?? ''} ${work.category ?? ''}`) === 'novels';
+}
+
+function getWorkDetailHref(work) {
+  return work?.code ? `/works/novels?work=${encodeURIComponent(work.code)}` : '/works/novels';
+}
 
 export default function useHomeStatus({
   concepts,
@@ -8,40 +17,15 @@ export default function useHomeStatus({
   selectedConcept,
   works,
 }) {
-  const dailyWork = getDailyItem(works, `${dailySignalKey}:hero-work`, work => `${work.code}:${work.title}`);
-  const dailyConcept = getDailyItem(concepts, `${dailySignalKey}:hero-concept`, concept => `${concept.code}:${concept.term}`);
-  const dailyQuestion = getDailyItem(dashboard.questions, `${dailySignalKey}:hero-question`, question => `${question.id}:${question.title}`);
-  const dailyMedia = getDailyItem(mediaItems, `${dailySignalKey}:hero-media`, item => `${item.code}:${item.title}`);
-  const todaySignal = [
-    dailyWork && {
-      href: '#works-archive',
-      label: '오늘의 작품',
-      meta: dailyWork.medium || '작품 아카이브',
-      title: dailyWork.title,
-    },
-    dailyConcept && {
-      href: '#concept-dictionary',
-      label: '오늘의 개념',
-      meta: dailyConcept.english || dailyConcept.category,
-      title: dailyConcept.term,
-    },
-    dailyQuestion && {
-      href: dailyQuestion.id ? `/questions/${dailyQuestion.id}` : '/questions',
-      label: '오늘의 토론',
-      meta: dailyQuestion.category || '커뮤니티',
-      title: dailyQuestion.title,
-    },
-    dailyMedia && {
-      href: '#media-archive',
-      label: '오늘의 미디어',
-      meta: dailyMedia.category || dailyMedia.medium,
-      title: dailyMedia.title,
-    },
-  ].filter(Boolean);
-  const todaySignalIndex = todaySignal.length > 0
-    ? Math.abs([...`${dailySignalKey}:hero-signal`].reduce((sum, char) => sum + char.charCodeAt(0), 0)) % todaySignal.length
-    : -1;
-  const selectedTodaySignal = todaySignal[todaySignalIndex] ?? null;
+  const novelWorks = works.filter(isNovelWork);
+  const dailyWork = getDailyItem(novelWorks, `${dailySignalKey}:hero-novel-work`, work => `${work.code}:${work.title}`);
+  const selectedTodaySignal = dailyWork ? {
+    href: getWorkDetailHref(dailyWork),
+    label: '오늘의 SF 소설',
+    meta: dailyWork.medium || '작품 아카이브',
+    title: dailyWork.title,
+    workCode: dailyWork.code,
+  } : null;
 
   const metrics = {
     todaySignal: selectedTodaySignal,
