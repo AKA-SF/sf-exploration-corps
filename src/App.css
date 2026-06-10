@@ -101,6 +101,10 @@
   flex-direction: column;
 }
 
+.mobile-container.desktop-home .page-container {
+  overflow-x: auto;
+}
+
 .desktop-admin .page-container {
   padding: 0;
   padding-bottom: 0;
