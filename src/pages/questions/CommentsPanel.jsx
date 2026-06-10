@@ -19,6 +19,11 @@ export default function CommentsPanel({
   onSubmit,
   status,
 }) {
+  const hasCommentContent = form.content.trim().length > 0;
+  const canSubmitComment = isAuthenticated && hasCommentContent && status !== 'submitting';
+  const hasEditContent = editForm.content.trim().length > 0;
+  const canSubmitEdit = hasEditContent && editStatus !== 'submitting';
+
   return (
     <section className="comments-panel" aria-label="댓글">
       <div className="comments-list">
@@ -43,7 +48,11 @@ export default function CommentsPanel({
                     <X aria-hidden="true" />
                     취소
                   </button>
-                  <button type="submit" disabled={editStatus === 'submitting'}>
+                  <button
+                    className={`comment-save-button ${hasEditContent ? 'is-ready' : ''}`}
+                    disabled={!canSubmitEdit}
+                    type="submit"
+                  >
                     <Save aria-hidden="true" />
                     {editStatus === 'submitting' ? '저장 중' : '저장'}
                   </button>
@@ -92,7 +101,11 @@ export default function CommentsPanel({
             {status === 'submitting' && '댓글을 저장 중입니다.'}
             {status === 'idle' && (isAuthenticated ? '댓글을 작성한 뒤 저장을 눌러주세요.' : '로그인 후 댓글을 저장할 수 있습니다.')}
           </p>
-          <button type="submit" disabled={!isAuthenticated || status === 'submitting'}>
+          <button
+            className={`comment-submit-button ${hasCommentContent ? 'is-ready' : ''}`}
+            disabled={!canSubmitComment}
+            type="submit"
+          >
             <Send aria-hidden="true" />
             {status === 'submitting' ? '저장 중' : '댓글 저장'}
           </button>

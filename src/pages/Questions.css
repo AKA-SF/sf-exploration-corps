@@ -833,6 +833,32 @@
   background: linear-gradient(180deg, #e8fffb, #55fff4);
 }
 
+.question-form .comment-submit-button,
+.question-form .comment-save-button {
+  border: 1px solid rgba(25, 247, 241, 0.28);
+  color: rgba(210, 255, 253, 0.78);
+  background: rgba(25, 247, 241, 0.12);
+  box-shadow: none;
+}
+
+.question-form .comment-submit-button.is-ready,
+.question-form .comment-save-button.is-ready {
+  border-color: rgba(25, 247, 241, 0.72);
+  color: #001114;
+  background: linear-gradient(180deg, #76fff7, var(--cyan));
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.18) inset,
+    0 0 26px rgba(25, 247, 241, 0.24);
+}
+
+.question-form .comment-submit-button.is-ready:hover,
+.question-form .comment-submit-button.is-ready:focus-visible,
+.question-form .comment-save-button.is-ready:hover,
+.question-form .comment-save-button.is-ready:focus-visible {
+  color: #00090b;
+  background: linear-gradient(180deg, #e8fffb, #55fff4);
+}
+
 .question-form button:disabled {
   border: 1px solid rgba(25, 247, 241, 0.28);
   color: rgba(210, 255, 253, 0.78);
@@ -870,6 +896,29 @@
 .question-form .comment-actions button.is-danger {
   border-color: rgba(240, 184, 90, 0.42);
   color: #f0b85a;
+}
+
+.question-form .comment-actions .comment-save-button {
+  border-color: rgba(25, 247, 241, 0.28);
+  color: rgba(210, 255, 253, 0.78);
+  background: rgba(25, 247, 241, 0.12);
+}
+
+.question-form .comment-actions .comment-save-button.is-ready {
+  border-color: rgba(25, 247, 241, 0.72);
+  color: #001114;
+  background: linear-gradient(180deg, #76fff7, var(--cyan));
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.18) inset,
+    0 0 26px rgba(25, 247, 241, 0.24);
+}
+
+.question-form .comment-submit-button:disabled,
+.question-form .comment-actions .comment-save-button:disabled {
+  border-color: rgba(25, 247, 241, 0.28);
+  color: rgba(210, 255, 253, 0.78);
+  background: rgba(25, 247, 241, 0.12);
+  box-shadow: none;
 }
 
 .reading-mode .page-container:has(.questions-page),
@@ -1075,6 +1124,32 @@
   background: linear-gradient(180deg, #3f8f98, #286f78) !important;
 }
 
+.reading-mode .question-form .comment-submit-button,
+.reading-mode .question-form .comment-save-button {
+  border-color: rgba(47, 111, 120, 0.18) !important;
+  color: rgba(47, 63, 70, 0.5) !important;
+  background: rgba(47, 111, 120, 0.08) !important;
+  box-shadow: none !important;
+}
+
+.reading-mode .question-form .comment-submit-button.is-ready,
+.reading-mode .question-form .comment-save-button.is-ready {
+  border-color: rgba(47, 111, 120, 0.74) !important;
+  color: #fffdf6 !important;
+  background: linear-gradient(180deg, #347f88, #1f5f68) !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.38) inset,
+    0 12px 28px rgba(47, 111, 120, 0.18) !important;
+}
+
+.reading-mode .question-form .comment-submit-button.is-ready:hover,
+.reading-mode .question-form .comment-submit-button.is-ready:focus-visible,
+.reading-mode .question-form .comment-save-button.is-ready:hover,
+.reading-mode .question-form .comment-save-button.is-ready:focus-visible {
+  color: #fffdf6 !important;
+  background: linear-gradient(180deg, #3f8f98, #286f78) !important;
+}
+
 .reading-mode .question-owner-actions button,
 .reading-mode .comment-actions button {
   border-color: rgba(47, 111, 120, 0.3) !important;
@@ -1105,6 +1180,22 @@
   border-color: rgba(155, 77, 34, 0.5) !important;
   color: #fffdf6 !important;
   background: #9b4d22 !important;
+}
+
+.reading-mode .question-form .comment-actions .comment-save-button {
+  border-color: rgba(47, 111, 120, 0.18) !important;
+  color: rgba(47, 63, 70, 0.5) !important;
+  background: rgba(47, 111, 120, 0.08) !important;
+  box-shadow: none !important;
+}
+
+.reading-mode .question-form .comment-actions .comment-save-button.is-ready {
+  border-color: rgba(47, 111, 120, 0.74) !important;
+  color: #fffdf6 !important;
+  background: linear-gradient(180deg, #347f88, #1f5f68) !important;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.38) inset,
+    0 12px 28px rgba(47, 111, 120, 0.18) !important;
 }
 
 .reading-mode .comment-edit-form {

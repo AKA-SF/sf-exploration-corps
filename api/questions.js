@@ -389,7 +389,7 @@ async function updateQuestion(request, response, body) {
     return;
   }
 
-  const rows = await supabaseRestRequest(`community_posts?id=eq.${encodeURIComponent(id)}`, {
+  const rows = await supabaseRestRequest(`community_posts?id=eq.${encodeURIComponent(id)}&user_id=eq.${encodeURIComponent(user.id)}`, {
     body: {
       attachment_url: sanitizeText(body.attachmentUrl, 1200) || null,
       body: content,
@@ -424,7 +424,7 @@ async function updateComment(request, response, body) {
     return;
   }
 
-  const rows = await supabaseRestRequest(`community_comments?id=eq.${encodeURIComponent(id)}`, {
+  const rows = await supabaseRestRequest(`community_comments?id=eq.${encodeURIComponent(id)}&user_id=eq.${encodeURIComponent(user.id)}`, {
     body: { body: content },
     method: 'PATCH',
     prefer: 'return=representation',
@@ -453,7 +453,7 @@ async function archiveQuestion(request, response, body) {
     return;
   }
 
-  const rows = await supabaseRestRequest(`community_posts?id=eq.${encodeURIComponent(id)}`, {
+  const rows = await supabaseRestRequest(`community_posts?id=eq.${encodeURIComponent(id)}&user_id=eq.${encodeURIComponent(user.id)}`, {
     body: { status: 'archived' },
     method: 'PATCH',
     prefer: 'return=representation',
@@ -479,7 +479,7 @@ async function archiveComment(request, response, body) {
     return;
   }
 
-  const rows = await supabaseRestRequest(`community_comments?id=eq.${encodeURIComponent(id)}`, {
+  const rows = await supabaseRestRequest(`community_comments?id=eq.${encodeURIComponent(id)}&user_id=eq.${encodeURIComponent(user.id)}`, {
     body: { status: 'archived' },
     method: 'PATCH',
     prefer: 'return=representation',
