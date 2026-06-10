@@ -17,7 +17,8 @@ export default function useHomeStatus({
   selectedConcept,
   works,
 }) {
-  const novelWorks = works.filter(isNovelWork);
+  const isWorksArchiveReady = Boolean(dashboard.status.works);
+  const novelWorks = isWorksArchiveReady ? works.filter(isNovelWork) : [];
   const dailyWork = getDailyItem(novelWorks, `${dailySignalKey}:hero-novel-work`, work => `${work.code}:${work.title}`);
   const selectedTodaySignal = dailyWork ? {
     href: getWorkDetailHref(dailyWork),
