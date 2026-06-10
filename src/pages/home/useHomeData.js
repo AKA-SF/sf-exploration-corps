@@ -33,15 +33,16 @@ const fetchJson = async (path, options = {}) => {
 
 export default function useHomeData({
   conceptEntries,
+  dailySignalKey,
   fallbackWorks,
   getRandomWorks,
   mergeWorksByCode,
 }) {
   const [works, setWorks] = useState(fallbackWorks);
-  const [randomWorkCodes, setRandomWorkCodes] = useState(() => getRandomWorks(fallbackWorks, 6).map(work => work.code));
+  const [randomWorkCodes, setRandomWorkCodes] = useState(() => getRandomWorks(fallbackWorks, 6, `works:${dailySignalKey}`).map(work => work.code));
   const [mediaItems, setMediaItems] = useState([]);
   const [concepts, setConcepts] = useState(conceptEntries);
-  const [randomConceptCodes, setRandomConceptCodes] = useState(() => getRandomWorks(conceptEntries, conceptEntries.length).map(concept => concept.code));
+  const [randomConceptCodes, setRandomConceptCodes] = useState(() => getRandomWorks(conceptEntries, conceptEntries.length, `concepts:${dailySignalKey}`).map(concept => concept.code));
   const [activeConceptCode, setActiveConceptCode] = useState('');
   const [dashboard, setDashboard] = useState(initialDashboard);
   const [lazySections, setLazySections] = useState(initialLazySections);
@@ -97,7 +98,7 @@ export default function useHomeData({
       .then(data => {
         if (isMounted && Array.isArray(data.works) && data.works.length > 0) {
           setWorks(data.works);
-          setRandomWorkCodes(getRandomWorks(data.works, 6).map(work => work.code));
+          setRandomWorkCodes(getRandomWorks(data.works, 6, `works:${dailySignalKey}`).map(work => work.code));
           setDashboard(state => ({ ...state, status: { ...state.status, works: true } }));
         }
       })
@@ -105,6 +106,7 @@ export default function useHomeData({
         if (isAbortError(error)) return;
         if (isMounted) {
           setWorks(fallbackWorks);
+          setRandomWorkCodes(getRandomWorks(fallbackWorks, 6, `works:${dailySignalKey}`).map(work => work.code));
           setDashboard(state => ({ ...state, status: { ...state.status, works: false } }));
         }
       });
@@ -113,7 +115,7 @@ export default function useHomeData({
       isMounted = false;
       controller.abort();
     };
-  }, [fallbackWorks, getRandomWorks]);
+  }, [dailySignalKey, fallbackWorks, getRandomWorks]);
 
   useEffect(() => {
     if (!lazySections.worksCovers) return undefined;
@@ -183,7 +185,7 @@ export default function useHomeData({
     })
       .then(data => {
         if (isMounted && Array.isArray(data.concepts)) {
-          const randomizedConcepts = getRandomWorks(data.concepts, data.concepts.length);
+          const randomizedConcepts = getRandomWorks(data.concepts, data.concepts.length, `concepts:${dailySignalKey}`);
           setConcepts(data.concepts);
           setRandomConceptCodes(randomizedConcepts.map(concept => concept.code));
           setActiveConceptCode(randomizedConcepts[0]?.code ?? '');
@@ -193,7 +195,7 @@ export default function useHomeData({
       .catch(error => {
         if (isAbortError(error)) return;
         if (isMounted) {
-          const randomizedConcepts = getRandomWorks(conceptEntries, conceptEntries.length);
+          const randomizedConcepts = getRandomWorks(conceptEntries, conceptEntries.length, `concepts:${dailySignalKey}`);
           setConcepts(conceptEntries);
           setRandomConceptCodes(randomizedConcepts.map(concept => concept.code));
           setActiveConceptCode(randomizedConcepts[0]?.code ?? '');
@@ -205,7 +207,7 @@ export default function useHomeData({
       isMounted = false;
       controller.abort();
     };
-  }, [conceptEntries, getRandomWorks, lazySections.concepts]);
+  }, [conceptEntries, dailySignalKey, getRandomWorks, lazySections.concepts]);
 
   useEffect(() => {
     let isMounted = true;

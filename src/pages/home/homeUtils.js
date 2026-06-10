@@ -1,7 +1,49 @@
-export function getRandomWorks(items, count) {
+const DAILY_SIGNAL_RESET_OFFSET_HOURS = 2; // UTC date after +2h equals KST day starting at 07:00.
+
+export function getDailySignalKey(date = new Date()) {
+  return new Date(date.getTime() + DAILY_SIGNAL_RESET_OFFSET_HOURS * 60 * 60 * 1000)
+    .toISOString()
+    .slice(0, 10);
+}
+
+export function getNextDailySignalResetDelay(date = new Date()) {
+  const kstNow = new Date(date.getTime() + 9 * 60 * 60 * 1000);
+  const nextResetKst = new Date(kstNow);
+  nextResetKst.setUTCHours(7, 0, 0, 0);
+  if (kstNow >= nextResetKst) {
+    nextResetKst.setUTCDate(nextResetKst.getUTCDate() + 1);
+  }
+  const nextResetUtc = nextResetKst.getTime() - 9 * 60 * 60 * 1000;
+  return Math.max(nextResetUtc - date.getTime(), 1000);
+}
+
+function hashString(value) {
+  return String(value ?? '').split('').reduce((hash, char) => (
+    ((hash << 5) - hash + char.charCodeAt(0)) | 0
+  ), 0);
+}
+
+function seededScore(seed, value) {
+  return Math.abs(hashString(`${seed}:${value}`));
+}
+
+export function getDailyShuffledItems(items, seed, identity = item => item?.code ?? item?.id ?? item?.title ?? '') {
   return [...items]
-    .sort(() => Math.random() - 0.5)
-    .slice(0, count);
+    .map((item, index) => ({
+      item,
+      score: seededScore(seed, `${identity(item) || index}:${index}`),
+    }))
+    .sort((a, b) => a.score - b.score)
+    .map(entry => entry.item);
+}
+
+export function getRandomWorks(items, count, seed = '') {
+  const source = seed ? getDailyShuffledItems(items, seed) : [...items].sort(() => Math.random() - 0.5);
+  return source.slice(0, count);
+}
+
+export function getDailyItem(items, seed, identity) {
+  return getDailyShuffledItems(items, seed, identity)[0] ?? null;
 }
 
 export function mergeWorksByCode(currentWorks, incomingWorks) {

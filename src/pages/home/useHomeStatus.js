@@ -1,39 +1,50 @@
+import { getDailyItem } from './homeUtils';
+
 export default function useHomeStatus({
   concepts,
+  dailySignalKey,
   dashboard,
   mediaItems,
   selectedConcept,
   works,
 }) {
+  const dailyWork = getDailyItem(works, `${dailySignalKey}:hero-work`, work => `${work.code}:${work.title}`);
+  const dailyConcept = getDailyItem(concepts, `${dailySignalKey}:hero-concept`, concept => `${concept.code}:${concept.term}`);
+  const dailyQuestion = getDailyItem(dashboard.questions, `${dailySignalKey}:hero-question`, question => `${question.id}:${question.title}`);
+  const dailyMedia = getDailyItem(mediaItems, `${dailySignalKey}:hero-media`, item => `${item.code}:${item.title}`);
   const todaySignal = [
-    works[0] && {
+    dailyWork && {
       href: '#works-archive',
       label: '오늘의 작품',
-      meta: works[0].medium || '작품 아카이브',
-      title: works[0].title,
+      meta: dailyWork.medium || '작품 아카이브',
+      title: dailyWork.title,
     },
-    selectedConcept && {
+    dailyConcept && {
       href: '#concept-dictionary',
       label: '오늘의 개념',
-      meta: selectedConcept.english || selectedConcept.category,
-      title: selectedConcept.term,
+      meta: dailyConcept.english || dailyConcept.category,
+      title: dailyConcept.term,
     },
-    dashboard.questions[0] && {
-      href: '/questions',
+    dailyQuestion && {
+      href: dailyQuestion.id ? `/questions/${dailyQuestion.id}` : '/questions',
       label: '오늘의 토론',
-      meta: dashboard.questions[0].category || '커뮤니티',
-      title: dashboard.questions[0].title,
+      meta: dailyQuestion.category || '커뮤니티',
+      title: dailyQuestion.title,
     },
-    mediaItems[0] && {
+    dailyMedia && {
       href: '#media-archive',
       label: '오늘의 미디어',
-      meta: mediaItems[0].category || mediaItems[0].medium,
-      title: mediaItems[0].title,
+      meta: dailyMedia.category || dailyMedia.medium,
+      title: dailyMedia.title,
     },
-  ].filter(Boolean)[0] ?? null;
+  ].filter(Boolean);
+  const todaySignalIndex = todaySignal.length > 0
+    ? Math.abs([...`${dailySignalKey}:hero-signal`].reduce((sum, char) => sum + char.charCodeAt(0), 0)) % todaySignal.length
+    : -1;
+  const selectedTodaySignal = todaySignal[todaySignalIndex] ?? null;
 
   const metrics = {
-    todaySignal,
+    todaySignal: selectedTodaySignal,
     works: works.length,
     media: mediaItems.length,
     concepts: concepts.length,

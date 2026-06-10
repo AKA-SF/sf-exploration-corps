@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { BookOpen, Compass, MessageSquareText, Radar, Sparkles } from 'lucide-react';
+import { getDailyItem } from './homeUtils';
 
 function SignalLink({ children, className = '', href }) {
   if (href?.startsWith('/')) {
@@ -39,47 +40,52 @@ const routeSteps = [
   },
 ];
 
-function getSignalItems({ concepts, mediaItems, questions, works }) {
+function getSignalItems({ concepts, dailySignalKey, mediaItems, questions, works }) {
   const safeConcepts = concepts ?? [];
   const safeMediaItems = mediaItems ?? [];
   const safeQuestions = questions ?? [];
   const safeWorks = works ?? [];
+  const dailyWork = getDailyItem(safeWorks, `${dailySignalKey}:guide-work`, work => `${work.code}:${work.title}`);
+  const dailyConcept = getDailyItem(safeConcepts, `${dailySignalKey}:guide-concept`, concept => `${concept.code}:${concept.term}`);
+  const dailyQuestion = getDailyItem(safeQuestions, `${dailySignalKey}:guide-question`, question => `${question.id}:${question.title}`);
+  const dailyMedia = getDailyItem(safeMediaItems, `${dailySignalKey}:guide-media`, item => `${item.code}:${item.title}`);
 
   return [
-    safeWorks[0] && {
+    dailyWork && {
       href: '#works-archive',
       label: 'WORK SIGNAL',
-      meta: safeWorks[0].medium || '작품 아카이브',
-      title: safeWorks[0].title,
+      meta: dailyWork.medium || '작품 아카이브',
+      title: dailyWork.title,
     },
-    safeConcepts[0] && {
+    dailyConcept && {
       href: '#concept-dictionary',
       label: 'CONCEPT SIGNAL',
-      meta: safeConcepts[0].english || safeConcepts[0].category || 'SF 개념',
-      title: safeConcepts[0].term,
+      meta: dailyConcept.english || dailyConcept.category || 'SF 개념',
+      title: dailyConcept.term,
     },
-    safeQuestions[0] && {
-      href: safeQuestions[0].id ? `/questions/${safeQuestions[0].id}` : '/questions',
+    dailyQuestion && {
+      href: dailyQuestion.id ? `/questions/${dailyQuestion.id}` : '/questions',
       label: 'BOARD SIGNAL',
-      meta: safeQuestions[0].category || '커뮤니티',
-      title: safeQuestions[0].title,
+      meta: dailyQuestion.category || '커뮤니티',
+      title: dailyQuestion.title,
     },
-    safeMediaItems[0] && {
+    dailyMedia && {
       href: '#media-archive',
       label: 'MEDIA SIGNAL',
-      meta: safeMediaItems[0].category || safeMediaItems[0].medium || '미디어',
-      title: safeMediaItems[0].title,
+      meta: dailyMedia.category || dailyMedia.medium || '미디어',
+      title: dailyMedia.title,
     },
   ].filter(Boolean);
 }
 
 export default function HomeGuideSection({
   concepts,
+  dailySignalKey,
   mediaItems,
   questions,
   works,
 }) {
-  const signals = getSignalItems({ concepts, mediaItems, questions, works });
+  const signals = getSignalItems({ concepts, dailySignalKey, mediaItems, questions, works });
 
   return (
     <section className="home-guide-section" aria-label="처음 온 탐사자 안내와 오늘의 추천 신호">

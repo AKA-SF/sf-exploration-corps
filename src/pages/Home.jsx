@@ -29,6 +29,7 @@ import {
 import useCommunityComposer from './home/useCommunityComposer';
 import useConceptDictionary from './home/useConceptDictionary';
 import useCoordinateMap from './home/useCoordinateMap';
+import useDailySignalKey from './home/useDailySignalKey';
 import useHomeData from './home/useHomeData';
 import useHomeModalProps from './home/useHomeModalProps';
 import useHomeStatus from './home/useHomeStatus';
@@ -93,6 +94,7 @@ function getRelatedItemsForWork(work, items, limit = 4) {
 export default function Home() {
   const { user } = useAuth();
   const { showActivityToast } = useActivityToast();
+  const dailySignalKey = useDailySignalKey();
   const archiveMode = 'random';
   const {
     activeConceptCode,
@@ -112,6 +114,7 @@ export default function Home() {
     worksArchiveRef,
   } = useHomeData({
     conceptEntries,
+    dailySignalKey,
     fallbackWorks,
     getRandomWorks,
     mergeWorksByCode,
@@ -134,6 +137,7 @@ export default function Home() {
     user,
   });
   const workArchiveControls = useWorkArchiveInteractions({
+    dailySignalKey,
     getRandomWorks,
     setRandomWorkCodes,
     setWorks,
@@ -286,6 +290,7 @@ export default function Home() {
   } = useWorksArchivePreview({ randomWorkCodes, works });
   const { metrics, recentSignals, systemReady } = useHomeStatus({
     concepts,
+    dailySignalKey,
     dashboard,
     mediaItems,
     selectedConcept,
@@ -313,6 +318,7 @@ export default function Home() {
 
       <HomeGuideSection
         concepts={visibleConcepts}
+        dailySignalKey={dailySignalKey}
         mediaItems={previewMedia}
         questions={dashboard.questions}
         works={displayedWorks}

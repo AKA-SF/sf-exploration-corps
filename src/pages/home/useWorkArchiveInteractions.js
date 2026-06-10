@@ -22,6 +22,7 @@ const workStatusLabels = {
 };
 
 export default function useWorkArchiveInteractions({
+  dailySignalKey,
   getRandomWorks,
   setRandomWorkCodes,
   setWorks,
@@ -170,7 +171,7 @@ export default function useWorkArchiveInteractions({
       const refreshed = await refreshResponse.json().catch(() => ({}));
       if (Array.isArray(refreshed.works) && refreshed.works.length > 0) {
         setWorks(refreshed.works);
-        setRandomWorkCodes(getRandomWorks(refreshed.works, 6).map(work => work.code));
+        setRandomWorkCodes(getRandomWorks(refreshed.works, 6, `works:${dailySignalKey}`).map(work => work.code));
       } else if (data.work) {
         setWorks(current => [data.work, ...current]);
       }
