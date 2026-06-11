@@ -268,10 +268,11 @@ export default function Home() {
           ? '이미 저장된 성향 결과입니다. 프로필 미션에 반영됩니다.'
           : '테스트 결과가 프로필에 저장되었습니다. 기본 훈련 미션에 반영됩니다.');
       } else if (isManualSave) {
+        const errorMessage = result?.error?.message ?? '';
         setTasteSaveStatus('error');
-        setTasteSaveMessage(result?.error?.message === '저장 응답 시간이 너무 오래 걸립니다.'
+        setTasteSaveMessage(errorMessage === '저장 응답 시간이 너무 오래 걸립니다.'
           ? '저장 응답이 지연되고 있습니다. 잠시 후 다시 눌러주세요.'
-          : '저장에 실패했습니다. 잠시 후 다시 눌러주세요.');
+          : `저장에 실패했습니다. ${errorMessage || '잠시 후 다시 눌러주세요.'}`);
       }
 
       return result;

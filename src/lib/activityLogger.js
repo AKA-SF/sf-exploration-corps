@@ -23,7 +23,12 @@ export async function recordUserActivity(user, activity) {
       .contains('metadata', { dedupe_key: dedupeKey })
       .limit(1);
 
-    if (lookupError) return { ok: false, error: lookupError };
+    // If the duplicate check fails, still record the activity. This keeps
+    // mission-critical actions such as taste-test completion from being blocked
+    // by a JSONB filter issue or an older Supabase schema.
+    if (lookupError) {
+      metadata.dedupe_lookup_error = lookupError.message;
+    }
     if (existing?.length) return { ok: true, skipped: true };
   }
 

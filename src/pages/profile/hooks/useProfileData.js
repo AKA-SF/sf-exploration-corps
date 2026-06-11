@@ -155,6 +155,7 @@ export function useProfileData(user) {
 
         const [
           { data: activityData, error: activityError },
+          { data: tasteActivityData, error: tasteActivityError },
           { data: statusData, error: statusError },
           { data: badgeData, error: badgeError },
           { data: workCommentData, error: workCommentError },
@@ -165,6 +166,13 @@ export function useProfileData(user) {
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
             .limit(PROFILE_ACTIVITY_LIMIT),
+          supabase
+            .from('activity_logs')
+            .select('id,action_type,points,genre,metadata,created_at')
+            .eq('user_id', user.id)
+            .eq('action_type', 'taste_test')
+            .order('created_at', { ascending: false })
+            .limit(1),
           supabase
             .from('work_statuses')
             .select('work_code,work_title,status,updated_at')
@@ -185,7 +193,11 @@ export function useProfileData(user) {
             .limit(PROFILE_WORK_COMMENT_LIMIT),
         ]);
 
-        const nextActivities = activityError ? [] : activityData ?? [];
+        const recentActivities = activityError ? [] : activityData ?? [];
+        const latestTasteActivity = tasteActivityError ? null : tasteActivityData?.[0] ?? null;
+        const nextActivities = latestTasteActivity && !recentActivities.some(activity => activity.id === latestTasteActivity.id)
+          ? [latestTasteActivity, ...recentActivities]
+          : recentActivities;
         const nextWorkStatuses = statusError ? mapLocalWorkStatuses(user.id) : statusData ?? [];
         const nextWorkComments = workCommentError ? [] : workCommentData ?? [];
         const workCodes = Array.from(new Set([
