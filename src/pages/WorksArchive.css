@@ -442,11 +442,26 @@
 }
 
 .reading-mode .works-full-search input {
-  color: #172126;
+  color: #172126 !important;
 }
 
 .reading-mode .works-full-search input::placeholder {
-  color: rgba(52, 68, 75, 0.5);
+  color: rgba(52, 68, 75, 0.62) !important;
+}
+
+.reading-mode .works-full-search,
+.reading-mode .works-full-search svg,
+.reading-mode .works-full-search span {
+  color: #2f6f78 !important;
+}
+
+body.reading-mode-active .mobile-container.reading-mode .works-full-search input {
+  background: transparent !important;
+  color: #172126 !important;
+}
+
+body.reading-mode-active .mobile-container.reading-mode .works-full-search input::placeholder {
+  color: rgba(52, 68, 75, 0.62) !important;
 }
 
 .reading-mode .works-full-card-top,

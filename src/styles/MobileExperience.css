@@ -1186,4 +1186,37 @@
   body.mobile-compact-active.reading-mode .comments-heading {
     color: #2f6f78 !important;
   }
+
+  body.mobile-compact-active .reading-mode .home-topbar,
+  body.mobile-compact-active.reading-mode .home-topbar {
+    border-bottom-color: rgba(25, 247, 241, 0.2) !important;
+    background: rgba(1, 8, 12, 0.92) !important;
+    color: #eafcff !important;
+  }
+
+  body.mobile-compact-active .reading-mode .home-topbar *,
+  body.mobile-compact-active.reading-mode .home-topbar * {
+    background: transparent !important;
+    color: #eafcff !important;
+  }
+
+  body.mobile-compact-active .reading-mode .brand-mark em,
+  body.mobile-compact-active .reading-mode .system-status span,
+  body.mobile-compact-active.reading-mode .brand-mark em,
+  body.mobile-compact-active.reading-mode .system-status span {
+    color: rgba(158, 239, 242, 0.82) !important;
+  }
+
+  body.mobile-compact-active .reading-mode .top-nav a,
+  body.mobile-compact-active.reading-mode .top-nav a {
+    border-color: rgba(25, 247, 241, 0.16) !important;
+    background: rgba(0, 16, 23, 0.52) !important;
+    color: #dffcff !important;
+  }
+
+  body.mobile-compact-active .reading-mode .system-status,
+  body.mobile-compact-active.reading-mode .system-status {
+    border-color: rgba(25, 247, 241, 0.18) !important;
+    background: rgba(0, 16, 23, 0.48) !important;
+  }
 }
