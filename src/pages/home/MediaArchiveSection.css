@@ -88,8 +88,9 @@
   place-items: center;
   aspect-ratio: 16 / 9;
   min-height: 0;
+  overflow: hidden;
   border-bottom: 1px solid rgba(25, 247, 241, 0.18);
-  background: rgba(0, 8, 12, 0.7);
+  background: #02080d;
   color: var(--cyan);
 }
 
@@ -98,6 +99,8 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center center;
+  transform: scale(1.015);
 }
 
 .media-thumb svg {

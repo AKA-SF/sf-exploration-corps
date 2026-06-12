@@ -4,6 +4,7 @@ import { multiSelect, pick, plainText } from './_notionProperties.js';
 
 const DEFAULT_MEDIA_DATABASE_ID = '36898dbef69d80fc98caf262593fc53b';
 const MEDIA_CACHE_TTL_MS = 10 * 60 * 1000;
+const MEDIA_CACHE_VERSION = 'v2-thumbnails';
 
 function getYouTubeId(link) {
   if (!link) return '';
@@ -14,6 +15,10 @@ function getYouTubeId(link) {
   } catch {
     return link.match(/(?:v=|youtu\.be\/|embed\/|shorts\/)([^&?/]+)/)?.[1] ?? '';
   }
+}
+
+function getYouTubeThumbnail(youtubeId) {
+  return youtubeId ? `https://i.ytimg.com/vi/${youtubeId}/hq720.jpg` : '';
 }
 
 function normalizeMediaCategory(category = '') {
@@ -70,7 +75,7 @@ function mapPageToMedia(page, index) {
     year,
     date,
     tags: tags.length > 0 ? tags : ['Media'],
-    thumbnail: youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : '',
+    thumbnail: getYouTubeThumbnail(youtubeId),
   };
 }
 
@@ -98,7 +103,7 @@ export default async function handler(request, response) {
   let cache;
   let media;
   try {
-    const cached = await getDurableCachedJson(`media:${databaseId}`, MEDIA_CACHE_TTL_MS, async () => {
+    const cached = await getDurableCachedJson(`media:${databaseId}:${MEDIA_CACHE_VERSION}`, MEDIA_CACHE_TTL_MS, async () => {
       const results = await queryNotionDatabaseAll(token, databaseId);
       return results
         .map(mapPageToMedia)
