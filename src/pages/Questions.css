@@ -1327,11 +1327,10 @@
   }
 
   .question-write-fab {
-    right: 12px;
-    bottom: 14px;
-    left: 12px;
-    width: auto;
+    position: static;
+    width: min(100%, 366px);
     min-height: 48px;
+    margin: 16px auto 0;
     padding: 0 16px;
   }
 
@@ -1355,25 +1354,70 @@
   }
 
   .question-row {
-    grid-template-columns: 1fr;
-    gap: 6px;
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      "code views"
+      "category category"
+      "title title"
+      "author date";
+    gap: 8px 10px;
     align-items: start;
     padding: 14px 16px;
   }
 
+  .question-row .question-code {
+    grid-area: code;
+  }
+
+  .question-row .question-category {
+    grid-area: category;
+    justify-self: start;
+    align-self: start;
+    max-width: 100%;
+    width: auto;
+    white-space: normal;
+  }
+
   .question-row strong {
+    grid-area: title;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 6px;
+    min-width: 0;
+    overflow: visible;
     white-space: normal;
     overflow-wrap: anywhere;
   }
 
-  .question-row span,
-  .question-row time {
+  .question-row strong > span {
+    min-width: 0;
     overflow-wrap: anywhere;
   }
 
-  .question-row .question-category {
+  .question-row .question-title-comments {
+    flex: 0 0 auto;
+  }
+
+  .question-row > span:nth-of-type(3) {
+    grid-area: author;
     min-width: 0;
-    min-height: 24px;
+  }
+
+  .question-row time {
+    grid-area: date;
+    justify-self: end;
+    white-space: nowrap;
+  }
+
+  .question-row .question-views {
+    grid-area: views;
+    justify-self: end;
+  }
+
+  .question-row > span,
+  .question-row time {
+    overflow-wrap: anywhere;
   }
 
   .question-detail {

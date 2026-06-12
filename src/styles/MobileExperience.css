@@ -667,12 +667,13 @@
 
   .question-row {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     grid-template-areas:
-      "code category views"
-      "title title title"
-      "author date date";
-    gap: 9px 10px;
+      "code views"
+      "category category"
+      "title title"
+      "author date";
+    gap: 8px 10px;
     min-height: auto;
     margin-bottom: 10px;
     padding: 14px;
@@ -686,16 +687,37 @@
 
   .question-row .question-category {
     grid-area: category;
+    justify-self: start;
+    align-self: start;
+    width: auto;
+    max-width: 100%;
+    white-space: normal;
   }
 
   .question-row strong {
     grid-area: title;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-width: 0;
+    overflow: visible;
     white-space: normal;
     line-height: 1.35;
+    overflow-wrap: anywhere;
   }
 
-  .question-row span:nth-of-type(3) {
+  .question-row strong > span {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .question-row .question-title-comments {
+    flex: 0 0 auto;
+  }
+
+  .question-row > span:nth-of-type(3) {
     grid-area: author;
+    min-width: 0;
   }
 
   .question-row time {
@@ -723,10 +745,9 @@
   }
 
   .question-write-fab {
-    right: var(--mobile-pad);
-    bottom: 18px;
-    left: var(--mobile-pad);
-    width: auto;
+    position: static;
+    width: min(100%, 366px);
+    margin: 16px auto 0;
   }
 
   .question-write-modal {
