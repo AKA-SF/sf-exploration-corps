@@ -861,17 +861,17 @@
 
 .question-form button:disabled {
   border: 1px solid rgba(25, 247, 241, 0.28);
-  color: rgba(210, 255, 253, 0.78);
-  background: rgba(25, 247, 241, 0.12);
+  color: #eaffff;
+  background: rgba(0, 18, 24, 0.92);
   cursor: not-allowed;
   opacity: 1;
   box-shadow: none;
 }
 
 .question-form .question-submit-button:disabled {
-  border-color: rgba(25, 247, 241, 0.34);
-  color: rgba(220, 255, 253, 0.82);
-  background: linear-gradient(180deg, rgba(25, 247, 241, 0.18), rgba(25, 247, 241, 0.09));
+  border-color: rgba(25, 247, 241, 0.52);
+  color: #f3ffff;
+  background: linear-gradient(180deg, rgba(25, 247, 241, 0.28), rgba(0, 16, 23, 0.92));
   text-shadow: none;
 }
 
@@ -1210,17 +1210,17 @@
 }
 
 .reading-mode .question-form button:disabled {
-  border-color: rgba(47, 111, 120, 0.26) !important;
-  background: rgba(47, 111, 120, 0.1) !important;
-  color: #2f6f78 !important;
+  border-color: rgba(47, 111, 120, 0.32) !important;
+  background: #f4ead6 !important;
+  color: #172126 !important;
   text-shadow: none !important;
   box-shadow: none !important;
 }
 
 .reading-mode .question-form .question-submit-button:disabled {
-  border-color: rgba(47, 111, 120, 0.26) !important;
-  color: #2f6f78 !important;
-  background: rgba(47, 111, 120, 0.1) !important;
+  border-color: rgba(47, 111, 120, 0.42) !important;
+  color: #172126 !important;
+  background: linear-gradient(180deg, #fff8e8, #d9caa8) !important;
 }
 
 .reading-mode .question-status.is-success {
