@@ -59,8 +59,8 @@
   --ui-shadow: rgba(0, 255, 255, 0.16);
   
   /* Typography */
-  --font-main: 'Outfit', sans-serif;
-  --font-mono: 'Space Mono', monospace;
+  --font-main: 'Outfit', 'Noto Sans KR', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'Space Mono', 'Noto Sans KR', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
 }
 
 * {
@@ -69,11 +69,20 @@
   padding: 0;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+  font-synthesis: none;
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
+}
+
 body {
   margin: 0;
   background-color: var(--bg-color);
   color: var(--text-main);
   font-family: var(--font-main);
+  font-synthesis: none;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   overflow: hidden; /* Mobile app feel, handle scrolling inside components */
@@ -153,8 +162,16 @@ button {
   border: none;
   color: inherit;
   font-family: inherit;
+  font-synthesis: none;
   cursor: pointer;
   outline: none;
+}
+
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-synthesis: none;
 }
 
 /* Shared spatial camera surface */
