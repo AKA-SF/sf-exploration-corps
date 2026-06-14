@@ -10,6 +10,8 @@ lerna-debug.log*
 node_modules
 dist
 dist-ssr
+
+# Local media/render outputs - keep these outside the public site bundle.
 av-generator-live/
 public/rendered-shorts/
 *.local
