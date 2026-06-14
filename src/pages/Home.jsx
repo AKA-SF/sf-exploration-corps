@@ -1,19 +1,13 @@
-import { lazy, Suspense, useCallback, useMemo, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import PageTransition from '../components/PageTransition';
 import { useActivityToast } from '../context/activityToastContextValue';
 import { useAuth } from '../context/authContextValue';
 import { getStorageItem, setStorageItem } from '../lib/browserStorage';
 import ArchiveDock from './home/ArchiveDock';
-import CommunitySection from './home/CommunitySection';
-import ConceptDictionarySection from './home/ConceptDictionarySection';
 import ContactSection from './home/ContactSection';
-import CoordinatesSection from './home/CoordinatesSection';
 import HeroSection from './home/HeroSection';
 import HomeGuideSection from './home/HomeGuideSection';
 import HomeTopBar from './home/HomeTopBar';
-import MediaArchiveSection from './home/MediaArchiveSection';
-import TasteTestSection from './home/TasteTestSection';
-import WorksArchiveSection from './home/WorksArchiveSection';
 import {
   archiveCards,
   conceptEntries,
@@ -50,6 +44,21 @@ import './home/HomeResponsive.css';
 import '../styles/MobileExperience.css';
 
 const HomeModals = lazy(() => import('./home/HomeModals'));
+const CommunitySection = lazy(() => import('./home/CommunitySection'));
+const ConceptDictionarySection = lazy(() => import('./home/ConceptDictionarySection'));
+const CoordinatesSection = lazy(() => import('./home/CoordinatesSection'));
+const MediaArchiveSection = lazy(() => import('./home/MediaArchiveSection'));
+const TasteTestSection = lazy(() => import('./home/TasteTestSection'));
+const WorksArchiveSection = lazy(() => import('./home/WorksArchiveSection'));
+
+function SectionLoader({ label = 'ARCHIVE MODULE LOADING' }) {
+  return (
+    <div className="home-section-loader" aria-live="polite" role="status">
+      <span>{label}</span>
+      <i aria-hidden="true" />
+    </div>
+  );
+}
 
 function getSignalSearchText(item) {
   return [
@@ -102,6 +111,7 @@ function withTimeout(promise, timeoutMs, message) {
 export default function Home() {
   const { user } = useAuth();
   const { showActivityToast } = useActivityToast();
+  const [deferredSectionsReady, setDeferredSectionsReady] = useState(false);
   const [tasteSaveStatus, setTasteSaveStatus] = useState('idle');
   const [tasteSaveMessage, setTasteSaveMessage] = useState('');
   const dailySignalKey = useDailySignalKey();
@@ -360,6 +370,14 @@ export default function Home() {
     works,
   });
 
+  useEffect(() => {
+    if (deferredSectionsReady) return undefined;
+    const schedule = window.requestIdleCallback ?? (callback => window.setTimeout(callback, 240));
+    const cancel = window.cancelIdleCallback ?? window.clearTimeout;
+    const handle = schedule(() => setDeferredSectionsReady(true), { timeout: 900 });
+    return () => cancel(handle);
+  }, [deferredSectionsReady]);
+
   return (
     <PageTransition className="archive-home">
       <HomeTopBar
@@ -387,93 +405,99 @@ export default function Home() {
         works={displayedWorks}
       />
 
-      <TasteTestSection
-        onAnswer={updateTasteAnswer}
-        onReset={resetTasteTestWithSaveState}
-        onSaveResult={(result) => recordTasteComplete(result, { manual: true })}
-        saveMessage={tasteSaveMessage}
-        saveStatus={tasteSaveStatus}
-        tasteAnswers={tasteAnswers}
-        tasteProfile={tasteProfile}
-        tasteQuestionSet={tasteQuestionSet}
-        tasteRecommendations={tasteRecommendations}
-      />
+      {deferredSectionsReady ? (
+        <Suspense fallback={<SectionLoader />}>
+          <TasteTestSection
+            onAnswer={updateTasteAnswer}
+            onReset={resetTasteTestWithSaveState}
+            onSaveResult={(result) => recordTasteComplete(result, { manual: true })}
+            saveMessage={tasteSaveMessage}
+            saveStatus={tasteSaveStatus}
+            tasteAnswers={tasteAnswers}
+            tasteProfile={tasteProfile}
+            tasteQuestionSet={tasteQuestionSet}
+            tasteRecommendations={tasteRecommendations}
+          />
 
-      <div ref={worksArchiveRef}>
-        <WorksArchiveSection
-          displayedWorks={displayedWorks}
-          onOpenWorkDetail={openWorkDetail}
-          onOpenWorkSubmit={openWorkSubmit}
-          selectedWork={selectedWork}
-          workCategories={workCategories}
-          workCategoryCounts={workCategoryCounts}
-          worksCount={works.length}
-        />
-      </div>
+          <div ref={worksArchiveRef}>
+            <WorksArchiveSection
+              displayedWorks={displayedWorks}
+              onOpenWorkDetail={openWorkDetail}
+              onOpenWorkSubmit={openWorkSubmit}
+              selectedWork={selectedWork}
+              workCategories={workCategories}
+              workCategoryCounts={workCategoryCounts}
+              worksCount={works.length}
+            />
+          </div>
 
-      <div ref={mediaArchiveRef}>
-        <MediaArchiveSection
-          activeMediaArchivePath={activeMediaArchivePath}
-          activeMediaCategory={activeMediaCategory}
-          mediaCategories={mediaCategories}
-          onMediaCategoryChange={setActiveMediaCategory}
-          onRecordMediaSignal={recordMediaSignal}
-          previewMedia={previewMedia}
-        />
-      </div>
+          <div ref={mediaArchiveRef}>
+            <MediaArchiveSection
+              activeMediaArchivePath={activeMediaArchivePath}
+              activeMediaCategory={activeMediaCategory}
+              mediaCategories={mediaCategories}
+              onMediaCategoryChange={setActiveMediaCategory}
+              onRecordMediaSignal={recordMediaSignal}
+              previewMedia={previewMedia}
+            />
+          </div>
 
-      <CoordinatesSection
-        activeGenre={activeGenre}
-        hasCoordinateFocus={hasCoordinateFocus}
-        mapDescription={mapDescription}
-        mapPositions={mapPositions}
-        minimapViewport={minimapViewport}
-        onConceptSelect={selectConcept}
-        onLogOpen={openCoordinateLogModal}
-        onNodeSelect={handleGenreNodeClick}
-        onOpenWorkDetail={openWorkDetail}
-        onReset={resetCoordinateMap}
-        onViewChange={setMapView}
-        relatedCoordinateIds={relatedCoordinateIds}
-        recommendedRoutes={recommendedRoutes}
-        selectedCoordinate={selectedCoordinate}
-        selectedCoordinateConcepts={selectedCoordinateConcepts}
-        selectedCoordinateId={selectedCoordinateId}
-        selectedCoordinateRoutes={selectedCoordinateRoutes}
-        selectedCoordinateBoardQuestions={selectedCoordinateBoardQuestions}
-        selectedCoordinateQuestions={selectedCoordinateQuestions}
-        selectedCoordinateWorks={selectedCoordinateWorks}
-        visibleConnections={visibleConnections}
-      />
+          <CoordinatesSection
+            activeGenre={activeGenre}
+            hasCoordinateFocus={hasCoordinateFocus}
+            mapDescription={mapDescription}
+            mapPositions={mapPositions}
+            minimapViewport={minimapViewport}
+            onConceptSelect={selectConcept}
+            onLogOpen={openCoordinateLogModal}
+            onNodeSelect={handleGenreNodeClick}
+            onOpenWorkDetail={openWorkDetail}
+            onReset={resetCoordinateMap}
+            onViewChange={setMapView}
+            relatedCoordinateIds={relatedCoordinateIds}
+            recommendedRoutes={recommendedRoutes}
+            selectedCoordinate={selectedCoordinate}
+            selectedCoordinateConcepts={selectedCoordinateConcepts}
+            selectedCoordinateId={selectedCoordinateId}
+            selectedCoordinateRoutes={selectedCoordinateRoutes}
+            selectedCoordinateBoardQuestions={selectedCoordinateBoardQuestions}
+            selectedCoordinateQuestions={selectedCoordinateQuestions}
+            selectedCoordinateWorks={selectedCoordinateWorks}
+            visibleConnections={visibleConnections}
+          />
 
-      <div ref={conceptSectionRef}>
-        <ConceptDictionarySection
-          conceptFeatureRef={conceptFeatureRef}
-          conceptReadingMode={conceptReadingMode}
-          conceptsCount={concepts.length}
-          getConceptSource={getConceptSource}
-          onConceptSelect={selectConcept}
-          onReadingModeToggle={toggleConceptReadingMode}
-          onShowAllToggle={toggleShowAllConcepts}
-          selectedConcept={selectedConcept}
-          showAllConcepts={showAllConcepts}
-          visibleConcepts={visibleConcepts}
-        />
-      </div>
+          <div ref={conceptSectionRef}>
+            <ConceptDictionarySection
+              conceptFeatureRef={conceptFeatureRef}
+              conceptReadingMode={conceptReadingMode}
+              conceptsCount={concepts.length}
+              getConceptSource={getConceptSource}
+              onConceptSelect={selectConcept}
+              onReadingModeToggle={toggleConceptReadingMode}
+              onShowAllToggle={toggleShowAllConcepts}
+              selectedConcept={selectedConcept}
+              showAllConcepts={showAllConcepts}
+              visibleConcepts={visibleConcepts}
+            />
+          </div>
 
-      <div ref={communitySectionRef}>
-        <CommunitySection
-          authorName={communityAuthorName}
-          isAuthenticated={isCommunityAuthenticated}
-          onQuestionFormChange={updateQuestionForm}
-          onQuestionSubmit={submitQuestion}
-          questionForm={questionForm}
-          questionLoadState={dashboard.loadState?.questions}
-          questionMessage={questionMessage}
-          questionStatus={questionStatus}
-          questions={dashboard.questions}
-        />
-      </div>
+          <div ref={communitySectionRef}>
+            <CommunitySection
+              authorName={communityAuthorName}
+              isAuthenticated={isCommunityAuthenticated}
+              onQuestionFormChange={updateQuestionForm}
+              onQuestionSubmit={submitQuestion}
+              questionForm={questionForm}
+              questionLoadState={dashboard.loadState?.questions}
+              questionMessage={questionMessage}
+              questionStatus={questionStatus}
+              questions={dashboard.questions}
+            />
+          </div>
+        </Suspense>
+      ) : (
+        <SectionLoader label="ARCHIVE MODULES STANDING BY" />
+      )}
 
       <ContactSection contactChannels={contactChannels} />
 
