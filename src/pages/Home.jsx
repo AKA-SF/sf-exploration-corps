@@ -135,6 +135,7 @@ export default function Home() {
   } = useHomeData({
     conceptEntries,
     dailySignalKey,
+    deferredSectionsReady,
     fallbackWorks,
     getRandomWorks,
     mergeWorksByCode,

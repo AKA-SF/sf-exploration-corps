@@ -34,6 +34,7 @@ const fetchJson = async (path, options = {}) => {
 export default function useHomeData({
   conceptEntries,
   dailySignalKey,
+  deferredSectionsReady = true,
   fallbackWorks,
   getRandomWorks,
   mergeWorksByCode,
@@ -52,6 +53,8 @@ export default function useHomeData({
   const communitySectionRef = useRef(null);
 
   useEffect(() => {
+    if (!deferredSectionsReady) return undefined;
+
     const sectionTargets = [
       ['worksCovers', worksArchiveRef],
       ['media', mediaArchiveRef],
@@ -79,13 +82,16 @@ export default function useHomeData({
     }, { rootMargin: '420px 0px' });
 
     sectionTargets.forEach(([key, ref]) => {
-      if (!ref.current) return;
+      if (!ref.current) {
+        setLazySections(current => current[key] ? current : { ...current, [key]: true });
+        return;
+      }
       ref.current.dataset.lazySection = key;
       observer.observe(ref.current);
     });
 
     return () => observer.disconnect();
-  }, []);
+  }, [deferredSectionsReady]);
 
   useEffect(() => {
     let isMounted = true;
