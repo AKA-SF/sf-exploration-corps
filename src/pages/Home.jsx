@@ -271,7 +271,7 @@ export default function Home() {
           taste_title: tasteProfileResult.title,
           node: 'taste-test',
         },
-      }, { force: isManualSave, timeoutMs: 12000 });
+      }, { force: true, timeoutMs: 12000 });
 
       if (result?.ok) {
         setTasteSaveStatus('saved');
