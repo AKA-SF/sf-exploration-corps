@@ -8,6 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "test:contrast": "node scripts/reading-contrast-check.mjs",
     "test:core": "node scripts/core-flow-check.mjs",
     "test:screen": "node scripts/screen-qa.mjs"
   },

@@ -96,7 +96,7 @@ export default function Badges() {
         <Link className="profile-signout" to="/profile">프로필로 돌아가기</Link>
       </header>
 
-      <section className="profile-badge-hero panel">
+      <section className="profile-badge-hero panel panel-accent">
         <div>
           <span className="mono text-muted text-xs">BADGE STATUS</span>
           <h3 className="mono">{unlockedCount} / {badges.length} UNLOCKED</h3>

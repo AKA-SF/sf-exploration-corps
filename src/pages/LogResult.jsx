@@ -81,7 +81,7 @@ const LogResult = () => {
           initial="hidden"
           animate="show"
         >
-          <motion.header variants={itemVariants} className="report-header panel">
+          <motion.header variants={itemVariants} className="report-header panel panel-accent">
             <div className="header-left">
               <span className="mono text-muted text-xs">REPORT_ID</span>
               <h2 className="mono text-cyan">{logData.id}</h2>
@@ -90,7 +90,7 @@ const LogResult = () => {
           </motion.header>
 
           {aggRisk > 70 && (
-            <motion.div variants={itemVariants} className="alert-panel panel glitch-hover">
+            <motion.div variants={itemVariants} className="alert-panel panel panel-accent glitch-hover">
               <AlertTriangle className="text-amber alert-icon pulse" />
               <div className="alert-text">
                 <span className="mono text-amber bold">WARNING: HIGH_DEREALIZATION_RISK</span>
@@ -99,7 +99,7 @@ const LogResult = () => {
             </motion.div>
           )}
 
-          <motion.div variants={itemVariants} className="data-visualization panel">
+          <motion.div variants={itemVariants} className="data-visualization panel panel-accent">
             <h3 className="mono text-xs text-muted section-title">탐사 결과 <span className="text-cyan">/ DATA_ANALYSIS</span></h3>
             
             <div className="viz-content">

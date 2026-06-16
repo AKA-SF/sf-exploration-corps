@@ -41,7 +41,7 @@ export default function ProfileHubPanel({
   ];
 
   return (
-    <section className="profile-hub-panel panel profile-dashboard-panel">
+    <section className="profile-hub-panel panel panel-accent profile-dashboard-panel">
       <div className="profile-hub-main">
         <div>
           <span className="mono text-muted text-xs">TODAY'S DASHBOARD</span>

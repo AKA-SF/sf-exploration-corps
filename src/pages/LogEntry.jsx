@@ -123,7 +123,7 @@ const LogEntry = () => {
         </div>
       </header>
 
-      <section className="uplink-brief panel">
+      <section className="uplink-brief panel panel-accent">
         <div>
           <span className="mono brief-kicker"><RadioTower size={12} /> REPORT_UPLINK</span>
           <h3>{prefilled.prefilledTitle ? '선택한 작품 신호를 기록 중' : '빠른 탐사 보고서 작성'}</h3>

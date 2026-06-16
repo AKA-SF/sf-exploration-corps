@@ -305,24 +305,30 @@ select {
   position: relative;
 }
 
-.panel::before {
+.panel.panel-accent {
+  --panel-accent-line: var(--ui-accent, var(--primary-cyan));
+}
+
+.panel.panel-accent::before {
   content: '';
   position: absolute;
   top: -1px;
   left: -1px;
   width: 10px;
   height: 10px;
-  border-top: 1px solid var(--primary-cyan);
-  border-left: 1px solid var(--primary-cyan);
+  border-top: 1px solid var(--panel-accent-line);
+  border-left: 1px solid var(--panel-accent-line);
+  pointer-events: none;
 }
 
-.panel::after {
+.panel.panel-accent::after {
   content: '';
   position: absolute;
   bottom: -1px;
   right: -1px;
   width: 10px;
   height: 10px;
-  border-bottom: 1px solid var(--primary-cyan);
-  border-right: 1px solid var(--primary-cyan);
+  border-bottom: 1px solid var(--panel-accent-line);
+  border-right: 1px solid var(--panel-accent-line);
+  pointer-events: none;
 }

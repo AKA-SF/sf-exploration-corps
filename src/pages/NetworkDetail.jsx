@@ -57,7 +57,7 @@ const NetworkDetail = () => {
         <h2 className="mono title-glitch text-sm">COMM_LINK: {log.id}</h2>
       </header>
 
-      <div className="log-data-panel panel">
+      <div className="log-data-panel panel panel-accent">
         <div className="log-data-header">
           <h1 className="mono">{log.title}</h1>
           <span className="mono text-xs text-cyan">SENDER: {log.explorerId}</span>

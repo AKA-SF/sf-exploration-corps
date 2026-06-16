@@ -438,7 +438,7 @@ const Network = () => {
         <p className="mono text-muted text-xs">탐사 장비: 기록, 감정, 섹터가 비슷한 신호를 수신하고 교신망으로 연결합니다.</p>
       </header>
 
-      <section className="network-primer network-control-deck panel">
+      <section className="network-primer network-control-deck panel panel-accent">
         <div className="network-control-status">
           <div className="relay-header mono">
             <MessageSquareText size={12} />
@@ -635,7 +635,7 @@ const Network = () => {
               })}
 
               {spatialLogs.length === 0 && (
-                <div className="network-empty-state panel">
+                <div className="network-empty-state panel panel-accent">
                   <span className="mono">NO_LIVE_SIGNAL</span>
                   <strong>아직 수신된 탐사 신호가 없습니다</strong>
                   <p>첫 탐사 보고서를 송신하면 이 공간에 감정 반응, 유사 탐사자, 연결 작품 신호가 나타납니다.</p>

@@ -3,7 +3,7 @@ import { Rocket } from 'lucide-react';
 
 export function ProfileMileagePanel({ points, rank }) {
   return (
-    <section className="class-track panel">
+    <section className="class-track panel panel-accent">
       <div className="class-track-header">
         <div>
           <span className="mono text-muted text-xs">EXPLORATION MILEAGE</span>

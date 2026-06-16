@@ -14,7 +14,7 @@ export default function ProfileIdentityCard({
     : baseSeed;
 
   return (
-    <section className="profile-card panel profile-identity-card">
+    <section className="profile-card panel panel-accent profile-identity-card">
       <CrewAvatar seed={avatarSeed} label={nickname || '탐사 대원'} />
       <div className="agent-id">
         <span className="mono text-muted text-xs">EXPLORER_CALLSIGN</span>
