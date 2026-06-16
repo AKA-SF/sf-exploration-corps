@@ -231,7 +231,7 @@ select {
   right: 0;
   background: rgba(255, 255, 255, 0.03);
   z-index: 2;
-  animation: flicker 0.15s infinite;
+  opacity: 0.012;
   pointer-events: none;
 }
 

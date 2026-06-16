@@ -32,7 +32,7 @@ const InteractiveBackground = ({ lowPower = false }) => {
     isStatic,
     compact: motionProfile.compact,
   });
-  const showGeometry = isVisualSurface && !isStatic && !(motionProfile.compact && !isHome);
+  const showGeometry = isVisualSurface && !isStatic && !isHome && !(motionProfile.compact && !isHome);
   
   const speed = 1 + (risk / 100) * 3; 
   const isDanger = risk > 80 && isVisualSurface;
@@ -49,7 +49,7 @@ const InteractiveBackground = ({ lowPower = false }) => {
     <>
       <div className={`noise-bg ${isStatic ? 'is-static' : ''}`}></div>
       <div className={`crt-overlay ${isStatic || motionProfile.compact ? 'is-static' : ''}`}></div>
-      {!isStatic && !motionProfile.compact && <div className="scanline"></div>}
+      {isDanger && !isStatic && !motionProfile.compact && <div className="scanline"></div>}
 
       {showGeometry && (
         <div className="bg-geometry" style={{ filter: isDanger ? 'hue-rotate(180deg) saturate(2)' : 'none' }}>

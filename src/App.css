@@ -15,7 +15,7 @@
   height: 100%;
   pointer-events: none;
   z-index: 0;
-  opacity: 0.6;
+  opacity: 0.38;
 }
 
 .radar-svg {
@@ -32,8 +32,8 @@
 }
 
 .geo-pulse {
-  opacity: 0.1;
-  animation: geo-pulse var(--duration, 4s) ease-in-out infinite;
+  opacity: 0.16;
+  animation: none;
 }
 
 .geo-typing-pulse {

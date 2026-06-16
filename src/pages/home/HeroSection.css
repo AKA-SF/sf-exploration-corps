@@ -406,21 +406,19 @@
 
 .radar-ring-a {
   inset: 7%;
-  animation: radarRotate 16s linear infinite;
   border-top-color: transparent;
   border-left-style: dashed;
 }
 
 .radar-ring-b {
   inset: 22%;
-  animation: radarRotate 11s linear infinite reverse;
   border-right-color: transparent;
   border-bottom-style: dashed;
 }
 
 .radar-ring-c {
   inset: 36%;
-  animation: radarPulse 3.2s ease-in-out infinite;
+  opacity: 0.42;
   border-style: dotted;
 }
 
@@ -438,18 +436,14 @@
   position: absolute;
   inset: 16%;
   border-radius: 50%;
-  animation: radarRotate 8s linear infinite;
 }
 
 .radar-orbit-b {
   inset: 27%;
-  animation-duration: 12s;
-  animation-direction: reverse;
 }
 
 .radar-orbit-c {
   inset: 39%;
-  animation-duration: 6.5s;
 }
 
 .radar-orbit i {
@@ -486,8 +480,7 @@
 .radar-blip {
   background: #d9fbff;
   box-shadow: 0 0 15px rgba(201, 252, 255, 0.9);
-  animation: radarBlip 2.4s ease-in-out infinite;
-  animation-delay: var(--blip-delay, 0s);
+  opacity: 0.72;
 }
 
 .radar-dust {
