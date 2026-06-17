@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useEffect, useState } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { BookOpen, Monitor, Smartphone, TerminalSquare } from 'lucide-react';
 import './App.css';
@@ -8,6 +8,7 @@ import InteractiveBackground from './components/InteractiveBackground';
 import { ActivityToastProvider } from './context/ActivityToastContext';
 import { AuthProvider } from './context/AuthContext';
 import { getStorageItem, removeStorageItem, setStorageItem } from './lib/browserStorage';
+import { applySeoMetadata, getSeoMetadata } from './lib/seo';
 
 const Home = lazy(() => import('./pages/Home'));
 const ExplorationLog = lazy(() => import('./pages/ExplorationLog'));
@@ -53,6 +54,7 @@ function App() {
   const location = useLocation();
   const [siteMode, setSiteMode] = useState(() => getStorageItem('sf-site-mode', 'console'));
   const [viewMode, setViewMode] = useState(getInitialViewMode);
+  const seoMetadata = useMemo(() => getSeoMetadata(location.pathname), [location.pathname]);
   const isAdminSurface = location.pathname.startsWith('/admin');
   const isDeviceSurface = location.pathname.startsWith('/profile')
     || location.pathname.startsWith('/badges')
@@ -75,6 +77,10 @@ function App() {
     removeStorageItem(VIEW_MODE_STORAGE_KEY);
     setViewMode('mobile');
   }, []);
+
+  useEffect(() => {
+    applySeoMetadata(seoMetadata);
+  }, [seoMetadata]);
 
   useEffect(() => {
     setStorageItem('sf-site-mode', siteMode);

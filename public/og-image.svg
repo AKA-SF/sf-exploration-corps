@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">SF 탐사단</title>
+  <desc id="desc">SF 작품과 개념을 우주 탐사 지도처럼 연결하는 과학소설 아카이브</desc>
+  <defs>
+    <radialGradient id="planet" cx="40%" cy="45%" r="62%">
+      <stop offset="0%" stop-color="#1ef7f1" stop-opacity="0.32"/>
+      <stop offset="42%" stop-color="#0a6172" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#02080d" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="line" x1="0%" x2="100%" y1="0%" y2="0%">
+      <stop offset="0%" stop-color="#19f7f1" stop-opacity="0"/>
+      <stop offset="45%" stop-color="#19f7f1" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ffb000" stop-opacity="0"/>
+    </linearGradient>
+    <pattern id="grid" width="48" height="48" patternUnits="userSpaceOnUse">
+      <path d="M48 0H0v48" fill="none" stroke="#19f7f1" stroke-opacity="0.08" stroke-width="1"/>
+    </pattern>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  <rect width="1200" height="630" fill="#02080d"/>
+  <rect width="1200" height="630" fill="url(#grid)"/>
+  <circle cx="915" cy="286" r="255" fill="url(#planet)"/>
+  <circle cx="915" cy="286" r="164" fill="none" stroke="#19f7f1" stroke-opacity="0.36" stroke-width="2"/>
+  <circle cx="915" cy="286" r="94" fill="none" stroke="#19f7f1" stroke-opacity="0.42" stroke-width="2"/>
+  <path d="M730 286h370M915 101v370" stroke="#19f7f1" stroke-opacity="0.38" stroke-width="2"/>
+  <path d="M915 286 1090 185" stroke="#19f7f1" stroke-width="18" stroke-linecap="round" stroke-opacity="0.22"/>
+  <circle cx="915" cy="286" r="16" fill="#19f7f1" filter="url(#glow)"/>
+  <path d="M70 70h400l35 28h260M1130 560H735l-35-28H430" fill="none" stroke="#19f7f1" stroke-opacity="0.62" stroke-width="3"/>
+  <rect x="54" y="52" width="1092" height="526" rx="26" fill="none" stroke="#19f7f1" stroke-opacity="0.38" stroke-width="2"/>
+  <rect x="78" y="78" width="1044" height="478" rx="12" fill="none" stroke="#19f7f1" stroke-opacity="0.18" stroke-width="1"/>
+  <text x="95" y="126" fill="#19f7f1" font-family="'Space Mono', monospace" font-size="22" letter-spacing="10">INTERSTELLAR ARCHIVE VESSEL</text>
+  <text x="95" y="255" fill="#ffffff" font-family="'Noto Sans KR', system-ui, sans-serif" font-size="104" font-weight="900">SF 탐사단</text>
+  <text x="98" y="326" fill="#19f7f1" font-family="'Space Mono', monospace" font-size="30" letter-spacing="12">SF EXPLORATION CORPS</text>
+  <text x="100" y="400" fill="#d5edf0" font-family="'Noto Sans KR', system-ui, sans-serif" font-size="30" font-weight="700">SF 작품, 개념, 미디어, 커뮤니티 기록을 연결하는</text>
+  <text x="100" y="444" fill="#d5edf0" font-family="'Noto Sans KR', system-ui, sans-serif" font-size="30" font-weight="700">과학소설 아카이브와 탐사 커뮤니티</text>
+  <rect x="100" y="492" width="330" height="52" fill="none" stroke="#19f7f1" stroke-opacity="0.7" stroke-width="2"/>
+  <text x="124" y="527" fill="#19f7f1" font-family="'Space Mono', monospace" font-size="18" letter-spacing="5">sf-explorer.net</text>
+  <rect x="727" y="486" width="368" height="44" fill="url(#line)" opacity="0.62"/>
+</svg>
