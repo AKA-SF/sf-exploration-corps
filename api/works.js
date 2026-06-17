@@ -10,6 +10,8 @@ import { getCachedAladinCover, mapWithConcurrency } from './_worksAladin.js';
 import { createNotionWork, mapPageToWork, splitTags } from './_worksNotion.js';
 
 const WORKS_CACHE_TTL_MS = 10 * 60 * 1000;
+const DEFAULT_MEDIA_WORKS_DATABASE_ID = '38298dbef69d80e49ddce149564394b7';
+const WORKS_CACHE_VERSION = 'v3-media-works';
 
 const apiCache = globalThis.__sfWorksApiCache ??= {
   worksWithoutCovers: null,
@@ -29,19 +31,80 @@ function clearWorksCache() {
   apiCache.pendingWorksWithCovers = null;
 }
 
-async function getWorksWithoutCovers(token, databaseId, shouldRefresh = false) {
-  const durableKey = `works:${databaseId}:base`;
+function getWorkCategorySlug(value = '') {
+  const normalized = String(value).replace(/\s/g, '').toLowerCase();
+  if (normalized.includes('애니') || normalized.includes('animation') || normalized.includes('anime')) return 'animation';
+  if (normalized.includes('게임') || normalized.includes('game')) return 'games';
+  if (
+    normalized.includes('영화')
+    || normalized.includes('cinema')
+    || normalized.includes('film')
+    || normalized.includes('movie')
+  ) return 'cinema';
+  return 'novels';
+}
+
+function normalizeMediaMedium(work) {
+  const source = `${work.medium ?? ''} ${work.category ?? ''}`;
+  const slug = getWorkCategorySlug(source);
+  if (slug === 'animation') return '애니메이션';
+  if (slug === 'games') return '게임';
+  if (slug === 'cinema') return '영화';
+  return work.medium || work.category || '영화';
+}
+
+async function queryMediaWorks(token, databaseId) {
+  if (!databaseId) return [];
+
+  try {
+    return await queryNotionDatabaseAll(token, databaseId);
+  } catch {
+    return [];
+  }
+}
+
+async function fetchWorksFromNotion(token, databaseId, mediaWorksDatabaseId) {
+  const [bookResults, mediaResults] = await Promise.all([
+    queryNotionDatabaseAll(token, databaseId),
+    queryMediaWorks(token, mediaWorksDatabaseId),
+  ]);
+
+  const bookWorks = bookResults
+    .map((page, index) => mapPageToWork(page, index, {
+      codePrefix: 'SFA',
+      defaultMedium: '소설',
+      source: 'books',
+    }))
+    .filter(work => work.title)
+    .map((work, index) => ({
+      ...work,
+      code: work.code.startsWith('SFA-') ? `SFA-${String(index + 1).padStart(3, '0')}` : work.code,
+      cover: '',
+      source: 'books',
+    }));
+
+  const mediaWorks = mediaResults
+    .map((page, index) => mapPageToWork(page, index, {
+      codePrefix: 'SFM',
+      defaultMedium: '영화',
+      source: 'media-works',
+    }))
+    .filter(work => work.title)
+    .map((work, index) => ({
+      ...work,
+      code: /^SF[AM]-/.test(work.code) ? `SFM-${String(index + 1).padStart(3, '0')}` : work.code,
+      medium: normalizeMediaMedium(work),
+      source: 'media-works',
+    }));
+
+  return [...bookWorks, ...mediaWorks];
+}
+
+async function getWorksWithoutCovers(token, databaseId, mediaWorksDatabaseId, shouldRefresh = false) {
+  const durableKey = `works:${databaseId}:${mediaWorksDatabaseId || 'no-media'}:base:${WORKS_CACHE_VERSION}`;
   if (!shouldRefresh) {
     const durable = await getDurableCachedJson(durableKey, WORKS_CACHE_TTL_MS, async () => {
-      const results = await queryNotionDatabaseAll(token, databaseId);
-      return results
-        .map(mapPageToWork)
-        .filter(work => work.title)
-        .map((work, index) => ({
-          ...work,
-          code: work.code.startsWith('SFA-') ? `SFA-${String(index + 1).padStart(3, '0')}` : work.code,
-          cover: '',
-        }));
+      return fetchWorksFromNotion(token, databaseId, mediaWorksDatabaseId);
     });
     apiCache.worksWithoutCovers = durable.value;
     apiCache.worksWithoutCoversExpiresAt = Date.now() + WORKS_CACHE_TTL_MS;
@@ -57,15 +120,7 @@ async function getWorksWithoutCovers(token, databaseId, shouldRefresh = false) {
   }
 
   const promise = getDurableCachedJson(durableKey, WORKS_CACHE_TTL_MS, async () => {
-    const results = await queryNotionDatabaseAll(token, databaseId);
-    return results
-      .map(mapPageToWork)
-      .filter(work => work.title)
-      .map((work, index) => ({
-        ...work,
-        code: work.code.startsWith('SFA-') ? `SFA-${String(index + 1).padStart(3, '0')}` : work.code,
-        cover: '',
-      }));
+    return fetchWorksFromNotion(token, databaseId, mediaWorksDatabaseId);
   }, { refresh: shouldRefresh })
     .then(({ value }) => value)
     .then(works => {
@@ -81,14 +136,14 @@ async function getWorksWithoutCovers(token, databaseId, shouldRefresh = false) {
   return { works: await promise, cache: 'MISS' };
 }
 
-async function getWorksWithCovers(token, databaseId, aladinApiKey, shouldRefresh = false) {
-  const durableKey = `works:${databaseId}:covers:${aladinApiKey ? 'enabled' : 'disabled'}`;
+async function getWorksWithCovers(token, databaseId, mediaWorksDatabaseId, aladinApiKey, shouldRefresh = false) {
+  const durableKey = `works:${databaseId}:${mediaWorksDatabaseId || 'no-media'}:covers:${aladinApiKey ? 'enabled' : 'disabled'}:${WORKS_CACHE_VERSION}`;
   if (!shouldRefresh) {
     const durable = await getDurableCachedJson(durableKey, WORKS_CACHE_TTL_MS, async () => {
-      const { works } = await getWorksWithoutCovers(token, databaseId, shouldRefresh);
+      const { works } = await getWorksWithoutCovers(token, databaseId, mediaWorksDatabaseId, shouldRefresh);
       return mapWithConcurrency(works, 4, async work => ({
         ...work,
-        cover: await getCachedAladinCover(work, aladinApiKey),
+        cover: work.cover || (work.source === 'books' ? await getCachedAladinCover(work, aladinApiKey) : ''),
       }));
     });
     apiCache.worksWithCovers = durable.value;
@@ -105,10 +160,10 @@ async function getWorksWithCovers(token, databaseId, aladinApiKey, shouldRefresh
   }
 
   const promise = getDurableCachedJson(durableKey, WORKS_CACHE_TTL_MS, async () => {
-    const { works } = await getWorksWithoutCovers(token, databaseId, shouldRefresh);
+    const { works } = await getWorksWithoutCovers(token, databaseId, mediaWorksDatabaseId, shouldRefresh);
     return mapWithConcurrency(works, 4, async work => ({
       ...work,
-      cover: await getCachedAladinCover(work, aladinApiKey),
+      cover: work.cover || (work.source === 'books' ? await getCachedAladinCover(work, aladinApiKey) : ''),
     }));
   }, { refresh: shouldRefresh })
     .then(({ value }) => value)
@@ -137,6 +192,9 @@ export default async function handler(request, response) {
   );
 
   const { token, databaseId, missing } = getNotionConfig('NOTION_WORKS_DATABASE_ID');
+  const {
+    databaseId: mediaWorksDatabaseId,
+  } = getNotionConfig('NOTION_MEDIA_WORKS_DATABASE_ID', DEFAULT_MEDIA_WORKS_DATABASE_ID);
   const aladinApiKey = process.env.ALADIN_TTB_KEY || process.env.VITE_ALADIN_TTB_KEY;
   const requestUrl = new URL(request.url ?? '/api/works', `https://${request.headers.host ?? 'localhost'}`);
   const shouldRefresh = requestUrl.searchParams.get('refresh') === '1';
@@ -166,21 +224,24 @@ export default async function handler(request, response) {
     }
 
     try {
-      const page = await createNotionWork(token, databaseId, body);
+      const categorySlug = getWorkCategorySlug(body.category);
+      const targetDatabaseId = categorySlug === 'novels' ? databaseId : mediaWorksDatabaseId;
+      const page = await createNotionWork(token, targetDatabaseId, body);
       clearWorksCache();
       await clearDurableCachePrefix(`works:${databaseId}:`);
       return response.status(201).json({
         ok: true,
         pageId: page.id,
         work: {
-          code: 'NEW',
+          code: categorySlug === 'novels' ? 'NEW' : 'SFM-NEW',
           medium: body.category || '소설',
           title: body.title,
-          subtitle: [body.author, body.publisher].filter(Boolean).join(' / ') || '새로 저장된 작품 신호',
+          subtitle: body.description || [body.author, body.publisher, body.year].filter(Boolean).join(' / ') || '새로 저장된 작품 신호',
           link: body.link || '',
           recommender: body.recommender || '',
           tags: splitTags(body.tags),
-          cover: '',
+          cover: body.image || '',
+          source: categorySlug === 'novels' ? 'books' : 'media-works',
         },
       });
     } catch (error) {
@@ -193,8 +254,8 @@ export default async function handler(request, response) {
 
   try {
     const { works, cache } = shouldIncludeCovers
-      ? await getWorksWithCovers(token, databaseId, aladinApiKey, shouldRefresh)
-      : await getWorksWithoutCovers(token, databaseId, shouldRefresh);
+      ? await getWorksWithCovers(token, databaseId, mediaWorksDatabaseId, aladinApiKey, shouldRefresh)
+      : await getWorksWithoutCovers(token, databaseId, mediaWorksDatabaseId, shouldRefresh);
     response.setHeader('X-SF-Archive-Cache', cache);
     response.setHeader('X-SF-Archive-Covers', shouldIncludeCovers ? '1' : '0');
     return response.status(200).json({ works });

@@ -16,6 +16,15 @@ export function plainText(value) {
   return '';
 }
 
+export function fileUrl(value) {
+  if (!value || value.type !== 'files') return '';
+  const firstFile = value.files?.[0];
+  if (!firstFile) return '';
+  if (firstFile.type === 'external') return firstFile.external?.url ?? '';
+  if (firstFile.type === 'file') return firstFile.file?.url ?? '';
+  return '';
+}
+
 export function multiSelect(value) {
   if (!value || value.type !== 'multi_select') return [];
   return value.multi_select.map(tag => tag.name);

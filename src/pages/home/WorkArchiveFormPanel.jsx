@@ -27,7 +27,11 @@ export default function WorkArchiveFormPanel({
             <input name="title" onChange={onChange} placeholder="작품 제목" required value={form.title} />
           </label>
           <label>
-            <span>카테고리</span>
+            <span>원제</span>
+            <input name="originalTitle" onChange={onChange} placeholder="원제 / 영어 제목" value={form.originalTitle} />
+          </label>
+          <label>
+            <span>매체</span>
             <select name="category" onChange={onChange} value={form.category}>
               <option value="소설">소설</option>
               <option value="영화">영화</option>
@@ -36,16 +40,36 @@ export default function WorkArchiveFormPanel({
             </select>
           </label>
           <label>
-            <span>저자</span>
+            <span>장르/분류</span>
+            <input name="genre" onChange={onChange} placeholder="예: 사이버펑크, 스페이스 오페라" value={form.genre} />
+          </label>
+          <label>
+            <span>창작자</span>
             <input name="author" onChange={onChange} placeholder="저자 / 감독 / 제작자" value={form.author} />
           </label>
           <label>
-            <span>출판사</span>
+            <span>제작/출판</span>
             <input name="publisher" onChange={onChange} placeholder="출판사 / 배급사 / 스튜디오" value={form.publisher} />
           </label>
+          <label>
+            <span>연도</span>
+            <input name="year" onChange={onChange} placeholder="예: 1982" value={form.year} />
+          </label>
+          <label>
+            <span>국가</span>
+            <input name="country" onChange={onChange} placeholder="예: 미국 / 일본 / 한국" value={form.country} />
+          </label>
           <label className="is-wide">
-            <span>알라딘 링크</span>
-            <input name="link" onChange={onChange} placeholder="https://www.aladin.co.kr/..." value={form.link} />
+            <span>한줄 설명</span>
+            <input name="description" onChange={onChange} placeholder="작품을 설명하는 짧은 문장" value={form.description} />
+          </label>
+          <label className="is-wide">
+            <span>링크</span>
+            <input name="link" onChange={onChange} placeholder="알라딘, 공식 사이트, IMDb, Steam, YouTube 등" value={form.link} />
+          </label>
+          <label className="is-wide">
+            <span>이미지 URL</span>
+            <input name="image" onChange={onChange} placeholder="포스터 / 스틸컷 / 커버 이미지 URL" value={form.image} />
           </label>
           <label>
             <span>태그</span>
@@ -57,7 +81,7 @@ export default function WorkArchiveFormPanel({
           </label>
           <div className="work-submit-actions">
             <p className={`work-comment-message is-${status}`}>
-              {status === 'idle' && '현재는 소설 입력을 기준으로 작동합니다. 다른 카테고리는 선택만 가능합니다.'}
+              {status === 'idle' && '소설은 기존 책 DB에, 영화·게임·애니메이션은 별도 미디어 작품 DB에 저장됩니다.'}
               {status === 'submitting' && '노션에 작품 신호를 저장 중입니다.'}
               {status !== 'idle' && status !== 'submitting' && message}
             </p>

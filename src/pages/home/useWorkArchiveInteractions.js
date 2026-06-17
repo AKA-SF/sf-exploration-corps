@@ -7,9 +7,15 @@ import { getUserNickname } from '../../lib/userIdentity';
 
 const emptyWorkSubmitForm = {
   title: '',
+  originalTitle: '',
   author: '',
   publisher: '',
   category: '소설',
+  genre: '',
+  year: '',
+  country: '',
+  description: '',
+  image: '',
   link: '',
   tags: '',
   recommender: '',

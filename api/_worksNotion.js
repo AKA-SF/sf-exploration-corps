@@ -1,28 +1,57 @@
 import { notionRequest } from './_notion.js';
-import { multiSelect, pick, pickName, plainText } from './_notionProperties.js';
+import { fileUrl, pick, pickName, plainText, textList } from './_notionProperties.js';
 import { richTextPayload, splitList } from './_notionWrite.js';
 
-export function mapPageToWork(page, index) {
+function pageCoverUrl(page) {
+  if (page.cover?.type === 'external') return page.cover.external?.url ?? '';
+  if (page.cover?.type === 'file') return page.cover.file?.url ?? '';
+  return '';
+}
+
+function pickFileOrText(properties, names) {
+  const property = pick(properties, names);
+  return fileUrl(property) || plainText(property);
+}
+
+export function mapPageToWork(page, index, {
+  codePrefix = 'SFA',
+  defaultMedium = 'ARCHIVE',
+  source = 'works',
+} = {}) {
   const properties = page.properties ?? {};
   const title = plainText(pick(properties, ['제목', '작품명', 'Title', 'Name', '이름']));
-  const author = plainText(pick(properties, ['저자', 'Author', 'Creator']));
-  const publisher = plainText(pick(properties, ['출판사', 'Publisher', 'Studio']));
-  const medium = plainText(pick(properties, ['매체', '카테고리', 'Medium', 'Type', '분류']));
-  const subtitle = plainText(pick(properties, ['설명', '메모', 'Subtitle', 'Description']));
-  const code = plainText(pick(properties, ['코드', 'Code', 'Archive Code'])) || `SFA-${String(index + 1).padStart(3, '0')}`;
+  const originalTitle = plainText(pick(properties, ['원제', 'Original Title', 'Original', 'English Title']));
+  const author = plainText(pick(properties, ['저자', '작가', '제작자', '감독', '개발사', 'Author', 'Creator', 'Director', 'Developer']));
+  const publisher = plainText(pick(properties, ['출판사', '제작사', '배급사', '스튜디오', 'Publisher', 'Studio', 'Distributor']));
+  const medium = plainText(pick(properties, ['매체', 'Medium', 'Type']));
+  const category = plainText(pick(properties, ['카테고리', '분류', '장르', 'Category', 'Genre']));
+  const subtitle = plainText(pick(properties, ['한줄 설명', '설명', '메모', 'Subtitle', 'Description', 'Summary']));
+  const code = plainText(pick(properties, ['코드', 'Code', 'Archive Code'])) || `${codePrefix}-${String(index + 1).padStart(3, '0')}`;
   const link = plainText(pick(properties, ['링크', 'Link', 'URL', 'Url']));
   const recommender = plainText(pick(properties, ['추천자', 'Recommender', '추천']));
-  const tags = multiSelect(pick(properties, ['태그', 'Tags', '키워드', 'Keywords']));
-  const description = subtitle || [author, publisher].filter(Boolean).join(' / ');
+  const tags = textList(pick(properties, ['태그', 'Tags', '키워드', 'Keywords']));
+  const year = plainText(pick(properties, ['연도', 'Year', 'Release Year']));
+  const country = plainText(pick(properties, ['국가', 'Country']));
+  const cover = pickFileOrText(properties, ['이미지', '포스터', '썸네일', 'Cover', 'Image', 'Poster', 'Thumbnail'])
+    || pageCoverUrl(page);
+  const description = subtitle || [author, publisher, year].filter(Boolean).join(' / ');
 
   return {
     code,
-    medium: medium || 'ARCHIVE',
+    medium: medium || category || defaultMedium,
+    category,
     title,
+    originalTitle,
     subtitle: description || '노션 작품 아카이브에서 동기화된 신호',
+    author,
+    publisher,
+    year,
+    country,
     link,
     recommender,
     tags: tags.length > 0 ? tags : ['Notion Sync'],
+    cover,
+    source,
   };
 }
 
@@ -40,6 +69,20 @@ function notionPropertyValue(schema, value, fallbackType = 'rich_text') {
   if (type === 'number') {
     const number = Number(value);
     return { number: Number.isFinite(number) ? number : null };
+  }
+  if (type === 'date') {
+    const source = String(value ?? '').trim();
+    const normalized = source.match(/^\d{4}$/) ? `${source}-01-01` : source;
+    return { date: normalized ? { start: normalized } : null };
+  }
+  if (type === 'files') {
+    return {
+      files: value ? [{
+        name: 'archive-image',
+        type: 'external',
+        external: { url: String(value) },
+      }] : [],
+    };
   }
   return { rich_text: richTextPayload(value, 2000) };
 }
@@ -59,17 +102,29 @@ export async function createNotionWork(token, databaseId, body) {
   const databaseProperties = database.properties ?? {};
   const properties = {};
   const title = String(body.title ?? '').trim();
+  const originalTitle = String(body.originalTitle ?? '').trim();
   const author = String(body.author ?? '').trim();
   const publisher = String(body.publisher ?? '').trim();
-  const category = String(body.category ?? '소설').trim();
+  const medium = String(body.medium ?? body.category ?? '소설').trim();
+  const category = String(body.genre ?? body.workCategory ?? (medium === '소설' ? medium : '')).trim();
   const link = String(body.link ?? '').trim();
   const recommender = String(body.recommender ?? '').trim();
+  const year = String(body.year ?? '').trim();
+  const country = String(body.country ?? '').trim();
+  const description = String(body.description ?? '').trim();
+  const image = String(body.image ?? body.cover ?? '').trim();
   const tags = splitTags(body.tags);
 
   assignNotionProperty(properties, databaseProperties, ['제목', '작품명', 'Title', 'Name', '이름'], title, 'title');
-  assignNotionProperty(properties, databaseProperties, ['저자', 'Author', 'Creator'], author, 'rich_text');
-  assignNotionProperty(properties, databaseProperties, ['출판사', 'Publisher', 'Studio'], publisher, 'rich_text');
-  assignNotionProperty(properties, databaseProperties, ['카테고리', '매체', 'Medium', 'Type', '분류'], category, 'select');
+  assignNotionProperty(properties, databaseProperties, ['원제', 'Original Title', 'Original', 'English Title'], originalTitle, 'rich_text');
+  assignNotionProperty(properties, databaseProperties, ['저자', '작가', '제작자', '감독', '개발사', 'Author', 'Creator', 'Director', 'Developer'], author, 'rich_text');
+  assignNotionProperty(properties, databaseProperties, ['출판사', '제작사', '배급사', '스튜디오', 'Publisher', 'Studio', 'Distributor'], publisher, 'rich_text');
+  assignNotionProperty(properties, databaseProperties, ['매체', 'Medium', 'Type'], medium, 'select');
+  assignNotionProperty(properties, databaseProperties, ['카테고리', '분류', '장르', 'Category', 'Genre'], category, 'select');
+  assignNotionProperty(properties, databaseProperties, ['연도', 'Year', 'Release Year'], year, 'number');
+  assignNotionProperty(properties, databaseProperties, ['국가', 'Country'], country, 'rich_text');
+  assignNotionProperty(properties, databaseProperties, ['한줄 설명', '설명', '메모', 'Subtitle', 'Description', 'Summary'], description, 'rich_text');
+  assignNotionProperty(properties, databaseProperties, ['이미지', '포스터', '썸네일', 'Cover', 'Image', 'Poster', 'Thumbnail'], image, 'files');
   assignNotionProperty(properties, databaseProperties, ['링크', 'Link', 'URL', 'Url'], link, 'url');
   assignNotionProperty(properties, databaseProperties, ['태그', 'Tags', '키워드', 'Keywords'], tags, 'multi_select');
   assignNotionProperty(properties, databaseProperties, ['추천자', 'Recommender', '추천'], recommender, 'rich_text');
