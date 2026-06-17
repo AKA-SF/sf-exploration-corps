@@ -44,12 +44,15 @@ function formatDate(value) {
 function mapPostToQuestion(post, {
   canEdit = false,
   commentCount = 0,
+  displayNumber,
   index = 0,
   offset = 0,
 } = {}) {
+  const fallbackNumber = offset + index + 1;
+  const questionNumber = Number.isFinite(Number(displayNumber)) ? Number(displayNumber) : fallbackNumber;
   return {
     id: post.id,
-    code: `Q-${String(offset + index + 1).padStart(3, '0')}`,
+    code: `Q-${String(Math.max(questionNumber, 1)).padStart(3, '0')}`,
     title: post.title || '제목 없음',
     content: post.body || '',
     author: post.author_name || '탐사자',
@@ -174,6 +177,31 @@ function buildPostQuery({
   return `community_posts?${params.toString()}`;
 }
 
+function buildPostCountQuery({
+  admin = false,
+  category = '',
+  mineOnly = false,
+  user,
+} = {}) {
+  const params = new URLSearchParams();
+  params.set('select', 'id');
+
+  if (!admin) params.set('status', 'eq.public');
+  if (mineOnly && user?.id) params.set('user_id', `eq.${user.id}`);
+
+  const normalizedCategory = normalizeCommunityCategory(category);
+  if (category && category !== '전체' && COMMUNITY_CATEGORIES.includes(normalizedCategory)) {
+    params.set('category', `eq.${normalizedCategory}`);
+  }
+
+  return `community_posts?${params.toString()}`;
+}
+
+async function fetchPostTotalCount(options, request) {
+  const rows = await supabaseRestRequest(buildPostCountQuery(options), { request });
+  return Array.isArray(rows) ? rows.length : 0;
+}
+
 async function fetchCommentCounts(postIds, request) {
   if (!postIds.length) return new Map();
 
@@ -218,17 +246,23 @@ async function listQuestions(request, response, query) {
   })}`;
 
   const loader = async () => {
-    const posts = await supabaseRestRequest(
-      buildPostQuery({
-        admin: wantsAdminList,
-        category: query.category,
-        mineOnly: wantsMineOnly,
-        offset,
-        pageSize,
-        user,
-      }),
-      { request },
-    );
+    const listOptions = {
+      admin: wantsAdminList,
+      category: query.category,
+      mineOnly: wantsMineOnly,
+      user,
+    };
+    const [posts, totalCount] = await Promise.all([
+      supabaseRestRequest(
+        buildPostQuery({
+          ...listOptions,
+          offset,
+          pageSize,
+        }),
+        { request },
+      ),
+      fetchPostTotalCount(listOptions, request),
+    ]);
     const postIds = (posts ?? []).map(post => post.id);
     const counts = includeCommentCounts || wantsAdminList
       ? await fetchCommentCounts(postIds, request)
@@ -236,15 +270,19 @@ async function listQuestions(request, response, query) {
     const questions = (posts ?? []).map((post, index) => mapPostToQuestion(post, {
       canEdit: Boolean(user?.id && post.user_id === user.id),
       commentCount: counts.get(post.id) || 0,
+      displayNumber: totalCount - offset - index,
       index,
       offset,
     }));
+    const pageLength = (posts ?? []).length;
+    const nextOffset = offset + pageLength;
+    const hasMore = pageLength > 0 && nextOffset < totalCount;
 
     return {
-      hasMore: (posts ?? []).length === pageSize,
-      nextCursor: (posts ?? []).length === pageSize ? String(offset + pageSize) : '',
+      hasMore,
+      nextCursor: hasMore ? String(nextOffset) : '',
       questions,
-      totalCount: questions.length,
+      totalCount,
     };
   };
 
