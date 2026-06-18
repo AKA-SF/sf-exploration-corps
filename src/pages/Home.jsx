@@ -398,13 +398,7 @@ export default function Home() {
 
       <ArchiveDock archiveCards={archiveCards} metrics={metrics} onResetCoordinateMap={resetCoordinateMap} />
 
-      <HomeGuideSection
-        concepts={visibleConcepts}
-        dailySignalKey={dailySignalKey}
-        mediaItems={previewMedia}
-        questions={dashboard.questions}
-        works={displayedWorks}
-      />
+      <HomeGuideSection />
 
       {deferredSectionsReady ? (
         <Suspense fallback={<SectionLoader />}>
