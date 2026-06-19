@@ -43,7 +43,19 @@ export function getRandomWorks(items, count, seed = '') {
 }
 
 export function getDailyItem(items, seed, identity) {
-  return getDailyShuffledItems(items, seed, identity)[0] ?? null;
+  let selected = null;
+  let selectedScore = Infinity;
+
+  items.forEach((item, index) => {
+    const itemIdentity = identity?.(item) ?? item?.code ?? item?.id ?? item?.title ?? '';
+    const score = seededScore(seed, `${itemIdentity || index}:${index}`);
+    if (score < selectedScore) {
+      selected = item;
+      selectedScore = score;
+    }
+  });
+
+  return selected;
 }
 
 export function mergeWorksByCode(currentWorks, incomingWorks) {
