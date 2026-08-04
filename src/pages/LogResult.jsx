@@ -1,31 +1,74 @@
-import { useLocation, useParams, useNavigate } from 'react-router-dom';
-import { useEffect, useMemo, useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { AlertTriangle, Database, Activity, Share2, MapPin } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useLogs } from '../context/LogContext';
+import { useAuth } from '../context/authContextValue';
+import { getSupabaseClient } from '../lib/getSupabaseClient';
+import { createExplorationLogRepository } from '../features/exploration-logs/explorationLogRepository';
+import { getCurrentExplorationLogLoadState, getExplorationLogRecordKey } from '../features/exploration-logs/explorationLogLoadState';
 import PageTransition from '../components/PageTransition';
 import './LogResult.css';
 import '../styles/MobileExperience.css';
 
 const LogResult = () => {
   const { id } = useParams();
-  const location = useLocation();
   const navigate = useNavigate();
-  const { addLog } = useLogs();
-  
-  const logData = useMemo(() => location.state || {
-    id: id || 'LOG-UNKNOWN',
-    title: 'UNKNOWN_ARTIFACT',
-    type: 'UNKNOWN',
-    experiences: { immersion: 0, addiction: 0, complexity: 0, visual: 0, derealization: 0, scale: 0 },
-    emotions: ['NONE'],
-    ideas: ['NONE']
-  }, [id, location.state]);
-
-  const [analyzing, setAnalyzing] = useState(true);
+  const { loading, user } = useAuth();
+  const [logData, setLogData] = useState(null);
+  const [loadState, setLoadState] = useState('loading');
+  const [loadedKey, setLoadedKey] = useState('');
+  const [analysisCompleteKey, setAnalysisCompleteKey] = useState('');
   const [scrambleText, setScrambleText] = useState("D3C0D1NG...");
+  const recordKey = getExplorationLogRecordKey(user?.id, id);
 
   useEffect(() => {
+    if (loading) return undefined;
+    if (!user) return undefined;
+
+    let isMounted = true;
+    async function loadExplorationLog() {
+      try {
+        const client = await getSupabaseClient();
+        if (!client) throw new Error('Supabase 환경 변수가 아직 연결되지 않았습니다.');
+        const record = await createExplorationLogRepository(client).getOwnExplorationLog({ userId: user.id, id });
+        if (!isMounted) return;
+        if (!record) {
+          setLoadedKey(recordKey);
+          setLoadState('not-found');
+          return;
+        }
+        setLogData({
+          ...record,
+          type: record.logType,
+          timestamp: record.createdAt,
+        });
+        setLoadedKey(recordKey);
+        setLoadState('ready');
+      } catch {
+        if (isMounted) {
+          setLoadedKey(recordKey);
+          setLoadState('error');
+        }
+      }
+    }
+
+    void loadExplorationLog();
+    return () => {
+      isMounted = false;
+    };
+  }, [id, loading, recordKey, user]);
+
+  const effectiveLoadState = getCurrentExplorationLogLoadState({
+    authLoading: loading,
+    userId: user?.id,
+    recordId: id,
+    loadedKey,
+    loadState,
+  });
+  const analyzing = effectiveLoadState === 'ready' && analysisCompleteKey !== recordKey;
+
+  useEffect(() => {
+    if (!analyzing) return undefined;
     const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%&*";
     let interval = setInterval(() => {
       setScrambleText(Array.from({length: 10}).map(() => chars[Math.floor(Math.random() * chars.length)]).join(''));
@@ -34,18 +77,35 @@ const LogResult = () => {
     const timer = setTimeout(() => {
       clearInterval(interval);
       setScrambleText("ANALYSIS_COMPLETE");
-      setAnalyzing(false);
-      
-      if (location.state && location.state.title !== 'UNKNOWN_ARTIFACT') {
-        addLog(logData);
-      }
+      setAnalysisCompleteKey(recordKey);
     }, 2500);
     
     return () => {
       clearInterval(interval);
       clearTimeout(timer);
     };
-  }, [addLog, location.state, logData]);
+  }, [analyzing, recordKey]);
+
+  if (effectiveLoadState === 'loading') {
+    return <PageTransition className="result-container"><div className="analyzing-overlay"><span className="mono text-cyan">ARCHIVE_RECORD_LOADING...</span></div></PageTransition>;
+  }
+
+  if (effectiveLoadState === 'unauthorized' || effectiveLoadState === 'not-found' || effectiveLoadState === 'error') {
+    const message = effectiveLoadState === 'unauthorized'
+      ? '로그인한 대원만 자신의 탐사 기록을 열 수 있습니다.'
+      : effectiveLoadState === 'not-found'
+        ? '요청한 탐사 기록을 찾을 수 없거나 접근 권한이 없습니다.'
+        : '탐사 기록을 불러오지 못했습니다. 잠시 후 다시 시도해주세요.';
+    return (
+      <PageTransition className="result-container">
+        <div className="error-panel mono">
+          <span className="text-amber">ERROR: ARCHIVE_RECORD_UNAVAILABLE</span>
+          <p>{message}</p>
+          <button className="btn-secondary" onClick={() => navigate(effectiveLoadState === 'unauthorized' ? '/login' : '/log')}>RETURN_TO_ARCHIVE</button>
+        </div>
+      </PageTransition>
+    );
+  }
 
   const aggRisk = (logData.experiences.derealization + logData.experiences.complexity) / 2 || 1;
   const strokeDash = `${aggRisk} ${100 - aggRisk}`;

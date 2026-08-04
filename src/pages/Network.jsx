@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useLogs } from '../context/LogContext';
+import { useVisibleExplorationLogs } from '../features/exploration-logs/useVisibleExplorationLogs';
 import { Lock, Radar, RadioTower, SendHorizontal, MessageSquareText, Users, Zap } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import { ZoomableMap } from '../components/ZoomableMap';
@@ -32,7 +33,8 @@ import './Network.css';
 import '../styles/MobileExperience.css';
 
 const Network = () => {
-  const { logs, networkLogs } = useLogs();
+  const { logs } = useLogs();
+  const { logs: visibleExplorationLogs } = useVisibleExplorationLogs();
   const { user } = useAuth();
   const { showActivityToast } = useActivityToast();
   const navigate = useNavigate();
@@ -165,7 +167,7 @@ const Network = () => {
   // Generate spatial coordinates and types for logs
   const spatialLogs = useMemo(() => {
     const nodeLimit = motionProfile.reduced ? 32 : motionProfile.compact ? 38 : MAX_VISIBLE_NODES;
-    return networkLogs.slice(0, nodeLimit).map((log) => {
+    return visibleExplorationLogs.slice(0, nodeLimit).map((log) => {
       // Deterministic pseudo-random placement based on index/id
       const hash = log.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
       const r1 = Math.sin(hash) * 10000;
@@ -180,9 +182,19 @@ const Network = () => {
       if (log.experiences.complexity > 85) typeKey = 'ANOMALY';
       if (log.encryptionLevel > userLogCount + 2) typeKey = 'LOST_TRANSMISSION';
 
-      return { ...log, x, y, typeKey };
+      return {
+        ...log,
+        type: log.logType,
+        timestamp: log.createdAt,
+        explorerId: log.nickname || 'ANONYMOUS_SIGNAL',
+        encryptionLevel: 0,
+        responseSignals: [],
+        x,
+        y,
+        typeKey,
+      };
     });
-  }, [motionProfile, networkLogs, userLogCount]);
+  }, [motionProfile, userLogCount, visibleExplorationLogs]);
 
   // Generate edges between similar logs (same genre or emotion)
   const edges = useMemo(() => {
@@ -317,9 +329,7 @@ const Network = () => {
   }, [activitySignals, boardSignals, dailyMission, radioStream, spatialLogs, unknownSignal, userLogCount, workCommentSignals]);
 
   const handleNodeClick = (log) => {
-    if (userLogCount >= log.encryptionLevel) {
-      navigate(`/network/${log.id}`);
-    }
+    navigate(`/network/${log.id}`);
   };
 
   const animatedEdgeLimit = motionProfile.reduced ? 0 : motionProfile.compact ? 10 : MAX_ANIMATED_EDGES;

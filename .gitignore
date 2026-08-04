@@ -19,6 +19,9 @@ public/rendered-shorts/
 .env.*
 !.env.example
 
+# Supabase CLI local project metadata
+supabase/.temp/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -29,3 +32,5 @@ public/rendered-shorts/
 *.njsproj
 *.sln
 *.sw?
+.vercel
+.env*

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { KeyRound, LogIn, Mail } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
@@ -10,13 +10,17 @@ import '../styles/MobileExperience.css';
 
 export default function Login() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { isConfigured, loading, user } = useAuth();
   const [mode, setMode] = useState('signin');
   const [form, setForm] = useState({ email: '', password: '', nickname: '' });
   const [status, setStatus] = useState('idle');
   const [message, setMessage] = useState('');
 
-  if (!loading && user) return <Navigate to="/profile" replace />;
+  const returnTo = typeof location.state?.returnTo === 'string' ? location.state.returnTo : '/profile';
+  const returnState = location.state?.returnState;
+
+  if (!loading && user) return <Navigate replace state={returnState} to={returnTo} />;
 
   const updateForm = event => {
     const { name, value } = event.target;
@@ -57,7 +61,7 @@ export default function Login() {
           await ensureUserProfile(data.user, supabase, nickname);
         }
         if (data.session) {
-          navigate('/profile');
+          navigate(returnTo, { state: returnState });
           return;
         }
         setStatus('success');
@@ -70,7 +74,7 @@ export default function Login() {
         password,
       });
       if (error) throw error;
-      navigate('/profile');
+      navigate(returnTo, { state: returnState });
     } catch (error) {
       setStatus('error');
       setMessage(error.message);
@@ -144,7 +148,7 @@ export default function Login() {
             {status === 'submitting' ? '처리 중' : mode === 'signup' ? '계정 등록하기' : '로그인'}
           </button>
           <p className={`login-message is-${status}`}>
-            {message || (mode === 'signup' ? '비밀번호는 6자 이상이어야 합니다.' : '아직 계정이 없다면 아래에서 등록하세요.')}
+            {message || location.state?.notice || (mode === 'signup' ? '비밀번호는 6자 이상이어야 합니다.' : '아직 계정이 없다면 아래에서 등록하세요.')}
           </p>
         </form>
 

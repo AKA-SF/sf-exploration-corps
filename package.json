@@ -10,6 +10,13 @@
     "preview": "vite preview",
     "test:contrast": "node scripts/reading-contrast-check.mjs",
     "test:core": "node scripts/core-flow-check.mjs",
+    "test:exploration-logs": "node --test scripts/exploration-log-contract-check.mjs",
+    "test:exploration-repository": "node --test scripts/exploration-log-repository-check.mjs",
+    "test:exploration-schema": "node --test scripts/exploration-log-schema-check.mjs",
+    "test:exploration-load-state": "node --test scripts/exploration-log-load-state-check.mjs",
+    "test:exploration-public-contract": "node --test scripts/exploration-log-public-contract-check.mjs",
+    "test:exploration-public-detail": "node --test scripts/exploration-log-public-detail-contract-check.mjs",
+    "test:exploration-submission": "node --test scripts/exploration-log-submission-check.mjs",
     "test:screen": "node scripts/screen-qa.mjs"
   },
   "dependencies": {

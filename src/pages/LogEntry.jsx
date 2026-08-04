@@ -2,24 +2,31 @@ import { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { FilePlus, Target, Brain, Activity, Save, Lightbulb, HeartPulse, RadioTower, CheckCircle2 } from 'lucide-react';
 import { useLogs } from '../context/LogContext';
+import { useAuth } from '../context/authContextValue';
+import { getSupabaseClient } from '../lib/getSupabaseClient';
+import { getJsonStorageItem, removeStorageItem, setJsonStorageItem } from '../lib/browserStorage';
+import { createExplorationLogRepository } from '../features/exploration-logs/explorationLogRepository';
+import { submitExplorationLog } from '../features/exploration-logs/explorationLogSubmission';
 import PageTransition from '../components/PageTransition';
 import './LogEntry.css';
 import '../styles/MobileExperience.css';
 
 const EMOTION_TAGS = ['우울함', '압도감', '외로움', '희망', '공포감', '기괴함'];
 const IDEA_TAGS = ['아이디어 충격', '미래 상상력', '기술 공포', '인간성 질문', '여운'];
+const EXPLORATION_DRAFT_KEY = 'sf_exploration_log_draft_v1';
 
 const LogEntry = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { setCurrentSystemState } = useLogs();
-  
+  const { loading: authLoading, user } = useAuth();
   const prefilled = location.state || {};
+  const draft = prefilled.draft || getJsonStorageItem(EXPLORATION_DRAFT_KEY, {});
 
   const [formData, setFormData] = useState({
-    title: prefilled.prefilledTitle || '',
-    type: prefilled.prefilledType || '',
-    experiences: prefilled.prefilledExperiences || {
+    title: draft.title ?? prefilled.prefilledTitle ?? '',
+    type: draft.type ?? prefilled.prefilledType ?? '',
+    experiences: draft.experiences ?? prefilled.prefilledExperiences ?? {
       immersion: 50,
       addiction: 50,
       complexity: 50,
@@ -27,14 +34,16 @@ const LogEntry = () => {
       derealization: 50,
       scale: 50
     },
-    emotions: prefilled.prefilledEmotions || [],
-    ideas: prefilled.prefilledIdeas || [],
-    memo: '',
-    visibility: 'ANON_NETWORK',
-    spoiler: 'CLEAR_SIGNAL',
+    emotions: draft.emotions ?? prefilled.prefilledEmotions ?? [],
+    ideas: draft.ideas ?? prefilled.prefilledIdeas ?? [],
+    memo: draft.memo ?? '',
+    visibility: draft.visibility ?? 'PRIVATE_ARCHIVE',
+    spoiler: draft.spoiler ?? 'CLEAR_SIGNAL',
   });
+  const [submissionId] = useState(() => draft.submissionId ?? crypto.randomUUID());
 
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState('');
   const [reportMode, setReportMode] = useState('quick');
   const coords = useMemo(() => {
     const x = (formData.experiences.immersion * 0.45).toFixed(3);
@@ -43,6 +52,10 @@ const LogEntry = () => {
     const z = (zSeed / 997).toFixed(3);
     return `X: ${x} Y: ${y} Z: ${z}`;
   }, [formData.experiences.immersion, formData.experiences.scale, formData.experiences.complexity, formData.title.length, formData.memo.length]);
+
+  useEffect(() => {
+    setJsonStorageItem(EXPLORATION_DRAFT_KEY, { ...formData, submissionId });
+  }, [formData, submissionId]);
 
   useEffect(() => {
     // Calculate aggregate risk based on derealization and complexity
@@ -73,15 +86,40 @@ const LogEntry = () => {
     setFormData(prev => ({ ...prev, experiences: { ...prev.experiences, [key]: parseInt(val) } }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title) return;
-    
+    if (authLoading) return;
+
+    if (!user) {
+      navigate('/login', {
+        state: {
+          notice: '탐사 기록은 로그인 후 개인 아카이브에 저장됩니다.',
+          returnTo: '/log',
+          returnState: { draft: formData },
+        },
+      });
+      return;
+    }
+
     setIsSubmitting(true);
-    setTimeout(() => {
-      const generatedId = `LOG-${Math.floor(Math.random() * 900 + 100)}`;
-      navigate(`/result/${generatedId}`, { state: { ...formData, id: generatedId } });
-    }, 2500);
+    setSubmitError('');
+    try {
+      const client = await getSupabaseClient();
+      if (!client) throw new Error('Supabase 환경 변수가 아직 연결되지 않았습니다.');
+
+      const savedLog = await submitExplorationLog({
+        repository: createExplorationLogRepository(client),
+        userId: user.id,
+        submissionId,
+        input: formData,
+      });
+      removeStorageItem(EXPLORATION_DRAFT_KEY);
+      navigate(`/result/${savedLog.id}`);
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : '탐사 기록을 저장하지 못했습니다. 다시 시도해주세요.');
+      setIsSubmitting(false);
+    }
   };
 
   const Sliders = [
@@ -105,9 +143,13 @@ const LogEntry = () => {
     return Math.round((score / reportChecklist.length) * 100);
   }, [reportChecklist]);
 
-  const canSubmit = formData.title.trim().length > 0 && !isSubmitting;
+  const canSubmit = formData.title.trim().length > 0 && !isSubmitting && !authLoading;
   const submitStatus = isSubmitting
     ? 'UPLINKING_SIGNAL...'
+    : authLoading
+      ? '계정 상태 확인 중...'
+    : !user
+      ? '로그인 후 개인 아카이브에 안전하게 저장됩니다.'
     : formData.title.trim().length === 0
       ? '작품명을 입력하면 제출 가능'
       : reportReadiness < 75
@@ -287,6 +329,7 @@ const LogEntry = () => {
           <span className="mono">{isSubmitting ? 'TRANSMITTING_TO_ARCHIVE...' : '탐사 완료 / COMMIT_LOG'}</span>
           {isSubmitting && <div className="scanning-bar"></div>}
         </button>
+        {submitError && <p className="mono text-amber" role="alert">{submitError}</p>}
 
         <div className="sticky-submit-bar panel">
           <div className="sticky-readout mono">
