@@ -47,6 +47,18 @@ test('Home prioritizes activation over display preferences', async ({ page }, te
   }
 });
 
+test('Home exploration navigation opens the works archive', async ({ page }, testInfo) => {
+  await mockHomeFeed(page);
+  await page.goto('/');
+
+  const explorationLink = page
+    .getByRole('navigation', { name: testInfo.project.name.includes('mobile') ? '주요 메뉴' : '상단 메뉴' })
+    .getByRole('link', { name: /^탐색/ });
+  await expect(explorationLink).toHaveAttribute('href', '/works/novels');
+  await explorationLink.click();
+  await expect(page).toHaveURL(/\/works\/novels$/);
+});
+
 test('Home distinguishes partial source failures from empty archives', async ({ page }) => {
   await page.route('**/api/home-feed', route => route.fulfill({
     contentType: 'application/json',

@@ -2,6 +2,11 @@
 
 SF 세계를 탐험하는 인터랙티브 탐사 시스템입니다. 일반 독서앱이 아니라, SF 작품을 섹터, 신호, 탐사 로그, 탐사자 네트워크로 다루는 콘솔형 웹앱입니다.
 
+## Product Direction
+
+제품 원칙, Production 기준선, P2 백로그와 단계별 개선 계획은
+[`docs/product-roadmap.md`](docs/product-roadmap.md)에서 관리합니다.
+
 ## Local Development
 
 ```bash

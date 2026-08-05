@@ -5,7 +5,7 @@ const Navbar = () => {
   return (
     <nav aria-label="주요 메뉴" className="navbar">
       <NavLink
-        to="/"
+        to="/works/novels"
         end
         className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
       >

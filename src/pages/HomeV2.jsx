@@ -172,7 +172,7 @@ function HomeV2() {
           <span><b>SF 탐사단</b><small className="mono">EXPLORATION CORPS</small></span>
         </Link>
         <nav className="home-v2-header__nav" aria-label="상단 메뉴">
-          <Link to="/">탐색</Link>
+          <Link to="/works/novels">탐색</Link>
           <Link to="/log">기록</Link>
           <Link to="/network">네트워크</Link>
           <Link className="home-v2-account" to={user ? '/profile' : '/login'}>

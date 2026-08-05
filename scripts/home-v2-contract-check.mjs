@@ -85,11 +85,13 @@ test('global mobile navigation exposes four Korean primary destinations', async 
   assert.match(css, /safe-area-inset-bottom/);
 });
 
-test('Home desktop navigation uses the same destination vocabulary as the global rail', async () => {
+test('Home and global exploration navigation open the works archive', async () => {
   const app = await read('src/App.jsx');
   const home = await read('src/pages/HomeV2.jsx');
+  const navbar = await read('src/components/Navbar.jsx');
 
-  assert.match(home, /to="\/">탐색<\/Link>/);
+  assert.match(home, /to="\/works\/novels">탐색<\/Link>/);
+  assert.match(navbar, /to="\/works\/novels"[\s\S]*nav-label-primary">탐색/);
   assert.match(home, /to="\/log">기록<\/Link>/);
   assert.match(home, /to="\/network">네트워크<\/Link>/);
   assert.match(home, /user \? '\/profile' : '\/login'/);
