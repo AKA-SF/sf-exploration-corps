@@ -6,6 +6,7 @@ import {
 import { readJsonBody } from './_notionWrite.js';
 import { clearDurableCachePrefix, getDurableCachedJson } from './_persistentCache.js';
 import { requireAuthenticatedUser } from './_adminAuth.js';
+import { requireAuthorizedArchiveRefresh } from './_archiveSyncAuth.js';
 import { getCachedAladinCover, mapWithConcurrency } from './_worksAladin.js';
 import { createNotionWork, mapPageToWork, splitTags } from './_worksNotion.js';
 
@@ -180,6 +181,24 @@ async function getWorksWithCovers(token, databaseId, mediaWorksDatabaseId, aladi
   return { works: await promise, cache: 'MISS' };
 }
 
+export async function loadWorksSnapshot({ includeCovers = false, refresh = false } = {}) {
+  const { token, databaseId, missing } = getNotionConfig('NOTION_WORKS_DATABASE_ID');
+  const { databaseId: mediaWorksDatabaseId } = getNotionConfig(
+    'NOTION_MEDIA_WORKS_DATABASE_ID',
+    DEFAULT_MEDIA_WORKS_DATABASE_ID,
+  );
+  if (missing.length > 0) {
+    const error = new Error('Notion works environment variables are not configured');
+    error.missing = missing;
+    throw error;
+  }
+
+  const aladinApiKey = process.env.ALADIN_TTB_KEY || process.env.VITE_ALADIN_TTB_KEY;
+  return includeCovers
+    ? getWorksWithCovers(token, databaseId, mediaWorksDatabaseId, aladinApiKey, refresh)
+    : getWorksWithoutCovers(token, databaseId, mediaWorksDatabaseId, refresh);
+}
+
 export default async function handler(request, response) {
   if (!['GET', 'POST'].includes(request.method)) {
     response.setHeader('Allow', 'GET, POST');
@@ -199,6 +218,8 @@ export default async function handler(request, response) {
   const requestUrl = new URL(request.url ?? '/api/works', `https://${request.headers.host ?? 'localhost'}`);
   const shouldRefresh = requestUrl.searchParams.get('refresh') === '1';
   const shouldIncludeCovers = requestUrl.searchParams.get('covers') !== '0';
+
+  if (shouldRefresh && !requireAuthorizedArchiveRefresh(request, response)) return;
 
   if (missing.length > 0) {
     return response.status(503).json({

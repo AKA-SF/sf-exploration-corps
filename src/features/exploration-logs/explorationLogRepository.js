@@ -45,6 +45,7 @@ function mapVisibleExplorationLog(row) {
     memo: row.memo,
     visibility: row.visibility,
     nickname: row.nickname,
+    spoiler: row.spoiler ?? 'CLEAR_SIGNAL',
     createdAt: row.created_at,
   };
 }

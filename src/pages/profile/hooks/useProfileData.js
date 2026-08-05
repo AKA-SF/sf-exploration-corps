@@ -22,10 +22,13 @@ const emptyProfileViewModel = buildProfileViewModel({
 const profileFields = 'id,nickname,public_code,mileage,title,title_override,avatar_url,created_at,updated_at';
 const legacyProfileFields = 'id,nickname,mileage,title,avatar_url,created_at,updated_at';
 const PROFILE_SYNC_INTERVAL_MS = 30000;
-const PROFILE_ACTIVITY_LIMIT = 180;
-const PROFILE_WORK_STATUS_LIMIT = 160;
-const PROFILE_BADGE_LIMIT = 80;
-const PROFILE_WORK_COMMENT_LIMIT = 60;
+const PROFILE_OVERVIEW_ACTIVITY_LIMIT = 8;
+const PROFILE_DETAIL_ACTIVITY_LIMIT = 120;
+const PROFILE_OVERVIEW_WORK_STATUS_LIMIT = 8;
+const PROFILE_RECORDS_WORK_STATUS_LIMIT = 160;
+const PROFILE_OVERVIEW_BADGE_LIMIT = 8;
+const PROFILE_PROGRESS_BADGE_LIMIT = 80;
+const PROFILE_INBOX_WORK_COMMENT_LIMIT = 60;
 const PROFILE_COMMENT_COUNT_LIMIT = 500;
 const PROFILE_COMMUNITY_LIMIT = 20;
 
@@ -62,7 +65,7 @@ async function selectProfileAfterWrite(supabase, userId) {
   return data;
 }
 
-export function useProfileData(user) {
+export function useProfileData(user, activeTab = 'overview') {
   const [profile, setProfile] = useState(null);
   const [activities, setActivities] = useState([]);
   const [nickname, setNickname] = useState('');
@@ -72,6 +75,7 @@ export function useProfileData(user) {
   const [workStatuses, setWorkStatuses] = useState([]);
   const [networkSignals, setNetworkSignals] = useState([]);
   const [manualBadges, setManualBadges] = useState([]);
+  const [dataOwnerId, setDataOwnerId] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -153,6 +157,17 @@ export function useProfileData(user) {
           setMessage('');
         }
 
+        const activityLimit = activeTab === 'progress' || activeTab === 'inbox'
+          ? PROFILE_DETAIL_ACTIVITY_LIMIT
+          : PROFILE_OVERVIEW_ACTIVITY_LIMIT;
+        const workStatusLimit = activeTab === 'records'
+          ? PROFILE_RECORDS_WORK_STATUS_LIMIT
+          : PROFILE_OVERVIEW_WORK_STATUS_LIMIT;
+        const badgeLimit = activeTab === 'progress'
+          ? PROFILE_PROGRESS_BADGE_LIMIT
+          : PROFILE_OVERVIEW_BADGE_LIMIT;
+        const shouldLoadInbox = activeTab === 'inbox';
+
         const [
           { data: activityData, error: activityError },
           { data: tasteActivityData, error: tasteActivityError },
@@ -165,7 +180,7 @@ export function useProfileData(user) {
             .select('id,action_type,points,genre,metadata,created_at')
             .eq('user_id', user.id)
             .order('created_at', { ascending: false })
-            .limit(PROFILE_ACTIVITY_LIMIT),
+            .limit(activityLimit),
           supabase
             .from('activity_logs')
             .select('id,action_type,points,genre,metadata,created_at')
@@ -178,19 +193,21 @@ export function useProfileData(user) {
             .select('work_code,work_title,status,updated_at')
             .eq('user_id', user.id)
             .order('updated_at', { ascending: false })
-            .limit(PROFILE_WORK_STATUS_LIMIT),
+            .limit(workStatusLimit),
           supabase
             .from('user_badges')
             .select('badge_id,awarded_at,badges(title,description)')
             .eq('user_id', user.id)
             .order('awarded_at', { ascending: false })
-            .limit(PROFILE_BADGE_LIMIT),
-          supabase
-            .from('work_comments')
-            .select('id,work_code,work_title,body,created_at')
-            .eq('user_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(PROFILE_WORK_COMMENT_LIMIT),
+            .limit(badgeLimit),
+          shouldLoadInbox
+            ? supabase
+              .from('work_comments')
+              .select('id,work_code,work_title,body,created_at')
+              .eq('user_id', user.id)
+              .order('created_at', { ascending: false })
+              .limit(PROFILE_INBOX_WORK_COMMENT_LIMIT)
+            : Promise.resolve({ data: [], error: null }),
         ]);
 
         const recentActivities = activityError ? [] : activityData ?? [];
@@ -206,7 +223,7 @@ export function useProfileData(user) {
           ...nextActivities.map(item => item.metadata?.work_code),
         ].filter(Boolean)));
         let workCommentCounts = {};
-        if (workCodes.length > 0) {
+        if (shouldLoadInbox && workCodes.length > 0) {
           const { data: commentCountData } = await supabase
             .from('work_comments')
             .select('work_code')
@@ -218,17 +235,19 @@ export function useProfileData(user) {
           }, {});
         }
 
-        let communityQuestions;
-        try {
-          const data = await fetchCommunityQuestions({
-            auth: true,
-            includeCommentCounts: 1,
-            mineOnly: 1,
-            pageSize: PROFILE_COMMUNITY_LIMIT,
-          });
-          communityQuestions = Array.isArray(data.questions) ? data.questions : [];
-        } catch {
-          communityQuestions = [];
+        let communityQuestions = [];
+        if (shouldLoadInbox) {
+          try {
+            const data = await fetchCommunityQuestions({
+              auth: true,
+              includeCommentCounts: 1,
+              mineOnly: 1,
+              pageSize: PROFILE_COMMUNITY_LIMIT,
+            });
+            communityQuestions = Array.isArray(data.questions) ? data.questions : [];
+          } catch {
+            communityQuestions = [];
+          }
         }
 
         if (isMounted) {
@@ -245,11 +264,19 @@ export function useProfileData(user) {
           }));
           setManualBadges(badgeError ? [] : badgeData ?? []);
           setSelectedMissionRoute(getSelectedMissionRoute(user.id));
+          setDataOwnerId(user.id);
           setStatus(activityError ? 'partial' : 'ready');
           setMessage(activityError ? activityError.message : '');
         }
       } catch (error) {
         if (isMounted) {
+          if (hasLoadedBaseProfile) {
+            setActivities([]);
+            setWorkStatuses([]);
+            setNetworkSignals([]);
+            setManualBadges([]);
+            setDataOwnerId(user.id);
+          }
           setStatus(hasLoadedBaseProfile ? 'partial' : 'error');
           setMessage(error?.message || '프로필 데이터를 불러오지 못했습니다.');
         }
@@ -260,7 +287,7 @@ export function useProfileData(user) {
     return () => {
       isMounted = false;
     };
-  }, [user]);
+  }, [activeTab, user]);
 
   useEffect(() => {
     if (!user) return;
@@ -316,11 +343,12 @@ export function useProfileData(user) {
     };
   }, [user]);
 
+  const hasCurrentUserData = Boolean(user?.id && dataOwnerId === user.id);
   const viewModel = useMemo(() => (
-    user
+    hasCurrentUserData
       ? buildProfileViewModel({ activities, manualBadges, profile, selectedMissionRoute, workStatuses })
       : emptyProfileViewModel
-  ), [activities, manualBadges, profile, selectedMissionRoute, user, workStatuses]);
+  ), [activities, hasCurrentUserData, manualBadges, profile, selectedMissionRoute, workStatuses]);
 
   const chooseMissionRoute = routeId => {
     if (!viewModel.missionTree.trainingComplete) return;
@@ -329,14 +357,14 @@ export function useProfileData(user) {
   };
 
   return {
-    activities,
+    activities: hasCurrentUserData ? activities : [],
     chooseMissionRoute,
-    message,
-    networkSignals,
-    nickname,
-    profile,
-    status,
+    message: hasCurrentUserData || status === 'error' ? message : '',
+    networkSignals: hasCurrentUserData ? networkSignals : [],
+    nickname: hasCurrentUserData ? nickname : '',
+    profile: hasCurrentUserData ? profile : null,
+    status: user && !hasCurrentUserData && status !== 'error' ? 'loading' : status,
     viewModel,
-    workStatuses,
+    workStatuses: hasCurrentUserData ? workStatuses : [],
   };
 }

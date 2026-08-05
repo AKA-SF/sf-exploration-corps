@@ -1,16 +1,19 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from 'react';
-import { Routes, Route, useLocation } from 'react-router-dom';
-import { BookOpen, Monitor, Smartphone, TerminalSquare } from 'lucide-react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
+import { Navigate, Routes, Route, useLocation } from 'react-router-dom';
+import { BookOpen, TerminalSquare } from 'lucide-react';
+import { Analytics } from '@vercel/analytics/react';
 import './App.css';
 
 import Navbar from './components/Navbar';
 import InteractiveBackground from './components/InteractiveBackground';
 import { ActivityToastProvider } from './context/ActivityToastContext';
 import { AuthProvider } from './context/AuthContext';
-import { getStorageItem, removeStorageItem, setStorageItem } from './lib/browserStorage';
+import { MobileActionLayerProvider } from './context/MobileActionLayerContext';
+import { getStorageItem, setStorageItem } from './lib/browserStorage';
 import { applySeoMetadata, getSeoMetadata } from './lib/seo';
 
-const Home = lazy(() => import('./pages/Home'));
+const HomeV2 = lazy(() => import('./pages/HomeV2'));
+const SfDiscoveries = lazy(() => import('./pages/SfDiscoveries'));
 const ExplorationLog = lazy(() => import('./pages/ExplorationLog'));
 const MediaArchive = lazy(() => import('./pages/MediaArchive'));
 const WorksArchive = lazy(() => import('./pages/WorksArchive'));
@@ -20,10 +23,11 @@ const LogResult = lazy(() => import('./pages/LogResult'));
 const Profile = lazy(() => import('./pages/Profile'));
 const CrewMessage = lazy(() => import('./pages/CrewMessage'));
 const Login = lazy(() => import('./pages/Login'));
-const Badges = lazy(() => import('./pages/Badges'));
+
 const Network = lazy(() => import('./pages/Network'));
 const NetworkDetail = lazy(() => import('./pages/NetworkDetail'));
 const Admin = lazy(() => import('./pages/Admin'));
+const AdminDiscoveries = lazy(() => import('./pages/AdminDiscoveries'));
 
 function RouteLoader() {
   return (
@@ -34,49 +38,36 @@ function RouteLoader() {
   );
 }
 
-const VIEW_MODE_STORAGE_KEY = 'sf-view-mode';
-const MOBILE_VIEW_QUERY = '(max-width: 760px)';
-
-function isMobileViewport() {
-  if (typeof window === 'undefined') return false;
-  return window.matchMedia(MOBILE_VIEW_QUERY).matches;
-}
-
-function getInitialViewMode() {
-  if (isMobileViewport()) {
-    removeStorageItem(VIEW_MODE_STORAGE_KEY);
-    return 'mobile';
-  }
-  return getStorageItem(VIEW_MODE_STORAGE_KEY, 'mobile');
-}
-
 function App() {
   const location = useLocation();
+  const shouldEnableAnalytics = import.meta.env.PROD
+    && !['localhost', '127.0.0.1'].includes(window.location.hostname);
   const [siteMode, setSiteMode] = useState(() => getStorageItem('sf-site-mode', 'console'));
-  const [viewMode, setViewMode] = useState(getInitialViewMode);
+  const [mobileActionLayer, setMobileActionLayer] = useState(null);
   const seoMetadata = useMemo(() => getSeoMetadata(location.pathname), [location.pathname]);
   const isAdminSurface = location.pathname.startsWith('/admin');
-  const isDeviceSurface = location.pathname.startsWith('/profile')
-    || location.pathname.startsWith('/badges')
-    || location.pathname.startsWith('/network');
+  const isHomeV2Surface = location.pathname === '/' || location.pathname === '/home-v2';
+  const isDeviceSurface = false;
   const isDesktopSurface = location.pathname === '/'
+    || location.pathname.startsWith('/discover')
     || location.pathname.startsWith('/works')
     || location.pathname.startsWith('/media')
     || location.pathname === '/exploration-log'
-    || location.pathname.startsWith('/questions');
+    || location.pathname === '/log'
+    || location.pathname.startsWith('/result/')
+    || location.pathname.startsWith('/questions')
+    || location.pathname.startsWith('/network')
+    || location.pathname.startsWith('/profile')
+    || location.pathname === '/login'
+    || location.pathname.startsWith('/badges');
   const isReadingMode = siteMode === 'reading';
-  const isDesktopRequested = viewMode === 'desktop';
-  const isMobileCompactSurface = !isDeviceSurface && !isDesktopRequested;
+  const supportsSiteMode = location.pathname.startsWith('/works')
+    || location.pathname.startsWith('/media')
+    || location.pathname === '/exploration-log'
+    || location.pathname.startsWith('/questions');
   const isLowPowerSurface = location.pathname.startsWith('/profile')
     || location.pathname.startsWith('/badges')
-    || location.pathname.startsWith('/admin')
-    || isMobileCompactSurface;
-
-  const handleMapNavigate = useCallback(() => {
-    if (!isMobileViewport()) return;
-    removeStorageItem(VIEW_MODE_STORAGE_KEY);
-    setViewMode('mobile');
-  }, []);
+    || location.pathname.startsWith('/admin');
 
   useEffect(() => {
     applySeoMetadata(seoMetadata);
@@ -90,52 +81,30 @@ function App() {
     };
   }, [siteMode]);
 
-  useEffect(() => {
-    if (isMobileViewport()) {
-      removeStorageItem(VIEW_MODE_STORAGE_KEY);
-    } else {
-      setStorageItem(VIEW_MODE_STORAGE_KEY, viewMode);
-    }
-    document.body.classList.toggle('device-surface-active', isDeviceSurface);
-    document.body.classList.toggle('desktop-view-requested', !isDeviceSurface && isDesktopRequested);
-    document.body.classList.toggle('mobile-compact-active', !isDeviceSurface && !isDesktopRequested);
-    return () => {
-      document.body.classList.remove('device-surface-active');
-      document.body.classList.remove('desktop-view-requested');
-      document.body.classList.remove('mobile-compact-active');
-    };
-  }, [isDesktopRequested, isDeviceSurface, viewMode]);
 
   return (
     <AuthProvider>
       <ActivityToastProvider>
-        <div className={`${isAdminSurface ? 'mobile-container desktop-admin' : isDesktopSurface ? 'mobile-container desktop-home' : isDeviceSurface ? 'mobile-container device-surface' : 'mobile-container'} ${isAdminSurface ? 'admin-mode' : isReadingMode ? 'reading-mode' : 'console-mode'} ${isLowPowerSurface ? 'low-power-surface' : ''}`}>
+        <MobileActionLayerProvider value={mobileActionLayer}>
+          <div className={`${isAdminSurface ? 'mobile-container desktop-admin' : isDesktopSurface ? 'mobile-container desktop-home' : isDeviceSurface ? 'mobile-container device-surface' : 'mobile-container'} ${isAdminSurface ? 'admin-mode' : isReadingMode ? 'reading-mode' : 'console-mode'} ${isLowPowerSurface ? 'low-power-surface' : ''}`}>
           <div className="app-wrapper">
             {!isAdminSurface && <InteractiveBackground lowPower={isLowPowerSurface} />}
-            {isDesktopSurface && (
+            {supportsSiteMode && (
               <button
                 className="site-mode-toggle"
                 onClick={() => setSiteMode(isReadingMode ? 'console' : 'reading')}
                 type="button"
               >
                 {isReadingMode ? <TerminalSquare aria-hidden="true" /> : <BookOpen aria-hidden="true" />}
-                <span>{isReadingMode ? 'Console Mode' : 'Reading Mode'}</span>
+                <span>{isReadingMode ? '콘솔 모드' : '읽기 모드'}</span>
               </button>
             )}
-            {!isAdminSurface && !isDeviceSurface && (
-              <button
-                className="viewport-mode-toggle"
-                onClick={() => setViewMode(isDesktopRequested ? 'mobile' : 'desktop')}
-                type="button"
-              >
-                {isDesktopRequested ? <Smartphone aria-hidden="true" /> : <Monitor aria-hidden="true" />}
-                <span>{isDesktopRequested ? '모바일 버전으로 전환' : 'PC 버전으로 전환'}</span>
-              </button>
-            )}
-            <div className="page-container">
+            <div className={`page-container${isHomeV2Surface ? ' home-v2-page-container' : ''}`}>
               <Suspense fallback={<RouteLoader />}>
                 <Routes location={location}>
-                  <Route path="/" element={<Home />} />
+                  <Route path="/" element={<HomeV2 />} />
+                  <Route path="/home-v2" element={<HomeV2 />} />
+                  <Route path="/discover" element={<SfDiscoveries />} />
                   <Route path="/works/:categorySlug" element={<WorksArchive />} />
                   <Route path="/media/:categorySlug" element={<MediaArchive />} />
                   <Route path="/exploration-log" element={<ExplorationLog />} />
@@ -145,17 +114,21 @@ function App() {
                   <Route path="/result/:id" element={<LogResult />} />
                   <Route path="/network" element={<Network />} />
                   <Route path="/network/:id" element={<NetworkDetail />} />
-                  <Route path="/badges" element={<Badges />} />
+                  <Route path="/badges" element={<Navigate to="/profile?tab=progress" replace />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/crew/:crewCode/message" element={<CrewMessage />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/admin" element={<Admin />} />
+                  <Route path="/admin/discoveries" element={<AdminDiscoveries />} />
                 </Routes>
               </Suspense>
             </div>
-            {!isAdminSurface && <Navbar onMapNavigate={handleMapNavigate} />}
+            <div id="mobile-action-layer" ref={setMobileActionLayer} />
+            {!isAdminSurface && <Navbar />}
           </div>
-        </div>
+          </div>
+        </MobileActionLayerProvider>
+        {shouldEnableAnalytics && <Analytics />}
       </ActivityToastProvider>
     </AuthProvider>
   );

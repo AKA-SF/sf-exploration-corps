@@ -1,0 +1,7 @@
+.git
+.hermes
+.omh
+dist
+node_modules
+playwright-report
+test-results

@@ -11,6 +11,11 @@ const routeMeta = [
     description: DEFAULT_DESCRIPTION,
   },
   {
+    match: pathname => pathname === '/discover',
+    title: '새로 포착된 SF | SF 탐사단',
+    description: 'SF 신작, 공개 예정작과 편집 추천을 공식 출처와 공개 일정으로 확인하는 SF 탐사단의 관측 정보 페이지입니다.',
+  },
+  {
     match: pathname => pathname.startsWith('/works/novels'),
     title: 'SF 소설 아카이브 | SF 탐사단',
     description: 'SF 탐사단의 소설 아카이브입니다. 한국 과학소설, 해외 SF, 고전, 장르 태그, 추천자 기록을 탐사 좌표처럼 찾아볼 수 있습니다.',

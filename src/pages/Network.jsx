@@ -1,57 +1,55 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useLogs } from '../context/LogContext';
-import { useVisibleExplorationLogs } from '../features/exploration-logs/useVisibleExplorationLogs';
-import { Lock, Radar, RadioTower, SendHorizontal, MessageSquareText, Users, Zap } from 'lucide-react';
+import { lazy, Suspense } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { ArrowRight, ListFilter, Map, Radio, Radar, SendHorizontal } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
-import { ZoomableMap } from '../components/ZoomableMap';
 import { useAuth } from '../context/authContextValue';
-import { useActivityToast } from '../context/activityToastContextValue';
-import { useMotionProfile } from '../hooks/useMotionProfile';
-import { recordUserActivity } from '../lib/activityLogger';
-import { supabase } from '../lib/supabaseClient';
-import { fetchCommunityQuestions } from './questions/communityApi';
+import { useVisibleExplorationLogs } from '../features/exploration-logs/useVisibleExplorationLogs';
 import useRadioMessages from './network/useRadioMessages';
-import {
-  formatSignalTime,
-  getActivitySignal,
-  getBoardSignal,
-  getDailyNetworkMission,
-  getSignalLine,
-  getSignalColor,
-  getUnknownSignalTarget,
-  getWorkCommentSignal,
-  LOG_TYPES,
-  MAX_ANIMATED_EDGES,
-  MAX_EDGE_COMPARE_WINDOW,
-  MAX_VISIBLE_EDGES,
-  MAX_VISIBLE_NODES,
-  NETWORK_AUX_SIGNAL_LIMIT,
-  NETWORK_REACTIONS,
-} from './network/networkUtils';
-import './Network.css';
-import '../styles/MobileExperience.css';
+import './NetworkV2.css';
 
-const Network = () => {
-  const { logs } = useLogs();
-  const { logs: visibleExplorationLogs } = useVisibleExplorationLogs();
+const NetworkMapV2 = lazy(() => import('./network/NetworkMapV2'));
+const NETWORK_TABS = [
+  { id: 'signals', icon: ListFilter, label: '신호 목록' },
+  { id: 'map', icon: Map, label: '지도' },
+  { id: 'radio', icon: Radio, label: '무전' },
+];
+const NETWORK_TAB_IDS = new Set(NETWORK_TABS.map(tab => tab.id));
+
+function formatDate(value) {
+  if (!value) return '최근 수신';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return '최근 수신';
+  return new Intl.DateTimeFormat('ko-KR', { month: 'short', day: 'numeric' }).format(date);
+}
+
+function signalDescription(log) {
+  if (Array.isArray(log.ideas) && log.ideas.length > 0) return log.ideas.slice(0, 2).join(' · ');
+  const immersion = Number(log.experiences?.immersion ?? 0);
+  const complexity = Number(log.experiences?.complexity ?? 0);
+  return `몰입 ${immersion} · 복잡성 ${complexity}의 공개 탐사 신호입니다.`;
+}
+
+function NetworkSourceError({ onRetry }) {
+  return (
+    <div className="network-v2-empty panel" role="alert">
+      <strong>공개 신호 연결을 확인하지 못했습니다.</strong>
+      <p>실제 빈 네트워크가 아닐 수 있습니다. 연결 상태를 확인한 뒤 다시 수신해 주세요.</p>
+      <button className="network-v2-empty-cta" onClick={onRetry} type="button">다시 수신하기</button>
+    </div>
+  );
+}
+
+export default function Network() {
   const { user } = useAuth();
-  const { showActivityToast } = useActivityToast();
   const navigate = useNavigate();
-  const userLogCount = logs.length;
-
-  const [hoveredNode, setHoveredNode] = useState(null);
-  const [activitySignals, setActivitySignals] = useState([]);
-  const [boardSignals, setBoardSignals] = useState([]);
-  const [workCommentSignals, setWorkCommentSignals] = useState([]);
-  const [amplifiedSignals, setAmplifiedSignals] = useState(() => new Set());
-  const [reactionNotice, setReactionNotice] = useState('');
-  const [isReacting, setIsReacting] = useState(false);
-  const motionProfile = useMotionProfile();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const requestedTab = searchParams.get('view') || 'signals';
+  const activeTab = NETWORK_TAB_IDS.has(requestedTab) ? requestedTab : 'signals';
+  const { logs: visibleExplorationLogs, loading, reload, status: networkSourceStatus } = useVisibleExplorationLogs(36);
+  const networkSourceUnavailable = networkSourceStatus === 'error' || networkSourceStatus === 'unavailable';
   const {
     isRadioSubmitting,
     radioBody,
-    radioMessages,
     radioNotice,
     radioStatus,
     radioStream,
@@ -62,661 +60,178 @@ const Network = () => {
     setReplyTarget,
     submitRadioMessage,
     submitRadioReply,
-  } = useRadioMessages(user);
+  } = useRadioMessages(user, activeTab === 'radio');
 
-  const normalizeActivitySignal = useCallback(activity => {
-    const signal = getActivitySignal(activity);
-    return {
-      id: `activity-${activity.id}`,
-      color: getSignalColor(signal.status),
-      status: signal.status,
-      sender: activity.genre || 'CREW_ACTIVITY',
-      body: signal.body,
-      href: signal.href,
-      time: formatSignalTime(activity.created_at),
-      createdAt: activity.created_at,
-    };
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadActivitySignals = async () => {
-      if (!supabase) {
-        setActivitySignals([]);
-        return;
-      }
-
-      const { data, error } = await supabase
-        .from('activity_logs')
-        .select('id, action_type, genre, points, metadata, created_at')
-        .order('created_at', { ascending: false })
-        .limit(18);
-
-      if (!isMounted) return;
-
-      if (error) {
-        setActivitySignals([]);
-        return;
-      }
-
-      setActivitySignals((data ?? []).map(normalizeActivitySignal));
-    };
-
-    loadActivitySignals();
-
-    if (!supabase) return () => {
-      isMounted = false;
-    };
-
-    const channel = supabase
-      .channel('network-activity-live')
-      .on('postgres_changes', {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'activity_logs',
-      }, payload => {
-        if (payload.new?.user_id !== user?.id) return;
-        setActivitySignals(current => {
-          const nextSignal = normalizeActivitySignal(payload.new);
-          if (current.some(signal => signal.id === nextSignal.id)) return current;
-          return [nextSignal, ...current].slice(0, 18);
-        });
-      })
-      .subscribe();
-
-    return () => {
-      isMounted = false;
-      supabase.removeChannel(channel);
-    };
-  }, [normalizeActivitySignal, user]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadAuxiliarySignals() {
-      const [boardResult, workCommentResult] = await Promise.allSettled([
-        fetchCommunityQuestions({ pageSize: NETWORK_AUX_SIGNAL_LIMIT }),
-        supabase
-          ? supabase
-            .from('work_comments')
-            .select('id,work_code,work_title,author_name,body,created_at')
-            .order('created_at', { ascending: false })
-            .limit(NETWORK_AUX_SIGNAL_LIMIT)
-          : Promise.resolve({ data: [] }),
-      ]);
-
-      if (!isMounted) return;
-
-      if (boardResult.status === 'fulfilled') {
-        setBoardSignals((boardResult.value.questions ?? []).map(getBoardSignal));
-      }
-
-      if (workCommentResult.status === 'fulfilled' && !workCommentResult.value.error) {
-        setWorkCommentSignals((workCommentResult.value.data ?? []).map(getWorkCommentSignal));
-      }
-    }
-
-    loadAuxiliarySignals();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // Generate spatial coordinates and types for logs
-  const spatialLogs = useMemo(() => {
-    const nodeLimit = motionProfile.reduced ? 32 : motionProfile.compact ? 38 : MAX_VISIBLE_NODES;
-    return visibleExplorationLogs.slice(0, nodeLimit).map((log) => {
-      // Deterministic pseudo-random placement based on index/id
-      const hash = log.id.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const r1 = Math.sin(hash) * 10000;
-      const r2 = Math.cos(hash) * 10000;
-      
-      const x = (r1 - Math.floor(r1)) * 2000; // 0 to 2000
-      const y = (r2 - Math.floor(r2)) * 1500; // 0 to 1500
-
-      // Assign type based on metrics
-      let typeKey = 'DEEP_SIGNAL';
-      if (log.experiences.derealization > 85) typeKey = 'WARNING';
-      if (log.experiences.complexity > 85) typeKey = 'ANOMALY';
-      if (log.encryptionLevel > userLogCount + 2) typeKey = 'LOST_TRANSMISSION';
-
-      return {
-        ...log,
-        type: log.logType,
-        timestamp: log.createdAt,
-        explorerId: log.nickname || 'ANONYMOUS_SIGNAL',
-        encryptionLevel: 0,
-        responseSignals: [],
-        x,
-        y,
-        typeKey,
-      };
-    });
-  }, [motionProfile, userLogCount, visibleExplorationLogs]);
-
-  // Generate edges between similar logs (same genre or emotion)
-  const edges = useMemo(() => {
-    const lines = [];
-    const compareWindow = motionProfile.reduced ? 10 : motionProfile.compact ? 12 : MAX_EDGE_COMPARE_WINDOW;
-    const edgeLimit = motionProfile.reduced ? 36 : motionProfile.compact ? 52 : MAX_VISIBLE_EDGES;
-    for (let i = 0; i < spatialLogs.length; i++) {
-      const maxJ = Math.min(spatialLogs.length, i + 1 + compareWindow);
-      for (let j = i + 1; j < maxJ; j++) {
-        const logA = spatialLogs[i];
-        const logB = spatialLogs[j];
-        
-        let isConnected = false;
-        if (logA.type === logB.type) isConnected = true; // Same genre
-        else if (logA.emotions.some(e => logB.emotions.includes(e))) isConnected = true; // Same emotion
-
-        if (isConnected) {
-          const dx = logA.x - logB.x;
-          const dy = logA.y - logB.y;
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          if (distance < 800) { // Only connect if within a reasonable range
-            const strength = Math.max(0.18, 1 - distance / 800);
-            lines.push({ id: `${logA.id}-${logB.id}`, x1: logA.x, y1: logA.y, x2: logB.x, y2: logB.y, strength });
-          }
-        }
-      }
-    }
-
-    if (lines.length === 0 && spatialLogs.length > 1) {
-      for (let i = 0; i < spatialLogs.length - 1; i++) {
-        const logA = spatialLogs[i];
-        const logB = spatialLogs[i + 1];
-        lines.push({
-          id: `relay-${logA.id}-${logB.id}`,
-          x1: logA.x,
-          y1: logA.y,
-          x2: logB.x,
-          y2: logB.y,
-          strength: 0.22,
-        });
-      }
-    }
-
-    return lines
-      .sort((a, b) => b.strength - a.strength)
-      .slice(0, edgeLimit);
-  }, [motionProfile, spatialLogs]);
-
-  const dailyMission = useMemo(() => getDailyNetworkMission(), []);
-
-  const unknownSignal = useMemo(
-    () => getUnknownSignalTarget({ activitySignals, radioMessages, spatialLogs }),
-    [activitySignals, radioMessages, spatialLogs],
-  );
-
-  const transmissionStream = useMemo(() => {
-    const radioSignals = radioStream.map(signal => ({
-      id: `radio-${signal.id}`,
-      color: signal.color,
-      status: signal.status,
-      sender: signal.sender,
-      body: signal.body,
-      time: signal.time,
-      message: signal.message,
-      isReplyToMe: signal.isReplyToMe,
-    }));
-
-    const unknownStreamSignal = {
-      id: 'unknown-daily-signal',
-      color: unknownSignal.color,
-      status: unknownSignal.status,
-      sender: 'DEEP_SCAN',
-      body: `미확인 신호 감지 // ${unknownSignal.body}`,
-      href: unknownSignal.href,
-      time: unknownSignal.label,
-    };
-
-    const missionSignal = {
-      id: `daily-mission-${dailyMission.id}`,
-      color: getSignalColor(dailyMission.signal),
-      status: 'DAILY_MISSION',
-      sender: 'MISSION-CONTROL',
-      body: `${dailyMission.title} // ${dailyMission.detail}`,
-      href: dailyMission.href,
-      time: dailyMission.reward,
-    };
-
-    const baseStream = spatialLogs
-      .slice()
-      .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-      .flatMap((log, index) => {
-        const typeConfig = LOG_TYPES[log.typeKey];
-        const isEncrypted = userLogCount < log.encryptionLevel;
-        return [
-          {
-            id: `${log.id}-primary`,
-            color: typeConfig.color,
-            status: isEncrypted ? 'LOCKED' : log.typeKey,
-            sender: log.explorerId,
-            body: isEncrypted ? `암호화된 신호 감지 / ACCESS_REQ LVL_${log.encryptionLevel}` : getSignalLine(log, index),
-            href: isEncrypted ? null : `/network/${log.id}`,
-            time: isEncrypted ? `LVL_${log.encryptionLevel}` : 'LOG_TRACE',
-          },
-          ...log.responseSignals.slice(-1).map(signal => ({
-            id: `${log.id}-${signal.signalId}`,
-            color: 'var(--accent-amber)',
-            status: 'RESPONSE',
-            sender: signal.sender,
-            body: `응답 신호 수신 // ${signal.message}`,
-            href: `/network/${log.id}`,
-            time: 'RELAY_REPLY',
-          })),
-        ];
-      });
-
-    if (baseStream.length + radioSignals.length < 5) {
-      baseStream.push(
-        { id: 'system-watch-01', color: 'var(--primary-cyan)', status: 'SYSTEM', sender: 'ARCHIVE-CORE', body: '섹터별 감정 동기화율을 갱신 중입니다.', href: '/works/novels', time: 'ARCHIVE' },
-        { id: 'system-watch-02', color: 'var(--accent-amber)', status: 'MISSION', sender: 'MISSION-CONTROL', body: '오늘의 임무 채널을 열어 대원 활동 신호를 기다리는 중입니다.', href: dailyMission.href, time: dailyMission.reward },
-      );
-    }
-
-    return [
-      unknownStreamSignal,
-      ...radioSignals.slice(0, 5),
-      ...activitySignals.slice(0, 6),
-      ...boardSignals.slice(0, 4),
-      ...workCommentSignals.slice(0, 4),
-      missionSignal,
-      ...baseStream,
-    ].slice(0, 22);
-  }, [activitySignals, boardSignals, dailyMission, radioStream, spatialLogs, unknownSignal, userLogCount, workCommentSignals]);
-
-  const handleNodeClick = (log) => {
-    navigate(`/network/${log.id}`);
+  const selectTab = tabId => {
+    const next = new URLSearchParams(searchParams);
+    if (tabId === 'signals') next.delete('view');
+    else next.set('view', tabId);
+    setSearchParams(next, { replace: true });
   };
 
-  const animatedEdgeLimit = motionProfile.reduced ? 0 : motionProfile.compact ? 10 : MAX_ANIMATED_EDGES;
-
-  const reactToSignal = async (signal, reaction) => {
-    if (!user) {
-      setReactionNotice('로그인 후 신호에 반응할 수 있습니다.');
-      return;
-    }
-    if (isReacting) return;
-
-    const today = new Date().toLocaleDateString('sv-SE');
-    const reactionKey = `${reaction.id}:${signal.id}:${today}`;
-    if (amplifiedSignals.has(reactionKey)) {
-      setReactionNotice('이 신호는 오늘 이미 처리했습니다.');
-      return;
-    }
-
-    setIsReacting(true);
-    setReactionNotice('');
-    const result = await recordUserActivity(user, {
-      actionType: reaction.id === 'amplify' ? 'signal_reaction' : 'reaction',
-      dedupeKey: `network:${reactionKey}`,
-      genre: '네트워크 반응',
-      points: reaction.points,
-      metadata: {
-        title: `${reaction.label} / ${signal.status}`,
-        body: signal.body,
-        href: signal.href,
-        signal_id: signal.id,
-        signal_status: signal.status,
-        reaction: reaction.id,
-        node: 'network-relay',
-      },
-    });
-
-    if (result.ok) {
-      setAmplifiedSignals(current => new Set(current).add(reactionKey));
-      setReactionNotice(`${reaction.label} 완료. +${reaction.points} MP`);
-      showActivityToast({
-        detail: `${signal.status} 신호에 ${reaction.label}을 남겼습니다.`,
-        points: reaction.points,
-        title: '네트워크 반응 기록',
-      });
-    } else {
-      setReactionNotice(result.error?.message || '신호 반응 저장에 실패했습니다.');
-    }
-    setIsReacting(false);
-  };
-
-  const renderRelayLine = (signal, index, ghost = false) => (
-    <div
-      aria-hidden={ghost ? 'true' : undefined}
-      key={`${ghost ? 'ghost' : 'live'}-${signal.id}`}
-      className={`relay-line ${ghost ? 'is-ghost' : ''} ${signal.isReplyToMe ? 'is-received-reply' : ''}`}
-      style={ghost ? undefined : { animationDelay: `${index * 0.05}s` }}
-    >
-      <span className="relay-pulse" style={{ backgroundColor: signal.color, boxShadow: `0 0 10px ${signal.color}` }} />
-      <div>
-        <div className="relay-line-meta mono">
-          <span style={{ color: signal.color }}>{signal.status}</span>
-          <span>{signal.time || signal.sender}</span>
+  return (
+    <PageTransition className="network-container network-v2">
+      <header className="network-v2-header">
+        <div>
+          <span className="mono">공개 탐사 신호 · PUBLIC NETWORK</span>
+          <h1><Radar aria-hidden="true" /> 탐사 네트워크</h1>
+          <p>다른 탐사자가 공개한 SF 감상 기록을 발견하고, 비슷한 감정과 아이디어에서 새로운 연결점을 찾습니다.</p>
         </div>
-        <p>{signal.body}</p>
-        {!ghost && (
-          <div className="relay-line-actions">
-            {signal.href && (
-              <button
-                className="relay-track-button mono"
-                onClick={() => navigate(signal.href)}
-                type="button"
-              >
-                신호 추적
-              </button>
-            )}
-            {NETWORK_REACTIONS.map(reaction => {
-              const today = new Date().toLocaleDateString('sv-SE');
-              const reactionKey = `${reaction.id}:${signal.id}:${today}`;
-              const isDone = amplifiedSignals.has(reactionKey);
+        <div className="network-v2-count mono" aria-label={networkSourceUnavailable ? '공개 신호 상태 확인 불가' : `공개 신호 ${visibleExplorationLogs.length}개`}>
+          <span>VISIBLE SIGNALS</span>
+          <strong>{networkSourceUnavailable ? '—' : visibleExplorationLogs.length}</strong>
+        </div>
+      </header>
+
+      <div className="network-v2-workspace">
+        <aside className="network-v2-rail">
+          <nav className="network-v2-tabs" aria-label="탐사 네트워크 보기" role="tablist">
+            {NETWORK_TABS.map(tab => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
               return (
                 <button
-                  className={`relay-reaction-button mono ${reaction.id === 'amplify' ? 'is-amplify' : ''}`}
-                  disabled={isReacting || isDone}
-                  key={reaction.id}
-                  onClick={() => reactToSignal(signal, reaction)}
+                  aria-controls={`network-panel-${tab.id}`}
+                  aria-selected={isActive}
+                  className={isActive ? 'is-active' : ''}
+                  id={`network-tab-${tab.id}`}
+                  key={tab.id}
+                  onClick={() => selectTab(tab.id)}
+                  role="tab"
                   type="button"
                 >
-                  {isDone ? '완료' : `${reaction.label} +${reaction.points}`}
+                  <Icon aria-hidden="true" />
+                  <span>{tab.label}</span>
                 </button>
               );
             })}
-            {signal.message && signal.message.user_id !== user?.id && (
-              <button
-                className="radio-reply-button mono"
-                onClick={() => {
-                  setReplyTarget(signal.message);
-                  setReplyBody('');
-                }}
-                type="button"
-              >
-                답신 보내기
-              </button>
-            )}
+          </nav>
+          <div className="network-v2-rail-guide panel">
+            <span className="mono">탐사망 안내 · NETWORK GUIDE</span>
+            <strong>{activeTab === 'signals' ? '공개 신호 탐색' : activeTab === 'map' ? '연결 구조 보기' : '공개 무전 참여'}</strong>
+            <p>{activeTab === 'signals' ? '공개 범위가 허용된 탐사 기록만 표시합니다.' : activeTab === 'map' ? '노드를 선택하면 해당 기록의 상세로 이동합니다.' : '이름과 무전 내용은 네트워크에 공개됩니다.'}</p>
           </div>
-        )}
-      </div>
-    </div>
-  );
+        </aside>
 
-  return (
-    <PageTransition className="network-container">
-      <header className="page-header pointer-area">
-        <h2 className="mono title-glitch" style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary-cyan)' }}>
-          <Radar size={20} className="spin-slow" /> RELAY_RECEIVER
-        </h2>
-        <p className="mono text-muted text-xs">탐사 장비: 기록, 감정, 섹터가 비슷한 신호를 수신하고 교신망으로 연결합니다.</p>
-      </header>
-
-      <section className="network-primer network-control-deck panel panel-accent">
-        <div className="network-control-status">
-          <div className="relay-header mono">
-            <MessageSquareText size={12} />
-            <span>EXPLORER_COMM_STREAM</span>
+        <main className="network-v2-content">
+          {activeTab === 'signals' && (
+        <section className="network-v2-panel" aria-labelledby="network-tab-signals" id="network-panel-signals" role="tabpanel">
+          <div className="network-v2-section-head">
+            <div><span className="mono">LATEST SIGNALS</span><h2>최근 공개 탐사 기록</h2></div>
+            <p>기록을 선택하면 공개가 허용된 필드만으로 상세 신호를 확인합니다.</p>
           </div>
-          <strong>탐사자 활동, 커뮤니티 글, 작품 댓글, 무전 메시지가 하나의 공개 신호망으로 흐릅니다.</strong>
-          <div className="network-device-readout mono" aria-label="교신 장비 상태">
-            <span>
-              <b>ACTIVE</b>
-              <em>{Math.max(7, spatialLogs.length * 3 + radioMessages.length + activitySignals.length)}</em>
-            </span>
-            <span>
-              <b>NODES</b>
-              <em>{spatialLogs.length}</em>
-            </span>
-            <span>
-              <b>PACKETS</b>
-              <em>{edges.length * 2 + activitySignals.length + radioMessages.length}</em>
-            </span>
-          </div>
-        </div>
 
-        <button className="unknown-signal-card network-top-signal" onClick={() => navigate(unknownSignal.href)} type="button">
-          <span className="mono">UNKNOWN_SIGNAL</span>
-          <strong>{unknownSignal.body}</strong>
-          <em className="mono">{unknownSignal.label}</em>
-        </button>
-
-        <div className="network-radio-dock">
-          <form className="radio-composer" onSubmit={submitRadioMessage}>
-            <label className="mono" htmlFor="radio-message">OPEN_RADIO_MESSAGE</label>
-            <textarea
-              id="radio-message"
-              maxLength={240}
-              onChange={event => setRadioBody(event.target.value)}
-              placeholder={user ? '현재 탐사 중인 좌표, 읽는 책, 감지한 신호를 짧게 남겨보세요.' : '로그인 후 무전 메시지를 송신할 수 있습니다.'}
-              value={radioBody}
-            />
-            <div className="radio-composer-bottom">
-              <span className="mono">{radioBody.length}/240</span>
-              <button className="mono" disabled={!user || isRadioSubmitting || !radioBody.trim()} type="submit">
-                송신 +4MP
-              </button>
-            </div>
-          </form>
-          {replyTarget && (
-            <form className="radio-reply-composer" onSubmit={submitRadioReply}>
-              <div className="radio-reply-target mono">
-                <span>REPLY_TO</span>
-                <strong>{replyTarget.author_name}</strong>
-                <button type="button" onClick={() => setReplyTarget(null)}>취소</button>
-              </div>
-              <textarea
-                maxLength={180}
-                onChange={event => setReplyBody(event.target.value)}
-                placeholder={`${replyTarget.author_name} 대원에게 공개 답신 보내기`}
-                value={replyBody}
-              />
-              <div className="radio-composer-bottom">
-                <span className="mono">{replyBody.length}/180</span>
-                <button className="mono" disabled={!user || isRadioSubmitting || !replyBody.trim()} type="submit">
-                  답신 +3MP
-                </button>
-              </div>
-            </form>
-          )}
-          {radioStatus === 'schema-missing' && (
-            <p className="radio-notice">무전 테이블 연결이 필요합니다. Supabase SQL 스키마를 다시 실행해주세요.</p>
-          )}
-          {radioNotice && radioStatus !== 'schema-missing' && <p className="radio-notice">{radioNotice}</p>}
-          {reactionNotice && <p className="radio-notice">{reactionNotice}</p>}
-        </div>
-      </section>
-
-      <div className="network-viewport">
-        <div className="signal-sweep"></div>
-        <ZoomableMap
-          width={2000}
-          height={1500}
-          initialScale={0.92}
-          minScale={0.38}
-          maxScale={3.2}
-          contentClassName="network-transform-content"
-        >
-            <div className="network-canvas-area">
-              <div className="network-grid-depth"></div>
-              
-              <svg className="network-edges" width="2000" height="1500">
-                {edges.map((edge, edgeIndex) => (
-                  <g key={edge.id} className="signal-edge">
-                    <line 
-                      x1={edge.x1} y1={edge.y1} 
-                      x2={edge.x2} y2={edge.y2} 
-                      stroke="var(--primary-cyan-dim)" 
-                      strokeWidth={0.8 + edge.strength * 1.4}
-                      opacity={0.14 + edge.strength * 0.42}
-                    />
-                    {edgeIndex < animatedEdgeLimit && (
-                      <>
-                        <circle r={1.6 + edge.strength * 2.4} fill="var(--primary-cyan)" opacity="0.88">
-                          <animateMotion
-                            dur={`${5 - edge.strength * 2.2}s`}
-                            repeatCount="indefinite"
-                            path={`M ${edge.x1} ${edge.y1} L ${edge.x2} ${edge.y2}`}
-                          />
-                        </circle>
-                        <circle r="1.5" fill="var(--accent-amber)" opacity="0.7">
-                          <animateMotion
-                            dur={`${7 - edge.strength * 2}s`}
-                            begin="1.2s"
-                            repeatCount="indefinite"
-                            path={`M ${edge.x2} ${edge.y2} L ${edge.x1} ${edge.y1}`}
-                          />
-                        </circle>
-                      </>
-                    )}
-                  </g>
-                ))}
-              </svg>
-
-              {spatialLogs.map(log => {
-                const isEncrypted = userLogCount < log.encryptionLevel;
-                const typeConfig = LOG_TYPES[log.typeKey];
-                const Icon = typeConfig.icon;
-                const isHovered = hoveredNode === log.id;
-
-                return (
-                  <div 
-                    key={log.id}
-                    className="network-node pointer-area"
-                    style={{ left: log.x, top: log.y }}
-                    onMouseEnter={() => setHoveredNode(log.id)}
-                    onMouseLeave={() => setHoveredNode(null)}
-                    onClick={() => handleNodeClick(log)}
-                  >
-                    <div className="node-icon-container">
-                      
-                      {/* Node Core */}
-                      <div 
-                        className={`signal-node-core ${isHovered ? 'hovered' : ''}`}
-                        style={{ backgroundColor: typeConfig.color, boxShadow: `0 0 10px ${typeConfig.color}` }}
-                      >
-                        {isEncrypted && <div className="encrypted-overlay"></div>}
-                      </div>
-                      
-                      <div 
-                        className="signal-radar-ring"
-                        style={{ borderColor: typeConfig.color }}
-                      ></div>
-                      <div
-                        className="signal-strength-ring"
-                        style={{
-                          borderColor: typeConfig.color,
-                          width: 30 + log.experiences.immersion * 0.45,
-                          height: 30 + log.experiences.immersion * 0.45,
-                        }}
-                      ></div>
-
-                      {isHovered && (
-                          <div
-                            className={`node-hud ${isEncrypted ? 'encrypted-hud' : ''}`}
-                            style={{ borderColor: isEncrypted ? '#ef4444' : 'var(--primary-cyan)' }}
-                          >
-                            <div className="hud-type-header">
-                              <Icon size={12} color={typeConfig.color} />
-                              <span className="mono" style={{ color: typeConfig.color, fontSize: '8px' }}>
-                                {log.typeKey}
-                              </span>
-                            </div>
-                            
-                            {isEncrypted ? (
-                              <div className="mono encrypted-text">
-                                <Lock size={10} style={{ display: 'inline', marginRight: '4px' }} />
-                                ENCRYPTED_DATA
-                                <div className="access-req">ACCESS_REQ: LVL_{log.encryptionLevel}</div>
-                              </div>
-                            ) : (
-                              <>
-                                <div className="mono hud-title">{log.title}</div>
-                                <div className="mono hud-sender">SENDER: {log.explorerId}</div>
-                                <div className="hud-tags">
-                                  {log.emotions.slice(0, 2).map(e => (
-                                    <span key={e} className="mono mini-tag">{e}</span>
-                                  ))}
-                                </div>
-                              </>
-                            )}
-                          </div>
-                        )}
-
-                    </div>
+          {networkSourceUnavailable ? (
+            <NetworkSourceError onRetry={reload} />
+          ) : loading ? (
+            <div className="network-v2-empty panel" role="status" aria-live="polite"><strong>공개 신호를 수신하고 있습니다.</strong></div>
+          ) : visibleExplorationLogs.length > 0 ? (
+            <div className="network-v2-feed">
+              {visibleExplorationLogs.map(log => (
+                <Link className="network-v2-card" key={log.id} to={`/network/${log.id}`}>
+                  <div className="network-v2-card-meta">
+                    <b>{log.visibility === 'PUBLIC_SIGNAL' ? '공개 신호' : '익명 신호'}</b>
+                    <span>{log.logType || '탐사 기록'}</span>
+                    <time dateTime={log.createdAt}>{formatDate(log.createdAt)}</time>
                   </div>
-                );
-              })}
+                  <h3>{log.spoiler === 'CLASSIFIED_SIGNAL' ? '분류된 탐사 신호' : log.title || '제목 없는 탐사 신호'}</h3>
+                  <p>{log.spoiler === 'CLASSIFIED_SIGNAL' ? '스포일러가 포함된 분류 신호입니다. 상세에서 직접 확인할 수 있습니다.' : signalDescription(log)}</p>
+                  <div className="network-v2-emotions" aria-label="감정 태그">
+                    {(log.spoiler === 'CLASSIFIED_SIGNAL' ? [] : log.emotions || []).slice(0, 3).map(emotion => <span key={emotion}>{emotion}</span>)}
+                  </div>
+                  <div className="network-v2-card-cta"><span>신호 상세 보기</span><ArrowRight aria-hidden="true" size={17} /></div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="network-v2-empty network-v2-empty--guided panel">
+              <header>
+                <span className="mono">NO PUBLIC SIGNALS RECEIVED</span>
+                <strong>아직 수신된 공개 신호가 없습니다.</strong>
+                <p>첫 신호는 자동으로 생성되지 않습니다. 탐사자가 기록의 공개 범위를 직접 선택할 때 네트워크에 연결됩니다.</p>
+              </header>
+              <ol className="network-v2-empty-steps" aria-label="공개 신호를 만드는 과정">
+                <li><span className="mono">01</span><strong>작품을 발견합니다</strong><p>소설, 영화, 게임에서 남기고 싶은 감각과 아이디어를 찾습니다.</p></li>
+                <li><span className="mono">02</span><strong>탐사 기록을 남깁니다</strong><p>경험 수치와 감정, 메모를 먼저 개인 기록으로 저장합니다.</p></li>
+                <li><span className="mono">03</span><strong>공개 범위를 직접 선택합니다</strong><p>공개 신호로 선택한 기록만 다른 탐사자에게 연결됩니다.</p></li>
+              </ol>
+              <div className="network-v2-empty-boundary">
+                <div><span className="mono">공개되는 정보</span><p>작품명, 공개 경험 수치, 선택한 감정과 아이디어</p></div>
+                <div><span className="mono">비공개로 유지</span><p>개인 초안, 비공개 메모, 공개하지 않은 탐사 기록</p></div>
+              </div>
+              <Link className="network-v2-empty-cta" to="/log">첫 탐사 기록 작성 <ArrowRight aria-hidden="true" /></Link>
+            </div>
+          )}
+        </section>
+      )}
 
-              {spatialLogs.length === 0 && (
-                <div className="network-empty-state panel panel-accent">
-                  <span className="mono">NO_LIVE_SIGNAL</span>
-                  <strong>아직 수신된 탐사 신호가 없습니다</strong>
-                  <p>첫 탐사 보고서를 송신하면 이 공간에 감정 반응, 유사 탐사자, 연결 작품 신호가 나타납니다.</p>
-                  <button className="mono" onClick={() => navigate('/log')}>첫 탐사 보고서 작성</button>
+      {activeTab === 'map' && (
+        <section className="network-v2-panel" aria-labelledby="network-tab-map" id="network-panel-map" role="tabpanel">
+          <div className="network-v2-section-head">
+            <div><span className="mono">SIGNAL MAP</span><h2>공개 신호 연결 지도</h2></div>
+            <p>지도 노드를 선택하면 해당 공개 탐사 기록의 상세 화면으로 이동합니다.</p>
+          </div>
+          {networkSourceUnavailable ? (
+            <NetworkSourceError onRetry={reload} />
+          ) : loading ? (
+            <div className="network-v2-empty panel" role="status">공개 신호를 수신하고 있습니다.</div>
+          ) : (
+            <Suspense fallback={<div className="network-v2-empty panel" role="status">신호 지도를 준비하고 있습니다.</div>}>
+              <NetworkMapV2 logs={visibleExplorationLogs} onSelect={log => navigate(`/network/${log.id}`)} />
+            </Suspense>
+          )}
+        </section>
+      )}
+
+      {activeTab === 'radio' && (
+        <section className="network-v2-panel" aria-labelledby="network-tab-radio" id="network-panel-radio" role="tabpanel">
+          <div className="network-v2-section-head">
+            <div><span className="mono">OPEN RADIO</span><h2>공개 무전 채널</h2></div>
+            <p>무전 내용과 발신자 이름은 공개됩니다. 개인 정보나 비공개 기록을 입력하지 마세요.</p>
+          </div>
+          <div className="network-v2-radio-grid">
+            <div className="network-v2-radio-compose-column">
+              <form className="network-v2-radio-composer panel" onSubmit={submitRadioMessage}>
+                <label className="mono" htmlFor="network-radio-body">새 공개 무전</label>
+                <textarea
+                  id="network-radio-body"
+                  maxLength={240}
+                  onChange={event => setRadioBody(event.target.value)}
+                  placeholder={user ? '탐사 중 발견한 연결점을 240자 이내로 공유하세요.' : '로그인 후 공개 무전을 보낼 수 있습니다.'}
+                  value={radioBody}
+                />
+                <div className="network-v2-form-bottom">
+                  <span>{radioBody.length}/240</span>
+                  <button disabled={!user || isRadioSubmitting || !radioBody.trim()} type="submit"><SendHorizontal aria-hidden="true" size={15} /> 송신</button>
                 </div>
+              </form>
+
+              {replyTarget && (
+                <form className="network-v2-reply-composer panel" onSubmit={submitRadioReply}>
+                  <div className="network-v2-reply-head"><strong>{replyTarget.author_name}에게 공개 답신</strong><button onClick={() => setReplyTarget(null)} type="button">취소</button></div>
+                  <textarea maxLength={180} onChange={event => setReplyBody(event.target.value)} value={replyBody} />
+                  <div className="network-v2-form-bottom"><span>{replyBody.length}/180</span><button disabled={!user || isRadioSubmitting || !replyBody.trim()} type="submit">답신</button></div>
+                </form>
               )}
 
+              {radioStatus === 'schema-missing' && <p className="network-v2-notice">무전 데이터 연결이 필요합니다.</p>}
+              {radioNotice && radioStatus !== 'schema-missing' && <p className="network-v2-notice" role="status">{radioNotice}</p>}
             </div>
-        </ZoomableMap>
-        
-        <div className="network-legend">
-          <div className="mono legend-title">NODE_TYPES</div>
-          {Object.entries(LOG_TYPES).map(([key, config]) => (
-            <div key={key} className="legend-item">
-              <div className="legend-dot" style={{ backgroundColor: config.color }}></div>
-              <span className="mono legend-label" style={{ color: config.color }}>{key.replace('_', ' ')}</span>
-            </div>
-          ))}
-        </div>
 
-        <div className="signal-telemetry panel">
-          <div className="mono legend-title"><RadioTower size={12} /> LIVE_RELAY</div>
-          <div className="telemetry-row mono">
-            <span>PACKETS</span>
-            <strong>{edges.length * 2}</strong>
-          </div>
-          <div className="telemetry-row mono">
-            <span>USER_LOGS</span>
-            <strong>{userLogCount}</strong>
-          </div>
-          <div className="transmission-strip">
-            {[0, 1, 2, 3, 4, 5].map(i => <span key={i} style={{ animationDelay: `${i * 0.18}s` }} />)}
-          </div>
-          <div className="mono uplink-label"><SendHorizontal size={10} /> LOG_TRANSMISSION_ARMED</div>
-        </div>
-
-        <div className="community-relay panel">
-          <div className="relay-top">
-            <div className="relay-header mono">
-              <MessageSquareText size={12} />
-              <span>LIVE_SIGNAL_LOG</span>
-            </div>
-            <div className="relay-metrics">
-              <div className="relay-metric mono">
-                <Users size={11} />
-                <span>{Math.max(7, spatialLogs.length * 3 + radioMessages.length + activitySignals.length)} ACTIVE</span>
-              </div>
-              <div className="relay-metric mono">
-                <Zap size={11} />
-                <span>{edges.length * 2 + radioMessages.length + activitySignals.length} PACKETS</span>
-              </div>
+            <div className="network-v2-radio-list" aria-live="polite">
+              {radioStream.length > 0 ? radioStream.map(signal => (
+                <article className="network-v2-radio-card panel" key={signal.id}>
+                  <header><strong>{signal.sender || '탐사자'}</strong><span>{signal.time}</span></header>
+                  <p>{signal.body}</p>
+                  {signal.message && signal.message.user_id !== user?.id && <button onClick={() => { setReplyTarget(signal.message); setReplyBody(''); }} type="button">공개 답신</button>}
+                </article>
+              )) : <div className="network-v2-empty panel"><strong>{radioStatus === 'loading' ? '무전을 수신하고 있습니다.' : '아직 공개 무전이 없습니다.'}</strong></div>}
             </div>
           </div>
-
-          <div
-            className="relay-stream"
-            style={{ '--relay-duration': `${Math.max(34, transmissionStream.length * 3.5)}s` }}
-          >
-            <div className="relay-stream-track">
-              <div className="relay-stream-set">
-                {transmissionStream.map((signal, index) => renderRelayLine(signal, index))}
-              </div>
-              <div className="relay-stream-set is-duplicate">
-                {transmissionStream.map((signal, index) => renderRelayLine(signal, index, true))}
-              </div>
-            </div>
-          </div>
-        </div>
+        </section>
+      )}
+        </main>
       </div>
     </PageTransition>
   );
-};
-
-export default Network;
+}

@@ -1,0 +1,29 @@
+name: Refresh archive snapshots
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: archive-snapshot-sync
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - name: Refresh last-known-good archive snapshot
+        env:
+          ARCHIVE_SYNC_SECRET: ${{ secrets.ARCHIVE_SYNC_SECRET }}
+        run: |
+          test -n "$ARCHIVE_SYNC_SECRET"
+          curl --fail --silent --show-error \
+            --retry 2 \
+            --max-time 90 \
+            --header "Authorization: Bearer $ARCHIVE_SYNC_SECRET" \
+            https://www.sf-explorer.net/api/archive-sync

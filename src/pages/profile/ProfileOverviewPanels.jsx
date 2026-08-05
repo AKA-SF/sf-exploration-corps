@@ -25,10 +25,10 @@ export function ProfileLaunchPanel() {
         <h3 className="mono">작품 아카이브에서 탐사 시작</h3>
         <p>작품 카드를 열고, 관심 있는 장르와 질문을 따라 다음 독서 좌표를 선택하세요.</p>
       </div>
-      <a className="profile-primary-link" href="/#works-archive">
+      <Link className="profile-primary-link" to="/works/novels">
         <Rocket size={16} />
         탐사 시작
-      </a>
+      </Link>
     </section>
   );
 }

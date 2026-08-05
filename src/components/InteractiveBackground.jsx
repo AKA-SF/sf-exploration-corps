@@ -20,6 +20,7 @@ const InteractiveBackground = ({ lowPower = false }) => {
   const motionProfile = useMotionProfile();
   const risk = currentSystemState.riskLevel || 0;
   const isHome = location.pathname === '/';
+  const isNetwork = location.pathname.startsWith('/network');
   const isVisualSurface = isHome
     || location.pathname.startsWith('/works')
     || location.pathname.startsWith('/media')
@@ -32,7 +33,7 @@ const InteractiveBackground = ({ lowPower = false }) => {
     isStatic,
     compact: motionProfile.compact,
   });
-  const showGeometry = isVisualSurface && !isStatic && !isHome && !(motionProfile.compact && !isHome);
+  const showGeometry = isVisualSurface && !isNetwork && !isStatic && !isHome && !(motionProfile.compact && !isHome);
   
   const speed = 1 + (risk / 100) * 3; 
   const isDanger = risk > 80 && isVisualSurface;

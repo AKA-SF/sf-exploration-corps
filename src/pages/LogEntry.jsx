@@ -1,27 +1,35 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FilePlus, Target, Brain, Activity, Save, Lightbulb, HeartPulse, RadioTower, CheckCircle2 } from 'lucide-react';
+import { FilePlus, Target, Brain, Activity, Lightbulb, HeartPulse, RadioTower, CheckCircle2 } from 'lucide-react';
 import { useLogs } from '../context/LogContext';
 import { useAuth } from '../context/authContextValue';
 import { getSupabaseClient } from '../lib/getSupabaseClient';
-import { getJsonStorageItem, removeStorageItem, setJsonStorageItem } from '../lib/browserStorage';
+import {
+  activatePendingExplorationDraft,
+  clearExplorationDraft,
+  readExplorationDraft,
+  readPendingExplorationDraft,
+  selectExplorationDraft,
+  writeExplorationDraft,
+} from '../features/exploration-logs/explorationDraftStorage';
 import { createExplorationLogRepository } from '../features/exploration-logs/explorationLogRepository';
 import { submitExplorationLog } from '../features/exploration-logs/explorationLogSubmission';
 import PageTransition from '../components/PageTransition';
+import LogSubmitActionBar from './log-entry/LogSubmitActionBar';
+import MobileLogSubmitPortal from './log-entry/MobileLogSubmitPortal';
 import './LogEntry.css';
 import '../styles/MobileExperience.css';
 
 const EMOTION_TAGS = ['우울함', '압도감', '외로움', '희망', '공포감', '기괴함'];
 const IDEA_TAGS = ['아이디어 충격', '미래 상상력', '기술 공포', '인간성 질문', '여운'];
-const EXPLORATION_DRAFT_KEY = 'sf_exploration_log_draft_v1';
+const LOG_FORM_ID = 'exploration-log-form';
 
-const LogEntry = () => {
+const LogEntryEditor = ({ initialDraft, user }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { setCurrentSystemState } = useLogs();
-  const { loading: authLoading, user } = useAuth();
   const prefilled = location.state || {};
-  const draft = prefilled.draft || getJsonStorageItem(EXPLORATION_DRAFT_KEY, {});
+  const draft = initialDraft || readExplorationDraft(user?.id);
 
   const [formData, setFormData] = useState({
     title: draft.title ?? prefilled.prefilledTitle ?? '',
@@ -54,8 +62,8 @@ const LogEntry = () => {
   }, [formData.experiences.immersion, formData.experiences.scale, formData.experiences.complexity, formData.title.length, formData.memo.length]);
 
   useEffect(() => {
-    setJsonStorageItem(EXPLORATION_DRAFT_KEY, { ...formData, submissionId });
-  }, [formData, submissionId]);
+    writeExplorationDraft({ ...formData, submissionId }, user?.id);
+  }, [formData, submissionId, user?.id]);
 
   useEffect(() => {
     // Calculate aggregate risk based on derealization and complexity
@@ -89,7 +97,6 @@ const LogEntry = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.title) return;
-    if (authLoading) return;
 
     if (!user) {
       navigate('/login', {
@@ -114,7 +121,7 @@ const LogEntry = () => {
         submissionId,
         input: formData,
       });
-      removeStorageItem(EXPLORATION_DRAFT_KEY);
+      clearExplorationDraft(user.id);
       navigate(`/result/${savedLog.id}`);
     } catch (error) {
       setSubmitError(error instanceof Error ? error.message : '탐사 기록을 저장하지 못했습니다. 다시 시도해주세요.');
@@ -138,16 +145,15 @@ const LogEntry = () => {
     { id: 'memo', label: '한 줄 메모', done: formData.memo.trim().length > 0 },
   ], [formData.emotions.length, formData.experiences.immersion, formData.memo, formData.title]);
 
-  const reportReadiness = useMemo(() => {
-    const score = reportChecklist.filter(item => item.done).length;
-    return Math.round((score / reportChecklist.length) * 100);
-  }, [reportChecklist]);
+  const completedReportItems = useMemo(
+    () => reportChecklist.filter(item => item.done).length,
+    [reportChecklist],
+  );
+  const reportReadiness = Math.round((completedReportItems / reportChecklist.length) * 100);
 
-  const canSubmit = formData.title.trim().length > 0 && !isSubmitting && !authLoading;
+  const canSubmit = formData.title.trim().length > 0 && !isSubmitting;
   const submitStatus = isSubmitting
     ? 'UPLINKING_SIGNAL...'
-    : authLoading
-      ? '계정 상태 확인 중...'
     : !user
       ? '로그인 후 개인 아카이브에 안전하게 저장됩니다.'
     : formData.title.trim().length === 0
@@ -157,7 +163,8 @@ const LogEntry = () => {
         : '송신 준비 완료 / SIGNAL_READY';
 
   return (
-    <PageTransition className={`log-entry-container ${isSubmitting ? 'submitting' : ''}`}>
+    <>
+      <PageTransition className={`log-entry-container ${isSubmitting ? 'submitting' : ''}`}>
       <header className="page-header">
         <h2 className="mono title-glitch"><FilePlus size={20} /> 탐사 로그 <span className="text-muted text-xs">/ EXPLORATION LOG</span></h2>
         <div className="terminal-decor">
@@ -171,9 +178,13 @@ const LogEntry = () => {
           <h3>{prefilled.prefilledTitle ? '선택한 작품 신호를 기록 중' : '빠른 탐사 보고서 작성'}</h3>
           <p>첫 기록은 가볍게 남기고, 상세 분석은 필요할 때만 확장하세요. 제출하면 DOSSIER와 LIVE_SIGNAL_NET에 반영됩니다.</p>
         </div>
-        <div className="readiness-ring mono" style={{ '--ready': `${reportReadiness}%` }}>
-          <strong>{reportReadiness}</strong>
-          <span>READY</span>
+        <div
+          aria-label={`작성 항목 ${reportChecklist.length}개 중 ${completedReportItems}개 완료`}
+          className="readiness-summary mono"
+        >
+          <span>작성 상태</span>
+          <strong>{completedReportItems}<small> / {reportChecklist.length}</small></strong>
+          <small>항목 완료</small>
         </div>
       </section>
 
@@ -192,8 +203,8 @@ const LogEntry = () => {
         </div>
       </section>
 
-      <form className="log-form" onSubmit={handleSubmit}>
-        <div className="form-group panel">
+      <form id={LOG_FORM_ID} className="log-form" onSubmit={handleSubmit}>
+        <div className="form-group panel log-target-panel">
           <label className="mono text-cyan"><Target size={14} /> 탐사 대상 <span className="text-muted">/ TARGET_IDENTIFIER</span></label>
           <input 
             type="text" 
@@ -206,7 +217,7 @@ const LogEntry = () => {
           />
         </div>
 
-        <div className="form-group panel">
+        <div className="form-group panel log-sector-panel">
           <label className="mono text-cyan"><Brain size={14} /> 탐사 구역 <span className="text-muted">/ SECTOR (TYPE)</span></label>
           <input 
             type="text" 
@@ -218,12 +229,12 @@ const LogEntry = () => {
           />
         </div>
 
-        <div className="form-group panel">
+        <div className="form-group panel log-metrics-panel">
           <label className="mono text-cyan"><Activity size={14} /> 경험 수치 <span className="text-muted">/ EXPERIENTIAL_METRICS</span></label>
           <div className="sliders-grid">
             {(reportMode === 'quick' ? Sliders.filter(s => ['immersion', 'derealization', 'scale'].includes(s.key)) : Sliders).map(s => (
               <div key={s.key} className="slider-item">
-                <div className="slider-labels">
+                <div id={`experience-${s.key}-label`} className="slider-labels">
                   <span className="kr-label">{s.labelKr}</span>
                   <span className="en-label mono text-muted">{s.labelEn}</span>
                 </div>
@@ -231,6 +242,8 @@ const LogEntry = () => {
                   <input 
                     type="range" min="0" max="100" 
                     className={`sf-slider ${s.color}-slider`}
+                    aria-labelledby={`experience-${s.key}-label`}
+                    aria-valuetext={`${formData.experiences[s.key]}%`}
                     value={formData.experiences[s.key]}
                     onChange={e => handleSlider(s.key, e.target.value)}
                     disabled={isSubmitting}
@@ -242,7 +255,7 @@ const LogEntry = () => {
           </div>
         </div>
 
-        <div className="form-group panel">
+        <div className="form-group panel log-emotions-panel">
           <label className="mono text-cyan"><HeartPulse size={14} /> 감정 잔류물 <span className="text-muted">/ EMOTIONAL_RESIDUE</span></label>
           <div className="tag-grid small">
             {EMOTION_TAGS.map(tag => (
@@ -259,7 +272,7 @@ const LogEntry = () => {
         </div>
 
         {reportMode === 'detail' && (
-        <div className="form-group panel">
+        <div className="form-group panel log-ideas-panel">
           <label className="mono text-cyan"><Lightbulb size={14} /> 획득 이데아 <span className="text-muted">/ ACQUIRED_IDEAS</span></label>
           <div className="tag-grid small">
             {IDEA_TAGS.map(tag => (
@@ -276,7 +289,7 @@ const LogEntry = () => {
         </div>
         )}
 
-        <div className="form-group panel">
+        <div className="form-group panel log-notes-panel">
           <label className="mono text-cyan">탐사 노트 <span className="text-muted">/ FIELD_NOTES</span></label>
           <textarea 
             placeholder={reportMode === 'quick' ? '한 줄만 남겨도 송신할 수 있습니다...' : '세부 감상, 세계관 해석, 스포일러 주의 내용을 기록하세요...'} 
@@ -320,34 +333,87 @@ const LogEntry = () => {
           </div>
         </div>
 
-        <button 
-          type="submit" 
-          className="submit-btn panel glitch-hover"
-          disabled={!canSubmit}
-        >
-          <Save size={18} />
-          <span className="mono">{isSubmitting ? 'TRANSMITTING_TO_ARCHIVE...' : '탐사 완료 / COMMIT_LOG'}</span>
-          {isSubmitting && <div className="scanning-bar"></div>}
-        </button>
-        {submitError && <p className="mono text-amber" role="alert">{submitError}</p>}
-
-        <div className="sticky-submit-bar panel">
-          <div className="sticky-readout mono">
-            <CheckCircle2 size={13} />
-            <span>{submitStatus}</span>
-          </div>
-          <button
-            type="submit"
-            className="sticky-submit-btn"
-            disabled={!canSubmit}
-          >
-            <Save size={16} />
-            <span className="mono">{isSubmitting ? '송신 중...' : formData.title ? '탐사보고서 제출' : '작품명 필요'}</span>
-          </button>
+        <div className="log-submit-feedback" aria-live="polite">
+          {submitError && <p className="mono text-amber" role="alert">{submitError}</p>}
         </div>
+
+        <LogSubmitActionBar
+          canSubmit={canSubmit}
+          className="desktop-log-submit-bar"
+          isSubmitting={isSubmitting}
+          submitStatus={submitStatus}
+          title={formData.title}
+        />
       </form>
-    </PageTransition>
+      </PageTransition>
+      <MobileLogSubmitPortal
+        canSubmit={canSubmit}
+        formId={LOG_FORM_ID}
+        isSubmitting={isSubmitting}
+        submitStatus={submitStatus}
+        title={formData.title}
+      />
+    </>
   );
+};
+
+const LogEntry = () => {
+  const { loading, user } = useAuth();
+
+  if (loading) {
+    return (
+      <PageTransition className="log-entry-container">
+        <section className="panel" role="status">계정 상태를 확인하고 있습니다...</section>
+      </PageTransition>
+    );
+  }
+
+  return <ResolvedLogEntry key={user?.id || 'anonymous'} user={user} />;
+};
+
+const ResolvedLogEntry = ({ user }) => {
+  const location = useLocation();
+  const [draft, setDraft] = useState(() => {
+    const storedDraft = readExplorationDraft(user?.id);
+    return selectExplorationDraft({
+      routeDraft: location.state?.draft,
+      routeDraftOwnerId: location.state?.draftOwnerId,
+      storedDraft,
+      userId: user?.id,
+    });
+  });
+  const [pendingDraft, setPendingDraft] = useState(() => readPendingExplorationDraft(user?.id));
+  const [conflictResolved, setConflictResolved] = useState(false);
+
+  if (user && Object.keys(pendingDraft).length > 0 && !conflictResolved) {
+    return (
+      <PageTransition className="log-entry-container">
+        <section className="panel" aria-labelledby="draft-conflict-title">
+          <span className="mono text-cyan">DRAFT_RECOVERY</span>
+          <h2 id="draft-conflict-title">이어갈 초안을 선택하세요</h2>
+          <p>계정에 저장된 초안과 로그인 전에 작성한 초안을 모두 안전하게 보관했습니다.</p>
+          <div className="mode-tabs">
+            <button type="button" onClick={() => setConflictResolved(true)}>
+              계정 초안: {draft.title || '제목 없음'}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                const activatedDraft = activatePendingExplorationDraft(user.id);
+                setDraft(activatedDraft);
+                setPendingDraft(readPendingExplorationDraft(user.id));
+                setConflictResolved(true);
+              }}
+            >
+              로그인 전 초안: {pendingDraft.title || '제목 없음'}
+            </button>
+          </div>
+        </section>
+      </PageTransition>
+    );
+  }
+
+  return <LogEntryEditor initialDraft={draft} user={user} />;
 };
 
 export default LogEntry;

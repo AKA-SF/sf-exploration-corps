@@ -5,7 +5,7 @@ import { supabase } from '../../lib/supabaseClient';
 import { getUserNickname } from '../../lib/userIdentity';
 import { formatSignalTime, RADIO_MESSAGE_LIMIT } from './networkUtils';
 
-export default function useRadioMessages(user) {
+export default function useRadioMessages(user, enabled = true) {
   const { showActivityToast } = useActivityToast();
   const [radioMessages, setRadioMessages] = useState([]);
   const [radioStatus, setRadioStatus] = useState('loading');
@@ -16,6 +16,7 @@ export default function useRadioMessages(user) {
   const [isRadioSubmitting, setIsRadioSubmitting] = useState(false);
 
   useEffect(() => {
+    if (!enabled) return undefined;
     let isMounted = true;
 
     async function loadRadioMessages() {
@@ -66,7 +67,7 @@ export default function useRadioMessages(user) {
       isMounted = false;
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [enabled]);
 
   const radioParentMap = useMemo(() => new Map(radioMessages.map(message => [message.id, message])), [radioMessages]);
 

@@ -37,7 +37,7 @@ export default function ProfileReadingPanel({
           <span className="mono">NEXT COORDINATE</span>
           <strong>{nextWork?.work_title ?? '다음 탐사 작품 대기 중'}</strong>
           <p>{nextWork ? `${workStatusLabels[nextWork.status] ?? nextWork.status} 목록에서 추천` : '작품 카드에서 읽고 싶어요를 누르면 여기에 표시됩니다.'}</p>
-          <a href="/#works-archive">작품 아카이브로 이동</a>
+          <a href="/works/novels">작품 아카이브로 이동</a>
         </article>
         <article>
           <span className="mono">WANT TO READ</span>

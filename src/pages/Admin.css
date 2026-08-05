@@ -62,6 +62,13 @@
   text-decoration: none;
 }
 
+.admin-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .admin-header-link:hover,
 .admin-header-link:focus-visible,
 .admin-locked a:hover,

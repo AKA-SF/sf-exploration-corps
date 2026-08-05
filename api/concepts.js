@@ -1,5 +1,6 @@
 import { getNotionConfig, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
 import { getDurableCachedJson } from './_persistentCache.js';
+import { requireAuthorizedArchiveRefresh } from './_archiveSyncAuth.js';
 import { multiSelect, pick, plainText, textList } from './_notionProperties.js';
 
 const CONCEPTS_CACHE_TTL_MS = 10 * 60 * 1000;
@@ -27,6 +28,19 @@ function mapPageToConcept(page, index) {
   };
 }
 
+export async function loadConceptsSnapshot({ refresh = false } = {}) {
+  const { token, databaseId, missing } = getNotionConfig('NOTION_CONCEPTS_DATABASE_ID');
+  if (missing.length > 0) throw new Error('Notion concept environment variables are not configured');
+
+  const cached = await getDurableCachedJson(`concepts:${databaseId}`, CONCEPTS_CACHE_TTL_MS, async () => {
+    const results = await queryNotionDatabaseAll(token, databaseId);
+    return results
+      .map(mapPageToConcept)
+      .filter(concept => concept.term);
+  }, { refresh });
+  return { concepts: cached.value, cache: cached.cache };
+}
+
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=1800');
 
@@ -47,6 +61,8 @@ export default async function handler(request, response) {
 
   const requestUrl = new URL(request.url ?? '/api/concepts', `https://${request.headers.host ?? 'localhost'}`);
   const shouldRefresh = requestUrl.searchParams.get('refresh') === '1';
+
+  if (shouldRefresh && !requireAuthorizedArchiveRefresh(request, response)) return;
   let cache;
   let concepts;
   try {

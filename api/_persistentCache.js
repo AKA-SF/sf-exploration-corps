@@ -95,11 +95,20 @@ export async function clearDurableCache(key) {
   }
 }
 
-export async function getDurableCachedJson(key, ttlMs, loader, { refresh = false } = {}) {
+export async function getDurableCachedJson(
+  key,
+  ttlMs,
+  loader,
+  { preferStale = true, refresh = false } = {},
+) {
   if (!refresh) {
-    const persistent = await readPersistentCache(key);
+    const persistent = await readPersistentCache(key, { allowStale: preferStale });
     if (persistent) {
-      return { cache: 'DB-HIT', updatedAt: persistent.updatedAt, value: persistent.payload };
+      return {
+        cache: persistent.expired ? 'DB-STALE' : 'DB-HIT',
+        updatedAt: persistent.updatedAt,
+        value: persistent.payload,
+      };
     }
   }
 

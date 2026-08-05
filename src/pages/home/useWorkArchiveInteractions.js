@@ -28,8 +28,6 @@ const workStatusLabels = {
 };
 
 export default function useWorkArchiveInteractions({
-  dailySignalKey,
-  getRandomWorks,
   setRandomWorkCodes,
   setWorks,
   user,
@@ -173,13 +171,9 @@ export default function useWorkArchiveInteractions({
         throw new Error(data?.notion?.message || data?.error || '작품 저장에 실패했습니다.');
       }
 
-      const refreshResponse = await fetch('/api/works?refresh=1');
-      const refreshed = await refreshResponse.json().catch(() => ({}));
-      if (Array.isArray(refreshed.works) && refreshed.works.length > 0) {
-        setWorks(refreshed.works);
-        setRandomWorkCodes(getRandomWorks(refreshed.works, 6, `works:${dailySignalKey}`).map(work => work.code));
-      } else if (data.work) {
+      if (data.work) {
         setWorks(current => [data.work, ...current]);
+        setRandomWorkCodes(current => [data.work.code, ...current.filter(code => code !== data.work.code)].slice(0, 6));
       }
 
       setWorkSubmitForm(emptyWorkSubmitForm);

@@ -5,14 +5,14 @@ const onboardingItems = [
   {
     description: '취향에 맞는 탐사 대원 유형과 추천 작품을 확인합니다.',
     getComplete: ({ latestTasteProfile }) => Boolean(latestTasteProfile),
-    href: '/#taste-test',
+    href: '/works/novels',
     icon: Sparkles,
     label: 'SF 성향 테스트 완료',
   },
   {
     description: '작품 카드에서 읽고 싶어요, 읽는 중, 읽었어요 중 하나를 저장합니다.',
     getComplete: ({ workStatuses }) => workStatuses.length > 0,
-    href: '/#works-archive',
+    href: '/works/novels',
     icon: Compass,
     label: '첫 작품 좌표 저장',
   },
@@ -32,6 +32,7 @@ export default function ProfileOnboardingPanel({
 }) {
   const context = { latestTasteProfile, stats, workStatuses };
   const completedCount = onboardingItems.filter(item => item.getComplete(context)).length;
+  if (completedCount === onboardingItems.length) return null;
 
   return (
     <section className="profile-onboarding-panel panel">

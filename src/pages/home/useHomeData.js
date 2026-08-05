@@ -155,7 +155,6 @@ export default function useHomeData({
     const controller = new AbortController();
 
     fetchJson('/api/media', {
-      cache: 'no-store',
       signal: controller.signal,
       errorMessage: 'Notion media unavailable',
     })
@@ -185,7 +184,6 @@ export default function useHomeData({
     const controller = new AbortController();
 
     fetchJson('/api/concepts', {
-      cache: 'no-store',
       signal: controller.signal,
       errorMessage: 'Notion concepts unavailable',
     })
@@ -224,12 +222,10 @@ export default function useHomeData({
     const idleId = scheduleIdle(() => {
       Promise.allSettled([
         fetchJson('/api/exploration-log', {
-          cache: 'no-store',
           signal: controller.signal,
           errorMessage: 'Exploration log unavailable',
         }),
         fetchJson('/api/questions?pageSize=12', {
-          cache: 'no-store',
           signal: controller.signal,
           errorMessage: 'Questions unavailable',
         }),

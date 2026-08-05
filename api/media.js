@@ -1,6 +1,7 @@
 import { getNotionConfig, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
 import { getDurableCachedJson } from './_persistentCache.js';
 import { multiSelect, pick, plainText } from './_notionProperties.js';
+import { requireAuthorizedArchiveRefresh } from './_archiveSyncAuth.js';
 
 const DEFAULT_MEDIA_DATABASE_ID = '36898dbef69d80fc98caf262593fc53b';
 const MEDIA_CACHE_TTL_MS = 10 * 60 * 1000;
@@ -79,6 +80,20 @@ function mapPageToMedia(page, index) {
   };
 }
 
+export async function loadMediaSnapshot({ refresh = false } = {}) {
+  const { token, databaseId, missing } = getNotionConfig('NOTION_MEDIA_DATABASE_ID', DEFAULT_MEDIA_DATABASE_ID);
+  if (missing.length > 0) throw new Error('Notion media environment variables are not configured');
+
+  const cached = await getDurableCachedJson(`media:${databaseId}:${MEDIA_CACHE_VERSION}`, MEDIA_CACHE_TTL_MS, async () => {
+    const results = await queryNotionDatabaseAll(token, databaseId);
+    return results
+      .map(mapPageToMedia)
+      .filter(item => item.title && item.link)
+      .sort((a, b) => getMediaSortTime(b) - getMediaSortTime(a));
+  }, { refresh });
+  return { media: cached.value, cache: cached.cache };
+}
+
 export default async function handler(request, response) {
   response.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=1800');
 
@@ -99,6 +114,8 @@ export default async function handler(request, response) {
 
   const requestUrl = new URL(request.url ?? '/api/media', `https://${request.headers.host ?? 'localhost'}`);
   const shouldRefresh = requestUrl.searchParams.get('refresh') === '1';
+
+  if (shouldRefresh && !requireAuthorizedArchiveRefresh(request, response)) return;
 
   let cache;
   let media;

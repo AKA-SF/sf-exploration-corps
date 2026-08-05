@@ -1,14 +1,7 @@
-import { getNotionConfig, notionRequest, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
-import { clearDurableCache, getDurableCachedJson } from './_persistentCache.js';
+import { getNotionConfig, queryNotionDatabaseAll, sendNotionError } from './_notion.js';
+import { getDurableCachedJson } from './_persistentCache.js';
+import { requireAuthorizedArchiveRefresh } from './_archiveSyncAuth.js';
 import { multiSelect, pick, plainText } from './_notionProperties.js';
-import {
-  findPropertyName,
-  multiSelectProperty,
-  readJsonBody,
-  richTextProperty,
-  selectProperty,
-  titleProperty,
-} from './_notionWrite.js';
 
 const DEFAULT_LOG_DATABASE_ID = '36998dbef69d80dfa4afc27813f25b11';
 const LOG_CACHE_TTL_MS = 5 * 60 * 1000;
@@ -36,14 +29,12 @@ function mapPageToLog(page, index) {
 }
 
 export default async function handler(request, response) {
-  response.setHeader('Cache-Control', request.method === 'GET'
-    ? 'public, s-maxage=300, stale-while-revalidate=1200'
-    : 'no-store');
-
-  if (!['GET', 'POST'].includes(request.method)) {
-    response.setHeader('Allow', 'GET, POST');
+  if (request.method !== 'GET') {
+    response.setHeader('Allow', 'GET');
     return response.status(405).json({ error: 'Method not allowed' });
   }
+
+  response.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=1200');
 
   const { token, databaseId, missing } = getNotionConfig('NOTION_LOG_DATABASE_ID', DEFAULT_LOG_DATABASE_ID);
 
@@ -55,91 +46,9 @@ export default async function handler(request, response) {
     });
   }
 
-  if (request.method === 'POST') {
-    let payload;
-    try {
-      payload = await readJsonBody(request);
-    } catch (error) {
-      return response.status(error.status || 400).json({ error: error.message || 'Invalid JSON body' });
-    }
-
-    const instagramUrl = String(payload.instagramUrl ?? payload.url ?? '').trim();
-    const nodeLabel = String(payload.nodeLabel ?? '').trim();
-    const nodeEnglish = String(payload.nodeEnglish ?? '').trim();
-    const nodeId = String(payload.nodeId ?? '').trim();
-    const title = String(payload.workTitle ?? nodeLabel ?? '탐사 좌표 로그').trim();
-
-    if (!instagramUrl || !/^https?:\/\/(www\.)?instagram\.com\//i.test(instagramUrl)) {
-      return response.status(400).json({ error: '인스타그램 주소를 입력해주세요.' });
-    }
-
-    let database;
-    try {
-      database = await notionRequest(`/databases/${databaseId}`, { token });
-    } catch (error) {
-      return sendNotionError(response, {
-        error,
-        fallbackMessage: 'Notion log database request failed',
-      });
-    }
-
-    const schema = database.properties ?? {};
-    const properties = {};
-
-    const titlePropertyName = findPropertyName(schema, ['작품명', '제목', 'Title', 'Name', '이름'], 'title', { loose: true });
-    if (titlePropertyName) properties[titlePropertyName] = titleProperty(title);
-
-    const instagramProperty = findPropertyName(schema, ['인스타URL', '인스타 URL', 'Instagram URL', 'URL', '링크', 'Link'], 'url', { loose: true });
-    if (instagramProperty) properties[instagramProperty] = { url: instagramUrl };
-
-    const reviewProperty = findPropertyName(schema, ['리뷰문구', '리뷰 문구', 'Review', '본문', '설명', 'Description'], 'rich_text', { loose: true });
-    if (reviewProperty) properties[reviewProperty] = richTextProperty(`${nodeLabel || 'SF 탐사 좌표'}에서 수집한 인스타 서평 신호입니다.`);
-
-    const categoryProperty = findPropertyName(schema, ['분류', 'Category', 'Type'], 'select', { loose: true });
-    if (categoryProperty) properties[categoryProperty] = selectProperty('탐사 좌표');
-
-    const statusProperty = findPropertyName(schema, ['상태', 'Status'], 'select', { loose: true });
-    if (statusProperty) properties[statusProperty] = selectProperty('공개');
-
-    const dateProperty = findPropertyName(schema, ['날짜', 'Date', '작성일'], 'date', { loose: true });
-    if (dateProperty) properties[dateProperty] = { date: { start: new Date().toISOString().slice(0, 10) } };
-
-    const tagsProperty = findPropertyName(schema, ['태그', 'Tags', '키워드', 'Keywords'], 'multi_select', { loose: true });
-    if (tagsProperty) properties[tagsProperty] = multiSelectProperty(['Coordinate Map', nodeLabel, nodeEnglish, nodeId]);
-
-    let createdPage;
-    try {
-      createdPage = await notionRequest('/pages', {
-        token,
-        method: 'POST',
-        body: {
-          parent: { database_id: databaseId },
-          properties,
-        },
-      });
-    } catch (error) {
-      return sendNotionError(response, {
-        error,
-        fallbackMessage: 'Notion log create request failed',
-      });
-    }
-
-    await clearDurableCache(`logs:${databaseId}`);
-    return response.status(201).json({
-      ok: true,
-      id: createdPage.id,
-      log: {
-        workTitle: title,
-        instagramUrl,
-        category: '탐사 좌표',
-        status: '공개',
-        date: new Date().toISOString().slice(0, 10),
-      },
-    });
-  }
-
   const requestUrl = new URL(request.url ?? '/api/exploration-log', `https://${request.headers.host ?? 'localhost'}`);
   const shouldRefresh = requestUrl.searchParams.get('refresh') === '1';
+  if (shouldRefresh && !requireAuthorizedArchiveRefresh(request, response)) return;
   let cache;
   let logs;
   try {

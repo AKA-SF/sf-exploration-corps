@@ -59,8 +59,8 @@
   --ui-shadow: rgba(0, 255, 255, 0.16);
   
   /* Typography */
-  --font-main: 'Outfit', 'Noto Sans KR', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  --font-mono: 'Space Mono', 'Noto Sans KR', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  --font-main: 'Avenir Next', 'Apple SD Gothic Neo', 'Pretendard', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'SFMono-Regular', 'Apple SD Gothic Neo', ui-monospace, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
 }
 
 * {
@@ -77,6 +77,11 @@ html {
   text-rendering: optimizeLegibility;
 }
 
+:focus-visible {
+  outline: 3px solid var(--accent-amber);
+  outline-offset: 3px;
+}
+
 body {
   margin: 0;
   background-color: var(--bg-color);
@@ -88,6 +93,20 @@ body {
   overflow: hidden; /* Mobile app feel, handle scrolling inside components */
   width: 100vw;
   height: 100vh;
+  min-height: 100dvh;
+}
+
+input,
+textarea,
+select {
+  font-size: max(16px, 1em);
+}
+
+@media (pointer: coarse) {
+  button,
+  [role='button'] {
+    min-height: 44px;
+  }
 }
 
 #root {

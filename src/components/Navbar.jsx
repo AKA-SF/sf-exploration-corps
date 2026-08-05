@@ -1,28 +1,32 @@
 import { NavLink } from 'react-router-dom';
-import { Award, Crosshair, User, Radio } from 'lucide-react';
+import { Compass, PenLine, Radio, UserRound } from 'lucide-react';
 
-const Navbar = ({ onMapNavigate }) => {
+const Navbar = () => {
   return (
-    <nav className="navbar">
+    <nav aria-label="주요 메뉴" className="navbar">
       <NavLink
         to="/"
+        end
         className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
-        onClick={onMapNavigate}
       >
-        <Crosshair />
-        <span className="mono">MAP</span>
+        <Compass aria-hidden="true" />
+        <span className="nav-label-primary">탐색</span>
+        <span className="nav-label-secondary mono">DISCOVER</span>
+      </NavLink>
+      <NavLink to="/log" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+        <PenLine aria-hidden="true" />
+        <span className="nav-label-primary">기록</span>
+        <span className="nav-label-secondary mono">LOG</span>
       </NavLink>
       <NavLink to="/network" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-        <Radio />
-        <span className="mono">NETWORK</span>
-      </NavLink>
-      <NavLink to="/badges" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-        <Award />
-        <span className="mono">BADGES</span>
+        <Radio aria-hidden="true" />
+        <span className="nav-label-primary">네트워크</span>
+        <span className="nav-label-secondary mono">SIGNALS</span>
       </NavLink>
       <NavLink to="/profile" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
-        <User />
-        <span className="mono">DOSSIER</span>
+        <UserRound aria-hidden="true" />
+        <span className="nav-label-primary">내 정보</span>
+        <span className="nav-label-secondary mono">PROFILE</span>
       </NavLink>
     </nav>
   );

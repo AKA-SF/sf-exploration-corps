@@ -4,7 +4,7 @@ import { createExplorationLogRepository } from '../src/features/exploration-logs
 
 const userId = '5a0a2c7d-993a-4d88-9f02-0e8876b0b1c9';
 
-function createFakeClient() {
+function createFakeClient(rpcData = []) {
   const calls = [];
   const builder = {
     select(columns) {
@@ -29,7 +29,7 @@ function createFakeClient() {
     calls,
     rpc(name, args) {
       calls.push(['rpc', name, args]);
-      return Promise.resolve({ data: [], error: null });
+      return Promise.resolve({ data: rpcData, error: null });
     },
     from(table) {
       calls.push(['from', table]);
@@ -78,4 +78,24 @@ test('공개 상세는 제한 필드 RPC로만 한 건을 조회한다', async (
   assert.deepEqual(client.calls, [
     ['rpc', 'get_visible_exploration_log_detail', { p_id: id }],
   ]);
+});
+
+test('공개 신호 모델은 스포일러 분류를 UI까지 전달한다', async () => {
+  const client = createFakeClient([{
+    created_at: '2026-08-05T00:00:00.000Z',
+    emotions: ['경이'],
+    experiences: { immersion: 80 },
+    id: 'e0545f72-3f3f-4c1a-9186-222222222222',
+    ideas: ['정체성'],
+    log_type: '감상',
+    memo: '숨겨야 할 메모',
+    nickname: '탐사자',
+    spoiler: 'CLASSIFIED_SIGNAL',
+    title: '숨겨야 할 제목',
+    visibility: 'PUBLIC_SIGNAL',
+  }]);
+
+  const [result] = await createExplorationLogRepository(client).listVisibleExplorationLogs({ limit: 1 });
+
+  assert.equal(result.spoiler, 'CLASSIFIED_SIGNAL');
 });

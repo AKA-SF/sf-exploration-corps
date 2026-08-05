@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 const DEFAULT_PORT = 4188;
 const BASE_URL = process.env.SCREEN_QA_URL || `http://127.0.0.1:${DEFAULT_PORT}`;
 const SHOULD_START_SERVER = !process.env.SCREEN_QA_URL;
-const ROUTES = ['/', '/works/novels', '/media/interviews', '/questions', '/login'];
+const ROUTES = ['/', '/discover', '/network', '/profile', '/works/novels', '/log', '/questions', '/login'];
 const VIEWPORTS = [
   { name: 'desktop', width: 1366, height: 900, isMobile: false },
   { name: 'mobile', width: 390, height: 844, isMobile: true },
@@ -79,7 +79,7 @@ async function runScreenQa() {
           }, { mode });
           await page.goto(`${BASE_URL}${route}`, { waitUntil: 'domcontentloaded', timeout: 12000 });
           await page.waitForTimeout(1500);
-          entry.issues = await page.evaluate(({ contrastThreshold }) => {
+          entry.issues = await page.evaluate(({ contrastThreshold, routePath }) => {
             const viewportWidth = window.innerWidth;
             const viewportHeight = window.innerHeight;
             const issues = [];
@@ -170,8 +170,72 @@ async function runScreenQa() {
               }
             }
 
+            const scrollContainer = document.querySelector('.page-container');
+            const scrollTargets = {
+              '/': '.home-v2-footer',
+              '/discover': '.sf-discoveries-grid, .sf-discoveries-state',
+              '/log': '.log-submit-feedback',
+              '/network': '.network-v2-content',
+            };
+            if (scrollContainer && scrollContainer.scrollHeight > scrollContainer.clientHeight + 20) {
+              const initialScrollTop = scrollContainer.scrollTop;
+              scrollContainer.scrollTop = Math.min(240, scrollContainer.scrollHeight - scrollContainer.clientHeight);
+              if (scrollContainer.scrollTop <= initialScrollTop) {
+                issues.push({ type: 'vertical-scroll-blocked', detail: `${routePath} did not accept scrollTop` });
+              }
+
+              const target = document.querySelector(scrollTargets[routePath]);
+              if (target) {
+                scrollContainer.scrollTop = scrollContainer.scrollHeight;
+                const targetRect = target.getBoundingClientRect();
+                const containerRect = scrollContainer.getBoundingClientRect();
+                const mobileSubmit = document.querySelector('.mobile-log-submit-bar');
+                const nav = document.querySelector('.navbar');
+                if (routePath === '/log' && viewportWidth <= 720 && mobileSubmit && nav) {
+                  const submitRect = mobileSubmit.getBoundingClientRect();
+                  const navRect = nav.getBoundingClientRect();
+                  if (submitRect.bottom > navRect.top + 1) {
+                    issues.push({
+                      type: 'log-submit-nav-overlap',
+                      detail: `submit bottom ${Math.round(submitRect.bottom)}, nav top ${Math.round(navRect.top)}`,
+                    });
+                  }
+                  if (targetRect.bottom > submitRect.top + 1) {
+                    issues.push({
+                      type: 'log-last-content-obscured',
+                      detail: `content bottom ${Math.round(targetRect.bottom)}, submit top ${Math.round(submitRect.top)}`,
+                    });
+                  }
+                } else if (targetRect.bottom > containerRect.bottom + 8) {
+                  issues.push({ type: 'last-content-unreachable', detail: `${routePath} target bottom ${Math.round(targetRect.bottom)}` });
+                }
+              }
+              scrollContainer.scrollTop = initialScrollTop;
+            }
+
+            if (routePath === '/log') {
+              const visibleSubmitButtons = [...document.querySelectorAll('button[type="submit"]')].filter(element => {
+                const rect = element.getBoundingClientRect();
+                const style = getComputedStyle(element);
+                return rect.width > 3
+                  && rect.height > 3
+                  && style.visibility !== 'hidden'
+                  && style.display !== 'none';
+              });
+              if (visibleSubmitButtons.length !== 1) {
+                issues.push({ type: 'log-submit-count', detail: `${visibleSubmitButtons.length} visible submit buttons` });
+              }
+              if (viewportWidth <= 720) {
+                const mobileSubmit = document.querySelector('.mobile-log-submit-bar');
+                const submitButton = mobileSubmit?.querySelector('button[type="submit"]');
+                if (!mobileSubmit || mobileSubmit.parentElement?.id !== 'mobile-action-layer' || submitButton?.getAttribute('form') !== 'exploration-log-form') {
+                  issues.push({ type: 'log-submit-portal-invalid', detail: 'mobile submit must portal between page and nav and target exploration-log-form' });
+                }
+              }
+            }
+
             return issues;
-          }, { contrastThreshold: 2.6 });
+          }, { contrastThreshold: 2.6, routePath: route });
         } catch (error) {
           entry.issues.push({ type: 'load-error', detail: error.message });
         } finally {

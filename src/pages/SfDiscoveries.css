@@ -1,0 +1,90 @@
+.sf-discoveries-page {
+  width: min(1180px, calc(100% - 56px));
+  margin: 0 auto;
+  padding: 48px 0 110px;
+  color: #d8e5e3;
+}
+
+.sf-discoveries-hero {
+  display: grid;
+  gap: 14px;
+  padding: 34px 0 42px;
+  border-bottom: 1px solid rgba(115, 238, 229, 0.2);
+}
+
+.sf-discoveries-back {
+  width: fit-content;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #8ca5a4;
+  font-size: 13px;
+}
+
+.sf-discoveries-back:hover,
+.sf-discoveries-back:focus-visible { color: #73eee5; }
+.sf-discoveries-hero > span { color: #73eee5; font-size: 10px; letter-spacing: 0.12em; }
+.sf-discoveries-hero h1 { margin: 0; font-size: clamp(42px, 7vw, 78px); line-height: 0.98; letter-spacing: -0.055em; }
+.sf-discoveries-hero p { max-width: 720px; margin: 0; color: #91a6a5; font-size: 16px; line-height: 1.75; word-break: keep-all; }
+
+.sf-discoveries-controls {
+  min-height: 84px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+  border-bottom: 1px solid rgba(115, 238, 229, 0.16);
+}
+
+.sf-discoveries-kind { display: flex; flex-wrap: wrap; gap: 8px; }
+.sf-discoveries-kind button,
+.sf-discoveries-controls select,
+.sf-discoveries-state button,
+.sf-discoveries-state a {
+  min-height: 44px;
+  border: 1px solid rgba(115, 238, 229, 0.2);
+  padding: 0 16px;
+  color: #91a6a5;
+  background: rgba(5, 15, 18, 0.82);
+}
+.sf-discoveries-kind button[aria-pressed="true"] { color: #061012; border-color: #73eee5; background: #73eee5; }
+.sf-discoveries-controls label { display: flex; align-items: center; gap: 12px; color: #91a6a5; font-size: 12px; }
+.sf-discoveries-controls select { color: #d8e5e3; font-size: 16px; }
+
+.sf-discoveries-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; padding: 32px 0; }
+.sf-discovery-card { min-width: 0; display: grid; align-content: start; gap: 18px; padding: 22px; border: 1px solid rgba(115, 238, 229, 0.18); border-top: 2px solid #73eee5; background: rgba(5, 15, 18, 0.82); }
+.sf-discovery-card--upcoming { border-top-color: #ffb000; }
+.sf-discovery-card--editor_pick { border-top-color: #9ca7ff; }
+.sf-discovery-card__meta { display: flex; justify-content: space-between; gap: 12px; color: #73eee5; font-size: 9px; letter-spacing: 0.08em; }
+.sf-discovery-card__image { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border: 1px solid rgba(115, 238, 229, 0.14); }
+.sf-discovery-card__body { display: grid; gap: 10px; }
+.sf-discovery-card h2 { margin: 0; color: #eef8f7; font-size: 23px; line-height: 1.3; letter-spacing: -0.025em; word-break: keep-all; }
+.sf-discovery-card p { margin: 0; color: #91a6a5; font-size: 14px; line-height: 1.7; word-break: keep-all; }
+.sf-discovery-card dl { display: grid; gap: 8px; margin: 0; padding-top: 14px; border-top: 1px solid rgba(115, 238, 229, 0.12); }
+.sf-discovery-card dl div { display: flex; justify-content: space-between; gap: 12px; }
+.sf-discovery-card dt { display: flex; align-items: center; gap: 5px; color: #718887; font-size: 11px; }
+.sf-discovery-card dt svg { width: 13px; }
+.sf-discovery-card dd { margin: 0; color: #c7d7d5; font-size: 11px; text-align: right; }
+.sf-discovery-card__spoiler { width: fit-content; padding: 5px 8px; color: #ffcf66; border: 1px solid rgba(255, 176, 0, 0.34); font-size: 10px; }
+.sf-discovery-card > a { min-height: 44px; display: inline-flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: auto; color: #73eee5; border-top: 1px solid rgba(115, 238, 229, 0.12); padding-top: 14px; font-size: 12px; }
+.sf-discovery-card > a svg { width: 16px; }
+
+.sf-discoveries-state { min-height: 280px; display: grid; place-items: center; align-content: center; gap: 12px; padding: 40px; text-align: center; border: 1px solid rgba(115, 238, 229, 0.16); margin-top: 32px; background: rgba(5, 15, 18, 0.72); }
+.sf-discoveries-state > svg { color: #73eee5; }
+.sf-discoveries-state strong { font-size: 22px; }
+.sf-discoveries-state span { color: #91a6a5; font-size: 14px; }
+.sf-discoveries-state button,
+.sf-discoveries-state a { display: inline-flex; align-items: center; justify-content: center; margin-top: 8px; color: #73eee5; }
+
+@media (max-width: 980px) { .sf-discoveries-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 720px) {
+  .sf-discoveries-page { width: min(100% - 32px, 620px); padding: 24px 0 calc(100px + env(safe-area-inset-bottom)); }
+  .sf-discoveries-hero { padding: 16px 0 32px; }
+  .sf-discoveries-hero h1 { font-size: 46px; }
+  .sf-discoveries-controls { align-items: stretch; flex-direction: column; padding: 18px 0; }
+  .sf-discoveries-kind { display: grid; grid-template-columns: repeat(2, 1fr); }
+  .sf-discoveries-controls label { justify-content: space-between; }
+  .sf-discoveries-grid { grid-template-columns: 1fr; padding-top: 22px; }
+  .sf-discovery-card { padding: 20px; }
+}

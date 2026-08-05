@@ -66,7 +66,7 @@ export default function ProfileHubPanel({
         })}
       </div>
       <div className="profile-dashboard-actions">
-        <Link to="/#works-archive">작품 탐사</Link>
+        <Link to="/works/novels">작품 탐사</Link>
         <Link to="/questions">커뮤니티 교신</Link>
         <Link to="/network">무전 네트워크</Link>
         <span>{activitySummary.missions.length > 0 ? `다음 임무 ${activitySummary.missions.length}개 대기` : '임무 큐 안정화'}</span>

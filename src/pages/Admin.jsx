@@ -300,7 +300,10 @@ export default function Admin() {
           <h1>관리자 대시보드</h1>
           <p>회원 권한, 커뮤니티 게시글, 댓글, 무전 신호, 히든 배지를 한 화면에서 관리하는 운영용 대시보드입니다.</p>
         </div>
-        <Link className="admin-header-link mono" to="/">홈으로</Link>
+        <div className="admin-header-actions">
+          <Link className="admin-header-link mono" to="/admin/discoveries">신작 정보 관리</Link>
+          <Link className="admin-header-link mono" to="/">홈으로</Link>
+        </div>
       </header>
 
       {(status === 'error' || actionStatus === 'error' || actionMessage) && (

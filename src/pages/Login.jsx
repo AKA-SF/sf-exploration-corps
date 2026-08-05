@@ -1,12 +1,17 @@
 import { useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { KeyRound, LogIn, Mail } from 'lucide-react';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { ArchiveRestore, ArrowLeft, KeyRound, LockKeyhole, LogIn, Mail, RadioTower } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
 import { supabase } from '../lib/supabaseClient';
 import { ensureUserProfile, normalizeEmail, normalizeNickname } from '../lib/userIdentity';
 import './Login.css';
 import '../styles/MobileExperience.css';
+
+function scopeReturnState(returnState, userId) {
+  if (!returnState?.draft || !userId) return returnState;
+  return { ...returnState, draftOwnerId: userId };
+}
 
 export default function Login() {
   const navigate = useNavigate();
@@ -20,7 +25,9 @@ export default function Login() {
   const returnTo = typeof location.state?.returnTo === 'string' ? location.state.returnTo : '/profile';
   const returnState = location.state?.returnState;
 
-  if (!loading && user) return <Navigate replace state={returnState} to={returnTo} />;
+  if (!loading && user) {
+    return <Navigate replace state={scopeReturnState(returnState, user.id)} to={returnTo} />;
+  }
 
   const updateForm = event => {
     const { name, value } = event.target;
@@ -61,7 +68,7 @@ export default function Login() {
           await ensureUserProfile(data.user, supabase, nickname);
         }
         if (data.session) {
-          navigate(returnTo, { state: returnState });
+          navigate(returnTo, { state: scopeReturnState(returnState, data.user?.id) });
           return;
         }
         setStatus('success');
@@ -69,12 +76,12 @@ export default function Login() {
         return;
       }
 
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
       if (error) throw error;
-      navigate(returnTo, { state: returnState });
+      navigate(returnTo, { state: scopeReturnState(returnState, data.user?.id) });
     } catch (error) {
       setStatus('error');
       setMessage(error.message);
@@ -83,6 +90,22 @@ export default function Login() {
 
   return (
     <PageTransition className="login-page">
+      <div className="login-workspace">
+        <aside className="login-brief" aria-labelledby="login-brief-title">
+          <Link className="login-back-link" to="/"><ArrowLeft aria-hidden="true" /> 탐색으로 돌아가기</Link>
+          <div className="login-brief__copy">
+            <span className="mono">PRIVATE ARCHIVE ACCESS</span>
+            <h2 id="login-brief-title">탐사를 계속할 수 있도록<br />기록을 안전하게 연결합니다.</h2>
+            <p>계정은 공개 활동보다 먼저, 개인 기록을 잃지 않고 이어가기 위해 사용됩니다.</p>
+          </div>
+          <ul className="login-benefits">
+            <li><ArchiveRestore aria-hidden="true" /><span><strong>초안 복원</strong><small>현재 브라우저에 저장된 탐사 기록을 계정별로 이어갑니다.</small></span></li>
+            <li><LockKeyhole aria-hidden="true" /><span><strong>기본 비공개</strong><small>기본 저장 범위는 나만 보는 개인 아카이브입니다.</small></span></li>
+            <li><RadioTower aria-hidden="true" /><span><strong>선택적 연결</strong><small>직접 공개한 기록만 네트워크 신호가 됩니다.</small></span></li>
+          </ul>
+          <p className="login-brief__status mono"><i aria-hidden="true" /> OWNER-SCOPED DRAFT STORAGE</p>
+        </aside>
+
       <section className="login-panel">
         <div className="login-header">
           <span>CREW AUTHENTICATION</span>
@@ -164,6 +187,7 @@ export default function Login() {
           {mode === 'signup' ? '이미 계정이 있어요' : '새 탐사 대원 등록'}
         </button>
       </section>
+      </div>
     </PageTransition>
   );
 }
