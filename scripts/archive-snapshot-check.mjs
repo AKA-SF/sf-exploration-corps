@@ -4,6 +4,7 @@ import test from 'node:test';
 
 import { buildHomeFeed } from '../api/_homeFeed.js';
 import { getHomeFeedSourceStatus, hasUsableArchiveSource } from '../api/home-feed.js';
+import { shouldResolveWorkCover } from '../api/works.js';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
@@ -103,14 +104,25 @@ test('archive snapshot storage is deployed as a migration and refresh is schedul
 
 test('home-feed and archive-sync endpoints are present', async () => {
   const homeFeed = await read('api/home-feed.js');
+  const home = await read('src/pages/HomeV2.jsx');
   const sync = await read('api/archive-sync.js');
 
   assert.match(homeFeed, /getDurableCachedJson/);
   assert.match(homeFeed, /buildHomeFeed/);
   assert.match(homeFeed, /get_published_sf_discoveries/);
   assert.match(homeFeed, /discoveries:\s*discoveriesResult\.status === 'fulfilled'/);
+  assert.match(homeFeed, /loadWorksSnapshot\(\{ includeCovers: true, coverLimit: 4, refresh \}\)/);
+  assert.match(home, /src=\{work\.image \|\| work\.cover\}/);
   assert.match(sync, /isAuthorizedArchiveRefresh/);
   assert.match(sync, /loadHomeFeedSnapshot/);
+});
+
+test('homepage cover hydration is limited to the four featured works', () => {
+  assert.equal(shouldResolveWorkCover(0, 4), true);
+  assert.equal(shouldResolveWorkCover(3, 4), true);
+  assert.equal(shouldResolveWorkCover(4, 4), false);
+  assert.equal(shouldResolveWorkCover(114, 4), false);
+  assert.equal(shouldResolveWorkCover(114), true);
 });
 
 test('expensive forced refreshes require the private sync secret', async () => {

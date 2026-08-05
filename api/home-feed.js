@@ -6,7 +6,7 @@ import { loadConceptsSnapshot } from './concepts.js';
 import { loadMediaSnapshot } from './media.js';
 import { loadWorksSnapshot } from './works.js';
 
-const HOME_FEED_CACHE_KEY = 'home-feed:v5-source-availability';
+const HOME_FEED_CACHE_KEY = 'home-feed:v6-featured-covers';
 const HOME_FEED_TTL_MS = 5 * 60 * 1000;
 
 export function hasUsableArchiveSource(results) {
@@ -31,7 +31,7 @@ export function getHomeFeedSourceStatus(results) {
 
 async function loadHomeFeedSources({ refresh }) {
   const sources = await Promise.allSettled([
-    loadWorksSnapshot({ includeCovers: false, refresh }),
+    loadWorksSnapshot({ includeCovers: true, coverLimit: 4, refresh }),
     loadMediaSnapshot({ refresh }),
     loadConceptsSnapshot({ refresh }),
     supabaseRpcRequest('get_visible_exploration_logs', { body: { p_limit: 3 } }),

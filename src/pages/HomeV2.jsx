@@ -296,8 +296,8 @@ function HomeV2() {
               <Link className="home-v2-work" key={work.code || work.id || index} onClick={() => trackProductEvent(HOME_EVENT_NAMES.RECOMMENDATION, { action: 'open', state: visitorState, surface: 'daily_discovery' })} to={`/works/novels?work=${encodeURIComponent(work.code || '')}`}>
                 <span className="home-v2-work__index mono">SIGNAL {String(index + 1).padStart(2, '0')}</span>
                 <div className="home-v2-work__cover">
-                  {work.image
-                    ? <img alt="" loading="lazy" src={work.image} />
+                  {work.image || work.cover
+                    ? <img alt="" loading="lazy" src={work.image || work.cover} />
                     : <BookOpen aria-hidden="true" />}
                 </div>
                 <div><strong>{workTitle(work)}</strong><span>{work.author || work.subtitle || work.category || 'SF ARCHIVE'}</span></div>

@@ -14,6 +14,11 @@ const WORKS_CACHE_TTL_MS = 10 * 60 * 1000;
 const DEFAULT_MEDIA_WORKS_DATABASE_ID = '38298dbef69d80e49ddce149564394b7';
 const WORKS_CACHE_VERSION = 'v3-media-works';
 
+export function shouldResolveWorkCover(index, coverLimit) {
+  if (coverLimit == null) return true;
+  return index < Math.max(0, Number(coverLimit) || 0);
+}
+
 const apiCache = globalThis.__sfWorksApiCache ??= {
   worksWithoutCovers: null,
   worksWithoutCoversExpiresAt: 0,
@@ -137,14 +142,17 @@ async function getWorksWithoutCovers(token, databaseId, mediaWorksDatabaseId, sh
   return { works: await promise, cache: 'MISS' };
 }
 
-async function getWorksWithCovers(token, databaseId, mediaWorksDatabaseId, aladinApiKey, shouldRefresh = false) {
-  const durableKey = `works:${databaseId}:${mediaWorksDatabaseId || 'no-media'}:covers:${aladinApiKey ? 'enabled' : 'disabled'}:${WORKS_CACHE_VERSION}`;
+async function getWorksWithCovers(token, databaseId, mediaWorksDatabaseId, aladinApiKey, shouldRefresh = false, coverLimit) {
+  const coverScope = coverLimit == null ? 'all' : Math.max(0, Number(coverLimit) || 0);
+  const durableKey = `works:${databaseId}:${mediaWorksDatabaseId || 'no-media'}:covers:${aladinApiKey ? 'enabled' : 'disabled'}:limit-${coverScope}:${WORKS_CACHE_VERSION}`;
   if (!shouldRefresh) {
     const durable = await getDurableCachedJson(durableKey, WORKS_CACHE_TTL_MS, async () => {
       const { works } = await getWorksWithoutCovers(token, databaseId, mediaWorksDatabaseId, shouldRefresh);
-      return mapWithConcurrency(works, 4, async work => ({
+      return mapWithConcurrency(works, 4, async (work, index) => ({
         ...work,
-        cover: work.cover || (work.source === 'books' ? await getCachedAladinCover(work, aladinApiKey) : ''),
+        cover: work.cover || (work.source === 'books' && shouldResolveWorkCover(index, coverLimit)
+          ? await getCachedAladinCover(work, aladinApiKey)
+          : ''),
       }));
     });
     apiCache.worksWithCovers = durable.value;
@@ -162,9 +170,11 @@ async function getWorksWithCovers(token, databaseId, mediaWorksDatabaseId, aladi
 
   const promise = getDurableCachedJson(durableKey, WORKS_CACHE_TTL_MS, async () => {
     const { works } = await getWorksWithoutCovers(token, databaseId, mediaWorksDatabaseId, shouldRefresh);
-    return mapWithConcurrency(works, 4, async work => ({
+    return mapWithConcurrency(works, 4, async (work, index) => ({
       ...work,
-      cover: work.cover || (work.source === 'books' ? await getCachedAladinCover(work, aladinApiKey) : ''),
+      cover: work.cover || (work.source === 'books' && shouldResolveWorkCover(index, coverLimit)
+        ? await getCachedAladinCover(work, aladinApiKey)
+        : ''),
     }));
   }, { refresh: shouldRefresh })
     .then(({ value }) => value)
@@ -181,7 +191,7 @@ async function getWorksWithCovers(token, databaseId, mediaWorksDatabaseId, aladi
   return { works: await promise, cache: 'MISS' };
 }
 
-export async function loadWorksSnapshot({ includeCovers = false, refresh = false } = {}) {
+export async function loadWorksSnapshot({ coverLimit, includeCovers = false, refresh = false } = {}) {
   const { token, databaseId, missing } = getNotionConfig('NOTION_WORKS_DATABASE_ID');
   const { databaseId: mediaWorksDatabaseId } = getNotionConfig(
     'NOTION_MEDIA_WORKS_DATABASE_ID',
@@ -195,7 +205,7 @@ export async function loadWorksSnapshot({ includeCovers = false, refresh = false
 
   const aladinApiKey = process.env.ALADIN_TTB_KEY || process.env.VITE_ALADIN_TTB_KEY;
   return includeCovers
-    ? getWorksWithCovers(token, databaseId, mediaWorksDatabaseId, aladinApiKey, refresh)
+    ? getWorksWithCovers(token, databaseId, mediaWorksDatabaseId, aladinApiKey, refresh, coverLimit)
     : getWorksWithoutCovers(token, databaseId, mediaWorksDatabaseId, refresh);
 }
 
