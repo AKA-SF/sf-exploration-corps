@@ -299,43 +299,42 @@
 
 .reading-mode .page-container:has(.media-archive-page),
 .reading-mode.page-container:has(.media-archive-page) {
-  background: #f3efe6;
+  background: var(--mode-reading-bg);
 }
 
 .reading-mode .media-archive-page {
-  --cyan: #2f6f78;
-  --line: rgba(35, 73, 82, 0.2);
+  --cyan: var(--mode-reading-cyan);
+  --line: var(--mode-reading-line);
   background:
-    linear-gradient(180deg, rgba(255, 252, 244, 0.98), rgba(239, 233, 219, 0.98));
-  color: #172126;
+    radial-gradient(circle at 78% 10%, rgba(39, 101, 109, 0.08), transparent 34%),
+    var(--mode-reading-bg);
+  color: var(--mode-reading-text);
 }
 
 .reading-mode .media-archive-header,
 .reading-mode .media-archive-card,
 .reading-mode .media-archive-empty,
 .reading-mode .media-archive-search {
-  border-color: rgba(46, 72, 77, 0.22);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.66), rgba(232, 222, 202, 0.34)),
-    rgba(255, 252, 244, 0.9);
+  border-color: var(--mode-reading-line);
+  background: var(--mode-reading-panel-soft);
   box-shadow: none;
 }
 
 .reading-mode .media-back-link,
 .reading-mode .media-archive-status,
 .reading-mode .media-archive-tabs a {
-  border-color: rgba(47, 111, 120, 0.28);
-  background: rgba(255, 252, 244, 0.72);
-  color: #2f6f78;
+  border-color: var(--mode-reading-line);
+  background: var(--mode-reading-panel-wash);
+  color: var(--mode-reading-cyan);
   box-shadow: none;
 }
 
 .reading-mode .media-archive-tabs a:hover,
 .reading-mode .media-archive-tabs a:focus-visible,
 .reading-mode .media-archive-tabs a.is-active {
-  border-color: rgba(47, 111, 120, 0.5);
-  background: #2f6f78;
-  color: #fffdf6;
+  border-color: rgba(39, 101, 109, 0.5);
+  background: var(--mode-reading-cyan);
+  color: var(--mode-reading-contrast);
 }
 
 .reading-mode .media-archive-thumb {
@@ -373,7 +372,7 @@
 }
 
 .reading-mode .media-archive-search input::placeholder {
-  color: rgba(52, 68, 75, 0.5);
+  color: var(--mode-reading-placeholder);
 }
 
 .reading-mode .media-archive-meta em,
@@ -391,8 +390,8 @@
 .reading-mode .media-archive-card:focus-visible {
   border-color: rgba(47, 111, 120, 0.46);
   background:
-    linear-gradient(135deg, rgba(221, 242, 239, 0.84), rgba(255, 252, 244, 0.92));
-  box-shadow: 0 16px 34px rgba(36, 28, 15, 0.1);
+    #eef5f3;
+  box-shadow: 0 16px 34px var(--mode-reading-shadow);
 }
 
 @media (max-width: 1180px) {

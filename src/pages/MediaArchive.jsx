@@ -139,6 +139,7 @@ export default function MediaArchive() {
       <nav className="media-archive-tabs" aria-label="미디어 전체 분류">
         {mediaCategories.map(category => (
           <Link
+            aria-current={category.slug === activeCategory.slug ? 'page' : undefined}
             className={category.slug === activeCategory.slug ? 'is-active' : ''}
             key={category.slug}
             to={`/media/${category.slug}`}

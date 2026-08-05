@@ -11,6 +11,9 @@ const tokenNames = [
   'mode-reading-heading',
   'mode-reading-muted',
   'mode-reading-contrast',
+  'mode-reading-focus',
+  'mode-reading-line',
+  'mode-reading-placeholder',
 ];
 
 const tokens = Object.fromEntries(tokenNames.map(name => {
@@ -31,6 +34,12 @@ const checks = [
   ['accent text on reading panel', 'mode-reading-cyan', 'mode-reading-panel', 4.5],
   ['link text on reading panel', 'mode-reading-link', 'mode-reading-panel', 4.5],
   ['light text on accent button', 'mode-reading-contrast', 'mode-reading-cyan', 4.5],
+  ['focus indicator on reading page', 'mode-reading-focus', 'mode-reading-bg', 3],
+  ['focus indicator on reading panel', 'mode-reading-focus', 'mode-reading-panel', 3],
+  ['control boundary on reading page', 'mode-reading-line', 'mode-reading-bg', 3],
+  ['control boundary on reading panel', 'mode-reading-line', 'mode-reading-panel', 3],
+  ['placeholder on reading page', 'mode-reading-placeholder', 'mode-reading-bg', 4.5],
+  ['placeholder on reading panel', 'mode-reading-placeholder', 'mode-reading-panel', 4.5],
 ];
 
 function hexToRgb(hex) {

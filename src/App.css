@@ -216,10 +216,14 @@ body.device-surface-active .page-container {
 }
 
 .reading-mode .site-mode-toggle {
-  border-color: rgba(55, 65, 81, 0.24);
-  background: rgba(255, 252, 244, 0.92);
-  color: #263238;
-  box-shadow: 0 14px 38px rgba(36, 28, 15, 0.14);
+  border-color: var(--mode-reading-line);
+  background: var(--mode-reading-panel-soft);
+  color: var(--mode-reading-link);
+  box-shadow: 0 14px 38px var(--mode-reading-shadow);
+}
+
+body.reading-mode-active :focus-visible {
+  outline-color: var(--mode-reading-focus);
 }
 
 @media (max-width: 720px) {
@@ -256,10 +260,8 @@ body.device-surface-active .page-container {
 }
 
 .reading-mode .system-status {
-  border-color: rgba(46, 72, 77, 0.22);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.72), rgba(232, 222, 202, 0.45)),
-    var(--mode-reading-panel-soft);
+  border-color: var(--mode-reading-line);
+  background: var(--mode-reading-panel-soft);
 }
 
 .activity-toast {
@@ -316,12 +318,10 @@ body.device-surface-active .page-container {
 }
 
 .reading-mode .activity-toast {
-  border-color: rgba(47, 111, 120, 0.28);
-  color: #1e2a2d;
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.76), rgba(232, 222, 202, 0.62)),
-    #fbf7ed;
-  box-shadow: 0 18px 56px rgba(36, 28, 15, 0.16);
+  border-color: var(--mode-reading-line);
+  color: var(--mode-reading-text);
+  background: var(--mode-reading-panel);
+  box-shadow: 0 18px 56px var(--mode-reading-shadow);
 }
 
 .reading-mode .activity-toast p {
@@ -378,17 +378,17 @@ body.device-surface-active .page-container {
   --ui-page-bg: var(--mode-reading-bg);
   --ui-panel-bg: var(--mode-reading-panel-soft);
   --ui-panel-bg-soft: var(--mode-reading-panel-wash);
-  --ui-control-bg: rgba(255, 252, 244, 0.8);
+  --ui-control-bg: var(--mode-reading-panel-wash);
   --ui-control-bg-strong: var(--mode-reading-cyan);
-  --ui-border: rgba(46, 72, 77, 0.22);
-  --ui-border-strong: rgba(47, 111, 120, 0.55);
+  --ui-border: var(--mode-reading-line);
+  --ui-border-strong: rgba(39, 101, 109, 0.55);
   --ui-text: var(--mode-reading-text);
   --ui-heading: var(--mode-reading-heading);
   --ui-muted: var(--mode-reading-muted);
   --ui-accent: var(--mode-reading-cyan);
   --ui-accent-contrast: var(--mode-reading-contrast);
   --ui-link: var(--mode-reading-link);
-  --ui-tag-bg: rgba(47, 111, 120, 0.08);
+  --ui-tag-bg: rgba(39, 101, 109, 0.08);
   --ui-shadow: var(--mode-reading-shadow);
   background: var(--mode-reading-bg);
   color: var(--mode-reading-text);
@@ -399,7 +399,8 @@ body.device-surface-active .page-container {
 .reading-mode .media-archive-page,
 .reading-mode .questions-page {
   background:
-    linear-gradient(180deg, rgba(255, 252, 244, 0.96), rgba(239, 233, 219, 0.96));
+    radial-gradient(circle at 78% 10%, rgba(39, 101, 109, 0.07), transparent 34%),
+    var(--mode-reading-bg);
 }
 
 .reading-mode .home-topbar,
@@ -413,7 +414,7 @@ body.device-surface-active .page-container {
 .reading-mode .question-detail,
 .reading-mode .comments-panel,
 .reading-mode .log-card {
-  border-color: rgba(46, 72, 77, 0.22);
+  border-color: var(--mode-reading-line);
   background: var(--mode-reading-panel-soft);
   box-shadow: none;
 }
@@ -422,7 +423,7 @@ body.device-surface-active .page-container {
 .reading-mode .media-archive-empty,
 .reading-mode .media-archive-search,
 .reading-mode .media-archive-tabs a {
-  border-color: rgba(46, 72, 77, 0.22);
+  border-color: var(--mode-reading-line);
   background: var(--mode-reading-panel-soft);
   box-shadow: none;
 }
@@ -482,16 +483,14 @@ body.device-surface-active .page-container {
 .reading-mode .coordinate-brief,
 .reading-mode .coordinate-minimap,
 .reading-mode .coordinate-mini-space {
-  border-color: rgba(46, 72, 77, 0.22);
-  background:
-    linear-gradient(135deg, rgba(255, 255, 255, 0.64), rgba(232, 222, 202, 0.42)),
-    rgba(255, 252, 244, 0.88);
+  border-color: var(--mode-reading-line);
+  background: var(--mode-reading-panel-soft);
   box-shadow: none;
 }
 
 .reading-mode .dock-card,
 .reading-mode .category-tile {
-  background: rgba(255, 252, 244, 0.52);
+  background: var(--mode-reading-panel-wash);
 }
 
 .reading-mode .dock-card:hover,
@@ -502,9 +501,8 @@ body.device-surface-active .page-container {
 .reading-mode .work-card.is-linked:focus-visible,
 .reading-mode .media-card:hover,
 .reading-mode .media-card:focus-visible {
-  background:
-    linear-gradient(135deg, rgba(221, 242, 239, 0.84), rgba(255, 252, 244, 0.92));
-  border-color: rgba(47, 111, 120, 0.44);
+  background: #eef5f3;
+  border-color: rgba(39, 101, 109, 0.44);
 }
 
 .reading-mode .work-cover-frame,
@@ -512,14 +510,14 @@ body.device-surface-active .page-container {
 .reading-mode .question-form input,
 .reading-mode .question-form textarea,
 .reading-mode .question-form select {
-  border-color: rgba(46, 72, 77, 0.2);
+  border-color: var(--mode-reading-line);
   background: rgba(255, 255, 255, 0.68);
   color: var(--mode-reading-text);
 }
 
 .reading-mode .question-form input::placeholder,
 .reading-mode .question-form textarea::placeholder {
-  color: rgba(52, 68, 75, 0.58);
+  color: var(--mode-reading-placeholder);
 }
 
 .reading-mode .map-grid-cross,
@@ -1016,7 +1014,7 @@ body.reading-mode-active .mobile-container.reading-mode :where(
 }
 
 body.reading-mode-active .mobile-container.reading-mode :where(input, textarea)::placeholder {
-  color: rgba(52, 68, 75, 0.58) !important;
+  color: var(--mode-reading-placeholder) !important;
 }
 
 body.reading-mode-active .mobile-container.reading-mode :where(

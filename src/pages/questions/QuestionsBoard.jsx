@@ -31,6 +31,7 @@ export default function QuestionsBoard({
       <nav className="questions-filter" aria-label="커뮤니티 게시판 분류">
         {categories.map(category => (
           <button
+            aria-pressed={activeCategory === category}
             className={activeCategory === category ? 'is-active' : ''}
             key={category}
             onClick={() => onCategoryChange(category)}

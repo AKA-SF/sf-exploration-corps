@@ -32,7 +32,7 @@ export default function WorksArchiveGrid({
             {(Array.isArray(work.tags) ? work.tags : []).map(tag => <span key={tag}>{tag}</span>)}
           </div>
           <div className="works-full-link">
-            <span>ARCHIVE ACTIONS</span>
+            <span>작품 정보</span>
             <div className="works-full-actions">
               <button onClick={() => onOpenWorkDetail(work)} type="button">
                 <MessageSquareText aria-hidden="true" />

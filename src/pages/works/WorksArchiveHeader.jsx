@@ -18,7 +18,7 @@ export default function WorksArchiveHeader({ activeCategory, onOpenWorkSubmit, v
         <strong>{visibleCount} SIGNALS</strong>
         <button className="works-full-submit-button" onClick={onOpenWorkSubmit} type="button">
           <Database aria-hidden="true" />
-          <span>작품 아카이브</span>
+          <span>작품 제보하기</span>
         </button>
       </div>
     </header>
