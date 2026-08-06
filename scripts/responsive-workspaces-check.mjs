@@ -4,31 +4,28 @@ import test from 'node:test';
 
 const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
-test('LogEntry uses a wide desktop report workspace instead of a mobile-width form', async () => {
+test('LogEntry uses a focused responsive writing workspace with a separate mobile action layer', async () => {
   const app = await read('src/App.jsx');
   const jsx = await read('src/pages/LogEntry.jsx');
   const css = await read('src/pages/LogEntry.css');
   const portal = await read('src/pages/log-entry/MobileLogSubmitPortal.jsx');
 
   assert.match(app, /location\.pathname === '\/log'/);
-  assert.match(jsx, /log-target-panel/);
-  assert.match(jsx, /log-metrics-panel/);
-  assert.match(jsx, /log-notes-panel/);
-  assert.match(css, /@media \(min-width: 900px\)/);
-  assert.match(css, /\.log-entry-container\s*\{[\s\S]*max-width:\s*1[23]\d{2}px/);
-  assert.match(css, /\.log-form\s*\{[\s\S]*grid-template-columns:/);
+  assert.match(jsx, /log-essential-fields/);
+  assert.match(jsx, /log-optional-fields/);
+  assert.match(jsx, /새 기록은 항상 나만 보기로 저장/);
+  assert.match(css, /\.log-entry-container\s*\{[^}]*width:\s*min\(840px, 100%\)/);
+  assert.match(css, /\.log-form\s*\{[^}]*display:\s*grid/);
   assert.match(jsx, /id=\{LOG_FORM_ID\}/);
   assert.match(jsx, /<MobileLogSubmitPortal/);
   assert.match(portal, /createPortal\(/);
   assert.match(app, /id="mobile-action-layer"[\s\S]*<Navbar/);
   assert.match(portal, /useMobileActionLayer\(\)/);
-  assert.match(css, /\.desktop-log-submit-bar\.panel\s*\{[\s\S]*position:\s*sticky/);
+  assert.match(css, /@media \(min-width: 721px\)[^}]*\.desktop-log-submit-bar[^}]*position:\s*sticky/);
   assert.match(css, /\.log-entry-container\s*\{[\s\S]*flex:\s*0 0 auto/);
-  assert.match(jsx, /readiness-summary/);
-  assert.match(jsx, /항목 완료/);
-  assert.doesNotMatch(jsx, /readiness-ring/);
-  assert.doesNotMatch(css, /\.readiness-ring/);
-  assert.match(css, /@media \(min-width: 900px\)[\s\S]*\.uplink-brief\s*\{[\s\S]*grid-template-columns:\s*minmax\(0, 1fr\) 104px/);
+  assert.match(jsx, /작품/);
+  assert.match(jsx, /한 줄 감상/);
+  assert.doesNotMatch(jsx, /readiness-summary|readiness-ring/);
 });
 
 test('Network2 has a desktop navigation rail and a separate content workspace', async () => {
@@ -42,13 +39,13 @@ test('Network2 has a desktop navigation rail and a separate content workspace', 
   assert.match(css, /\.network-v2-rail\s*\{[\s\S]*position:\s*sticky/);
 });
 
-test('Profile2 combines identity and navigation into a desktop rail', async () => {
+test('Profile uses a tabless two-column personal home on desktop', async () => {
   const jsx = await read('src/pages/Profile.jsx');
   const css = await read('src/pages/Profile.css');
 
-  assert.match(jsx, /profile-v2-rail/);
-  assert.match(css, /@media \(min-width: 900px\)[\s\S]*\.profile-v2-workspace\s*\{[\s\S]*grid-template-columns:/);
-  assert.match(css, /\.profile-v2-rail\s*\{[\s\S]*position:\s*sticky/);
+  assert.match(jsx, /profile-home-grid/);
+  assert.doesNotMatch(jsx, /role="tab"|profile-v2-rail/);
+  assert.match(css, /@media \(min-width: 900px\)[\s\S]*\.profile-home-grid\s*\{[^}]*grid-template-columns:\s*repeat\(2/);
 });
 
 test('Login uses a desktop workspace and explains account privacy before authentication', async () => {
@@ -66,15 +63,15 @@ test('Login uses a desktop workspace and explains account privacy before authent
   assert.match(css, /@media \(min-width: 900px\)[\s\S]*\.login-workspace\s*\{[\s\S]*grid-template-columns:/);
 });
 
-test('all three workspaces explicitly collapse to one column on mobile', async () => {
+test('all three workspaces preserve one-column reading and reachable actions on mobile', async () => {
   const logCss = await read('src/pages/LogEntry.css');
   const networkCss = await read('src/pages/NetworkV2.css');
   const profileCss = await read('src/pages/Profile.css');
 
-  assert.match(logCss, /@media \(max-width: 899px\)[\s\S]*\.log-form\s*\{[\s\S]*grid-template-columns:\s*1fr/);
-  assert.match(logCss, /@media \(max-width: 899px\)[\s\S]*\.mobile-log-submit-bar\.panel\s*\{[\s\S]*position:\s*fixed/);
+  assert.match(logCss, /\.log-entry-container\s*\{[^}]*flex-direction:\s*column/);
+  assert.match(logCss, /@media \(max-width: 720px\)[\s\S]*\.mobile-log-submit-bar\s*\{[^}]*position:\s*fixed/);
   assert.match(networkCss, /@media \(max-width: 680px\)[\s\S]*\.network-v2-workspace\s*\{[\s\S]*grid-template-columns:\s*1fr/);
-  assert.match(profileCss, /@media\s*\(max-width:\s*680px\)[\s\S]*\.profile-v2-workspace\s*\{[\s\S]*grid-template-columns:\s*1fr/);
+  assert.match(profileCss, /\.profile-home-grid\s*\{[^}]*grid-template-columns:\s*1fr/);
 });
 
 test('desktop uses a navigation rail while mobile preserves the bottom navigation', async () => {
@@ -93,7 +90,8 @@ test('primary Korean navigation labels stay readable and interactions transition
   assert.doesNotMatch(appCss, /\.nav-item\s*\{[\s\S]{0,500}?transition:\s*all/);
   assert.match(homeCss, /\.home-v2-continuation > span\s*\{[^}]*font-size:\s*11px/);
   assert.match(networkCss, /\.network-v2-tabs button\s*\{[^}]*font-size:\s*12px/);
-  assert.match(profileCss, /\.profile-tab-list button\s*\{[^}]*font-size:\s*12px/);
+  assert.match(profileCss, /\.profile-section-heading h2\s*\{[^}]*font-size:\s*20px/);
+  assert.match(profileCss, /\.profile-empty-action a\s*\{[^}]*min-height:\s*44px/);
 });
 
 test('Home desktop header surface is centered without reserving the hidden global rail', async () => {

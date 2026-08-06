@@ -1,246 +1,163 @@
-import { lazy, Suspense, useMemo } from 'react';
-import { Link, Navigate, useSearchParams } from 'react-router-dom';
-import { BookOpen, Inbox, LayoutDashboard, LogOut, Medal, PenLine, UserRound } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { ArrowRight, Inbox, LockKeyhole, LogOut, PenLine, UserRound } from 'lucide-react';
+import { Link, Navigate } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
 import { readExplorationDraft } from '../features/exploration-logs/explorationDraftStorage';
-import ProfileActivityPanel from './profile/ProfileActivityPanel';
-import ProfileHubPanel from './profile/ProfileHubPanel';
-import ProfileIdentityCard from './profile/ProfileIdentityCard';
-import ProfileMissionTree from './profile/ProfileMissionTree';
-import ProfileMessagesPanel from './profile/ProfileMessagesPanel';
-import ProfileOnboardingPanel from './profile/ProfileOnboardingPanel';
-import { activityLabels, workStatusLabels } from './profile/profileLabels';
-import { activityTitle } from './profile/profileDataUtils';
-import {
-  ProfileBadgeSummary,
-  ProfileLaunchPanel,
-  ProfileMileagePanel,
-  ProfileStatsGrid,
-} from './profile/ProfileOverviewPanels';
-import ProfileReadingPanel from './profile/ProfileReadingPanel';
-import { useProfileData } from './profile/hooks/useProfileData';
+import AccountSettingsPanel from './profile/AccountSettingsPanel';
+import { useOwnExplorationLogs } from './profile/hooks/useOwnExplorationLogs';
 import './Profile.css';
 import '../styles/MobileExperience.css';
 
-const ProfileCyberIdCard = lazy(() => import('./profile/ProfileCyberIdCard'));
-const PROFILE_TABS = [
-  { id: 'overview', icon: LayoutDashboard, label: '개요' },
-  { id: 'records', icon: BookOpen, label: '내 기록' },
-  { id: 'progress', icon: Medal, label: '진행' },
-  { id: 'inbox', icon: Inbox, label: '수신함' },
-];
-const PROFILE_TAB_IDS = new Set(PROFILE_TABS.map(tab => tab.id));
+function formatRecordDate(value) {
+  if (!value) return '';
+  return new Intl.DateTimeFormat('ko-KR', {
+    dateStyle: 'medium',
+  }).format(new Date(value));
+}
 
+function getAccountName(user) {
+  return user?.user_metadata?.nickname
+    || user?.user_metadata?.full_name
+    || user?.email?.split('@')[0]
+    || '탐사 대원';
+}
 
-function ProfileCyberIdFallback() {
-  return (
-    <button className="profile-cyber-id-tab" type="button" disabled>
-      <span className="mono">CYBER ID</span>
-      <strong>ID 카드 준비 중</strong>
-    </button>
-  );
+function isLocalProfilePreview() {
+  if (typeof window === 'undefined') return false;
+  const localHosts = new Set(['localhost', '127.0.0.1']);
+  const preview = new URLSearchParams(window.location.search).get('preview');
+  return localHosts.has(window.location.hostname) && preview === 'profile';
 }
 
 export default function Profile() {
-  const { isConfigured, loading, user, signOut } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const requestedTab = searchParams.get('tab') || 'overview';
-  const activeTab = PROFILE_TAB_IDS.has(requestedTab) ? requestedTab : 'overview';
+  const { isConfigured, loading, signOut, user } = useAuth();
+  const isPreview = isLocalProfilePreview();
+  const [nameOverride, setNameOverride] = useState(null);
   const draft = useMemo(
-    () => loading ? {} : readExplorationDraft(user?.id),
-    [loading, user?.id],
+    () => isPreview || loading ? {} : readExplorationDraft(user?.id),
+    [isPreview, loading, user?.id],
   );
-  const hasDraft = Boolean(draft?.title || draft?.type || draft?.memo);
-  const {
-    activities,
-    chooseMissionRoute,
-    message,
-    networkSignals,
-    nickname,
-    profile,
-    status,
-    viewModel,
-    workStatuses,
-  } = useProfileData(user, activeTab);
+  const hasDraft = Boolean(draft?.title || draft?.memo);
+  const { error, logs, status } = useOwnExplorationLogs(isPreview ? null : user);
+  const visibleLogs = isPreview ? [] : logs;
+  const visibleStatus = isPreview ? 'ready' : status;
+  const displayName = isPreview
+    ? '프리뷰 탐사자'
+    : nameOverride?.userId === user?.id
+      ? nameOverride.nickname
+      : getAccountName(user);
 
-  const {
-    activitySummary,
-    badges,
-    dailyLoginReceived,
-    latestTasteProfile,
-    latestWorkStatus,
-    missionTree,
-    nextMission,
-    points,
-    rank,
-    stats,
-    statusCounts,
-    unlockedBadges,
-  } = viewModel;
+  if (!isPreview && !loading && !user) return <Navigate to="/login" replace />;
 
-  if (!loading && !user) return <Navigate to="/login" replace />;
-
-  if (!isConfigured) {
+  if (!isPreview && !isConfigured) {
     return (
       <PageTransition className="profile-container profile-auth-state">
-        <div className="profile-card panel">
-          <h2 className="mono">Supabase 연결 필요</h2>
-          <p>프로필과 개인 기록을 사용하려면 Supabase 연결이 필요합니다.</p>
-        </div>
+        <section className="profile-card panel">
+          <h2>개인 기록 연결이 필요합니다</h2>
+          <p>내 정보와 비공개 기록을 사용하려면 Supabase 연결이 필요합니다.</p>
+        </section>
       </PageTransition>
     );
   }
 
-  if (user && status === 'loading' && !profile) {
+  if (!isPreview && loading) {
     return (
       <PageTransition className="profile-container profile-auth-state">
-        <div className="profile-card panel" role="status" aria-live="polite">
-          <h2 className="mono">내 탐사 기록 동기화 중</h2>
-          <p>대원 정보와 최근 탐사 신호를 불러오고 있습니다.</p>
-        </div>
+        <section className="profile-card panel" role="status">계정 정보를 확인하고 있습니다.</section>
       </PageTransition>
     );
   }
-
-  if (user && status === 'error' && !profile) {
-    return (
-      <PageTransition className="profile-container profile-auth-state">
-        <div className="profile-card panel" role="alert">
-          <h2 className="mono">프로필 연결 오류</h2>
-          <p>{message || 'Supabase 프로필 정보를 불러오지 못했습니다.'}</p>
-        </div>
-      </PageTransition>
-    );
-  }
-
-  const selectTab = tabId => {
-    const next = new URLSearchParams(searchParams);
-    if (tabId === 'overview') next.delete('tab');
-    else next.set('tab', tabId);
-    setSearchParams(next, { replace: true });
-  };
 
   return (
-    <PageTransition className="profile-container profile-v2">
-      <header className="profile-v2-header">
+    <PageTransition className="profile-container profile-home">
+      {isPreview && (
+        <aside className="profile-preview-notice" role="status">
+          <strong>로컬 화면 검토 모드</strong>
+          <p>레이아웃 확인을 위한 빈 상태입니다. 실제 계정과 실제 개인 기록은 표시하지 않습니다.</p>
+        </aside>
+      )}
+      <header className="profile-home-header">
         <div>
-          <span className="mono">개인 아카이브 · PERSONAL ARCHIVE</span>
-          <h1><UserRound aria-hidden="true" /> 내 탐사 기록</h1>
-          <p>최근 기록을 이어가고, 나의 탐사 진행과 수신 신호를 확인합니다.</p>
+          <span className="mono">PERSONAL ARCHIVE</span>
+          <h1><UserRound aria-hidden="true" /> 내 정보</h1>
+          <p>{displayName}님의 기록과 개인정보 설정을 한곳에서 확인합니다.</p>
         </div>
-        <button className="profile-signout" onClick={signOut} type="button"><LogOut size={15} /> 로그아웃</button>
+        {!isPreview && (
+          <button className="profile-signout" onClick={signOut} type="button">
+            <LogOut aria-hidden="true" size={16} /> 로그아웃
+          </button>
+        )}
       </header>
 
-      <div className="profile-v2-workspace">
-        <aside className="profile-v2-rail">
-          <nav className="profile-tab-list" aria-label="내 정보 메뉴" role="tablist">
-            {PROFILE_TABS.map(tab => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  aria-controls={`profile-panel-${tab.id}`}
-                  aria-selected={isActive}
-                  className={isActive ? 'is-active' : ''}
-                  id={`profile-tab-${tab.id}`}
-                  key={tab.id}
-                  onClick={() => selectTab(tab.id)}
-                  role="tab"
-                  type="button"
-                >
-                  <Icon aria-hidden="true" />
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </nav>
+      <main className="profile-home-grid">
+        <section className="profile-home-section profile-draft-section panel" aria-labelledby="profile-draft-title">
+          <div className="profile-section-heading">
+            <span className="profile-section-icon"><PenLine aria-hidden="true" /></span>
+            <div><span className="mono">DRAFT</span><h2 id="profile-draft-title">작성 중인 기록</h2></div>
+          </div>
+          {hasDraft ? (
+            <Link className="profile-primary-card" to="/log">
+              <div>
+                <strong>{draft.title || '제목을 정하지 않은 기록'}</strong>
+                <p>{draft.memo || '저장된 지점부터 감상을 이어서 작성합니다.'}</p>
+              </div>
+              <span>이어가기 <ArrowRight aria-hidden="true" /></span>
+            </Link>
+          ) : (
+            <div className="profile-empty-action">
+              <p>작성 중인 기록이 없습니다. 작품과 한 줄 감상만으로 시작할 수 있습니다.</p>
+              <Link to="/log">새 기록 쓰기</Link>
+            </div>
+          )}
+        </section>
 
-          <div className="profile-v2-identity">
-          <ProfileIdentityCard
-            actionSlot={(
-              <Suspense fallback={<ProfileCyberIdFallback />}>
-                <ProfileCyberIdCard
-                  nickname={nickname}
-                  points={points}
-                  publicCode={profile?.public_code}
-                  rank={rank}
-                  stats={stats}
-                  tasteProfile={latestTasteProfile}
-                  unlockedBadges={unlockedBadges}
-                  user={user}
-                />
-              </Suspense>
-            )}
-            nickname={nickname}
-            rank={rank}
+        <section className="profile-home-section profile-records-section panel" aria-labelledby="profile-records-title">
+          <div className="profile-section-heading">
+            <span className="profile-section-icon"><LockKeyhole aria-hidden="true" /></span>
+            <div><span className="mono">PRIVATE RECORDS</span><h2 id="profile-records-title">최근 기록</h2></div>
+          </div>
+          {visibleStatus === 'loading' && <p className="profile-state" role="status">최근 기록을 불러오고 있습니다.</p>}
+          {visibleStatus === 'error' && <p className="profile-state" role="alert">{error}</p>}
+          {visibleStatus === 'ready' && visibleLogs.length === 0 && (
+            <div className="profile-empty-action"><p>아직 저장한 기록이 없습니다.</p><Link to="/log">첫 기록 남기기</Link></div>
+          )}
+          {visibleLogs.length > 0 && (
+            <div className="profile-record-list">
+              {visibleLogs.map(log => (
+                <Link key={log.id} to={`/result/${log.id}`}>
+                  <div><strong>{log.title}</strong><p>{log.memo}</p></div>
+                  <time dateTime={log.createdAt}>{formatRecordDate(log.createdAt)}</time>
+                </Link>
+              ))}
+            </div>
+          )}
+        </section>
+
+        <section className="profile-home-section panel" aria-labelledby="profile-replies-title">
+          <div className="profile-section-heading">
+            <span className="profile-section-icon"><Inbox aria-hidden="true" /></span>
+            <div><span className="mono">REPLIES</span><h2 id="profile-replies-title">받은 답신</h2></div>
+          </div>
+          <div className="profile-quiet-state">
+            <strong>아직 표시할 답신이 없습니다.</strong>
+            <p>내 공개 신호에 답신이 도착하면 원문과 함께 이곳에서 확인할 수 있습니다.</p>
+          </div>
+        </section>
+
+        <section className="profile-home-section panel" aria-labelledby="profile-account-title">
+          <div className="profile-section-heading">
+            <span className="profile-section-icon"><UserRound aria-hidden="true" /></span>
+            <div><span className="mono">ACCOUNT</span><h2 id="profile-account-title">계정과 개인정보</h2></div>
+          </div>
+          <AccountSettingsPanel
+            isPreview={isPreview}
+            key={isPreview ? 'preview' : user?.id}
+            onNicknameChange={nickname => setNameOverride({ nickname, userId: user?.id })}
             user={user}
           />
-          <div className="profile-v2-quick panel">
-            <span className="mono">다음 행동 · NEXT ACTION</span>
-            <strong>{hasDraft ? '작성 중인 탐사 기록' : nextMission?.title || '새 작품 탐사'}</strong>
-            <p>{hasDraft ? draft.title || '제목을 정하지 않은 기록' : nextMission?.description || '다음 작품을 발견하고 기록을 남겨보세요.'}</p>
-            <Link to={hasDraft ? '/log' : '/works/novels'}>{hasDraft ? '기록 이어가기' : '작품 발견하기'}</Link>
-          </div>
-          </div>
-        </aside>
-
-        <div className="profile-v2-content">
-          {activeTab === 'overview' && (
-            <section aria-labelledby="profile-tab-overview" id="profile-panel-overview" role="tabpanel">
-              {hasDraft && (
-                <Link className="profile-resume-card panel" to="/log">
-                  <PenLine aria-hidden="true" />
-                  <div><span className="mono">DRAFT SIGNAL</span><strong>{draft.title || '작성 중인 탐사 기록'}</strong><p>저장된 지점부터 기록을 이어갑니다.</p></div>
-                  <b>이어가기</b>
-                </Link>
-              )}
-              <ProfileOnboardingPanel latestTasteProfile={latestTasteProfile} stats={stats} workStatuses={workStatuses} />
-              <ProfileHubPanel
-                activitySummary={activitySummary}
-                dailyLoginReceived={dailyLoginReceived}
-                latestWorkStatus={latestWorkStatus}
-                nextMission={nextMission}
-                points={points}
-                rank={rank}
-                stats={stats}
-                unlockedBadges={unlockedBadges}
-                workStatuses={workStatuses}
-              />
-              <section className="profile-v2-recent panel">
-                <div><span className="mono">RECENT ACTIVITY</span><h2>최근 탐사 활동</h2></div>
-                {activities.slice(0, 3).length > 0 ? activities.slice(0, 3).map(activity => (
-                  <article key={activity.id}><span>{activityLabels[activity.action_type] || '탐사 활동'}</span><strong>{activityTitle(activity)}</strong><em>+{activity.points ?? 0} MP</em></article>
-                )) : <p>아직 기록된 탐사 활동이 없습니다.</p>}
-              </section>
-            </section>
-          )}
-
-          {activeTab === 'records' && (
-            <section aria-labelledby="profile-tab-records" id="profile-panel-records" role="tabpanel">
-              <ProfileLaunchPanel />
-              <ProfileReadingPanel latestWorkStatus={latestWorkStatus} statusCounts={statusCounts} workStatuses={workStatuses} workStatusLabels={workStatusLabels} />
-              <Link className="profile-record-cta panel" to="/log"><PenLine aria-hidden="true" /><div><strong>새 탐사 기록 남기기</strong><p>작품에서 받은 감정과 아이디어를 개인 아카이브에 저장합니다.</p></div></Link>
-            </section>
-          )}
-
-          {activeTab === 'progress' && (
-            <section aria-labelledby="profile-tab-progress" id="profile-panel-progress" role="tabpanel">
-              <ProfileMileagePanel points={points} rank={rank} />
-              <ProfileMissionTree missionTree={missionTree} onChooseRoute={chooseMissionRoute} />
-              <ProfileStatsGrid badges={badges} stats={stats} />
-              <ProfileBadgeSummary badges={badges} />
-            </section>
-          )}
-
-          {activeTab === 'inbox' && (
-            <section aria-labelledby="profile-tab-inbox" id="profile-panel-inbox" role="tabpanel">
-              <ProfileMessagesPanel profile={profile} user={user} />
-              <ProfileActivityPanel activities={activities} activityLabels={activityLabels} activitySummary={activitySummary} activityTitle={activityTitle} message={message} networkSignals={networkSignals} status={status} />
-            </section>
-          )}
-        </div>
-      </div>
+        </section>
+      </main>
     </PageTransition>
   );
 }

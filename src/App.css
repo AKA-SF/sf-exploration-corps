@@ -96,6 +96,7 @@
   height: 100%;
   padding: 24px;
   padding-bottom: 96px; /* Space for navbar */
+  scroll-padding-bottom: calc(var(--mobile-nav-height) + 16px);
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
@@ -103,6 +104,41 @@
   z-index: 10;
   display: flex;
   flex-direction: column;
+}
+
+@media (max-width: 720px) {
+  .page-container {
+    margin-bottom: var(--mobile-nav-height);
+    padding-bottom: 24px;
+  }
+}
+
+.page-container:has(.log-entry-container),
+.page-container:has(.result-container),
+.page-container:has(.profile-home),
+.page-container:has(.profile-auth-state),
+.page-container:has(.login-page) {
+  background:
+    radial-gradient(circle at 78% 10%, rgba(21, 149, 151, 0.14), transparent 34%),
+    radial-gradient(circle at 8% 62%, rgba(255, 165, 44, 0.055), transparent 28%),
+    linear-gradient(180deg, #05090d 0%, #071016 55%, #05090d 100%);
+}
+
+.page-container:has(.log-entry-container)::before,
+.page-container:has(.result-container)::before,
+.page-container:has(.profile-home)::before,
+.page-container:has(.profile-auth-state)::before,
+.page-container:has(.login-page)::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.14;
+  background-image:
+    linear-gradient(rgba(115, 238, 229, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(115, 238, 229, 0.06) 1px, transparent 1px);
+  background-size: 80px 80px;
+  mask-image: linear-gradient(to bottom, black, transparent 70%);
 }
 
 .mobile-container.desktop-home .page-container {

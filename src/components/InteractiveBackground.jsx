@@ -48,10 +48,6 @@ const InteractiveBackground = ({ lowPower = false }) => {
 
   return (
     <>
-      <div className={`noise-bg ${isStatic ? 'is-static' : ''}`}></div>
-      <div className={`crt-overlay ${isStatic || motionProfile.compact ? 'is-static' : ''}`}></div>
-      {isDanger && !isStatic && !motionProfile.compact && <div className="scanline"></div>}
-
       {showGeometry && (
         <div className="bg-geometry" style={{ filter: isDanger ? 'hue-rotate(180deg) saturate(2)' : 'none' }}>
         <svg viewBox="0 0 100 100" preserveAspectRatio="none" className="radar-svg">

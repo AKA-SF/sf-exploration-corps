@@ -20,7 +20,7 @@ const LogSubmitActionBar = ({
       form={formId}
     >
       <Save size={16} />
-      <span className="mono">{isSubmitting ? '송신 중...' : title ? '탐사보고서 제출' : '작품명 필요'}</span>
+      <span className="mono">{isSubmitting ? '저장 중...' : title ? '나만 보기로 저장' : '작품과 감상 필요'}</span>
     </button>
   </div>
 );

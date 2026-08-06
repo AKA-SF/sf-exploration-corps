@@ -1,3 +1,5 @@
+import { normalizeExplorationTags } from './explorationTagModel.js';
+
 const VISIBILITY_VALUES = new Set([
   'PRIVATE_ARCHIVE',
   'ANON_NETWORK',
@@ -28,22 +30,16 @@ function requireText(value, fieldName, maxLength) {
   return normalized;
 }
 
-function normalizeStringList(value, fieldName) {
-  if (!Array.isArray(value) || value.some(item => typeof item !== 'string')) {
-    throw new Error(`${fieldName} must be a list of text values.`);
-  }
-
-  return value.map(item => item.trim()).filter(Boolean);
-}
-
 function normalizeExperiences(value) {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+  if (value == null) return {};
+  if (typeof value !== 'object' || Array.isArray(value)) {
     throw new Error('experiences must be an object.');
   }
 
   const normalized = {};
   EXPERIENCE_KEYS.forEach(key => {
     const score = value[key];
+    if (score == null) return;
     if (!Number.isFinite(score) || score < 0 || score > 100) {
       throw new Error(`experiences.${key} must be a number from 0 to 100.`);
     }
@@ -63,8 +59,8 @@ function hashText(value) {
 }
 
 export function normalizeExplorationLogInput(input) {
-  const visibility = input?.visibility ?? 'PRIVATE_ARCHIVE';
-  if (!VISIBILITY_VALUES.has(visibility)) {
+  const requestedVisibility = input?.visibility ?? 'PRIVATE_ARCHIVE';
+  if (!VISIBILITY_VALUES.has(requestedVisibility)) {
     throw new Error('visibility must be PRIVATE_ARCHIVE, ANON_NETWORK, or PUBLIC_SIGNAL.');
   }
 
@@ -73,19 +69,16 @@ export function normalizeExplorationLogInput(input) {
     throw new Error('spoiler must be CLEAR_SIGNAL or CLASSIFIED_SIGNAL.');
   }
 
-  const memo = typeof input?.memo === 'string' ? input.memo.trim() : '';
-  if (memo.length > 10000) {
-    throw new Error('memo must be 10000 characters or fewer.');
-  }
+  const memo = requireText(input?.memo, 'memo', 10000);
 
   return {
     title: requireText(input?.title, 'title', 240),
-    logType: requireText(input?.logType ?? input?.type, 'logType', 120),
+    logType: requireText(input?.logType || input?.type || '감상 기록', 'logType', 120),
     experiences: normalizeExperiences(input?.experiences),
-    emotions: normalizeStringList(input?.emotions ?? [], 'emotions'),
-    ideas: normalizeStringList(input?.ideas ?? [], 'ideas'),
+    emotions: normalizeExplorationTags(input?.emotions ?? [], '느낀 감정'),
+    ideas: normalizeExplorationTags(input?.ideas ?? [], '남은 생각'),
     memo,
-    visibility,
+    visibility: 'PRIVATE_ARCHIVE',
     spoiler,
   };
 }

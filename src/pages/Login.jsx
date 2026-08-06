@@ -24,6 +24,8 @@ export default function Login() {
 
   const returnTo = typeof location.state?.returnTo === 'string' ? location.state.returnTo : '/profile';
   const returnState = location.state?.returnState;
+  const canPreviewProfile = typeof window !== 'undefined'
+    && ['localhost', '127.0.0.1'].includes(window.location.hostname);
 
   if (!loading && user) {
     return <Navigate replace state={scopeReturnState(returnState, user.id)} to={returnTo} />;
@@ -113,9 +115,17 @@ export default function Login() {
           <p>
             {mode === 'signup'
               ? '이메일과 비밀번호로 개인 탐사 프로필을 만듭니다.'
-              : '개인 탐사 프로필, 마일리지, 배지를 저장하기 위한 계정입니다.'}
+              : '비공개 기록과 개인정보 설정을 안전하게 이어가기 위한 계정입니다.'}
           </p>
         </div>
+
+        {!isConfigured && (
+          <aside className="login-preview-callout" role="status">
+            <strong>현재 Preview는 계정 연결 전입니다.</strong>
+            <p>실제 로그인에는 Supabase 환경 변수 연결과 재빌드가 필요합니다.</p>
+            {canPreviewProfile && <Link to="/profile?preview=profile">내 정보 화면 검토</Link>}
+          </aside>
+        )}
 
         <form className="login-form" onSubmit={submitAuth}>
           {mode === 'signup' && (
@@ -166,7 +176,7 @@ export default function Login() {
             </div>
           </label>
 
-          <button disabled={status === 'submitting'} type="submit">
+          <button disabled={!isConfigured || status === 'submitting'} type="submit">
             <LogIn aria-hidden="true" />
             {status === 'submitting' ? '처리 중' : mode === 'signup' ? '계정 등록하기' : '로그인'}
           </button>

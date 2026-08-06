@@ -38,6 +38,41 @@ test('정상 탐사 기록을 계정 소유 저장 형태로 정규화한다', (
   });
 });
 
+test('작품과 한 줄 감상만으로 비공개 기록을 만들 수 있다', () => {
+  const result = normalizeExplorationLogInput({
+    title: '솔라리스',
+    type: '',
+    memo: '타자를 이해한다는 믿음 자체를 되묻게 한다.',
+  });
+
+  assert.deepEqual(result, {
+    title: '솔라리스',
+    logType: '감상 기록',
+    experiences: {},
+    emotions: [],
+    ideas: [],
+    memo: '타자를 이해한다는 믿음 자체를 되묻게 한다.',
+    visibility: 'PRIVATE_ARCHIVE',
+    spoiler: 'CLEAR_SIGNAL',
+  });
+});
+
+test('새 기록은 공개값이 전달되어도 먼저 비공개로 정규화한다', () => {
+  const result = normalizeExplorationLogInput({
+    ...validInput,
+    visibility: 'PUBLIC_SIGNAL',
+  });
+
+  assert.equal(result.visibility, 'PRIVATE_ARCHIVE');
+});
+
+test('한 줄 감상이 비어 있으면 기록을 만들지 않는다', () => {
+  assert.throws(
+    () => normalizeExplorationLogInput({ title: '솔라리스', memo: '   ' }),
+    /memo/i,
+  );
+});
+
 test('허용하지 않은 공개 범위는 거부한다', () => {
   assert.throws(
     () => normalizeExplorationLogInput({ ...validInput, visibility: 'EVERYONE' }),

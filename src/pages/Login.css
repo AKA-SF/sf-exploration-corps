@@ -173,6 +173,19 @@
   text-wrap: pretty;
 }
 
+.login-preview-callout {
+  display: grid;
+  gap: 7px;
+  padding: 14px;
+  border: 1px solid rgba(255, 189, 89, 0.34);
+  color: var(--text-main);
+  background: rgba(255, 189, 89, 0.055);
+}
+
+.login-preview-callout strong { color: #ffbd59; }
+.login-preview-callout p { margin: 0; color: var(--text-muted); font-size: 13px; line-height: 1.55; }
+.login-preview-callout a { min-height: 44px; display: inline-flex; align-items: center; justify-self: start; color: var(--primary-cyan); text-underline-offset: 4px; }
+
 .login-form { display: grid; gap: 14px; }
 .login-form label { display: grid; gap: 8px; }
 
@@ -231,7 +244,7 @@
 
 .login-form button:active,
 .login-mode-switch:active { transform: scale(0.96); }
-.login-form button:disabled { cursor: wait; opacity: 0.6; }
+.login-form button:disabled { cursor: not-allowed; opacity: 0.6; }
 .login-mode-switch { color: var(--primary-cyan); background: rgba(0, 0, 0, 0.32); }
 .login-message.is-error { color: var(--accent-amber); }
 .login-message.is-success { color: var(--primary-cyan); }
