@@ -14,6 +14,7 @@ import { applySeoMetadata, getSeoMetadata } from './lib/seo';
 
 const HomeV2 = lazy(() => import('./pages/HomeV2'));
 const SfDiscoveries = lazy(() => import('./pages/SfDiscoveries'));
+const SfDiscoveryDetail = lazy(() => import('./pages/SfDiscoveryDetail'));
 const ExplorationLog = lazy(() => import('./pages/ExplorationLog'));
 const MediaArchive = lazy(() => import('./pages/MediaArchive'));
 const WorksArchive = lazy(() => import('./pages/WorksArchive'));
@@ -26,8 +27,11 @@ const Login = lazy(() => import('./pages/Login'));
 
 const Network = lazy(() => import('./pages/Network'));
 const NetworkDetail = lazy(() => import('./pages/NetworkDetail'));
+const AdminAccessBoundary = lazy(() => import('./components/admin/AdminAccessBoundary'));
 const Admin = lazy(() => import('./pages/Admin'));
 const AdminDiscoveries = lazy(() => import('./pages/AdminDiscoveries'));
+const AdminVisualPreview = import.meta.env.DEV ? lazy(() => import('./pages/AdminVisualPreview')) : null;
+const EditorialDraftPreview = import.meta.env.DEV ? lazy(() => import('./pages/EditorialDraftPreview')) : null;
 
 function RouteLoader() {
   return (
@@ -105,6 +109,7 @@ function App() {
                   <Route path="/" element={<HomeV2 />} />
                   <Route path="/home-v2" element={<HomeV2 />} />
                   <Route path="/discover" element={<SfDiscoveries />} />
+                  <Route path="/discover/:slug" element={<SfDiscoveryDetail />} />
                   <Route path="/works/:categorySlug" element={<WorksArchive />} />
                   <Route path="/media/:categorySlug" element={<MediaArchive />} />
                   <Route path="/exploration-log" element={<ExplorationLog />} />
@@ -118,8 +123,10 @@ function App() {
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/crew/:crewCode/message" element={<CrewMessage />} />
                   <Route path="/login" element={<Login />} />
-                  <Route path="/admin" element={<Admin />} />
-                  <Route path="/admin/discoveries" element={<AdminDiscoveries />} />
+                  <Route path="/admin" element={<AdminAccessBoundary><Admin /></AdminAccessBoundary>} />
+                  <Route path="/admin/discoveries" element={<AdminAccessBoundary><AdminDiscoveries /></AdminAccessBoundary>} />
+                  {AdminVisualPreview && <Route path="/admin/__visual-preview" element={<AdminVisualPreview />} />}
+                  {EditorialDraftPreview && <Route path="/__editorial-preview" element={<EditorialDraftPreview />} />}
                 </Routes>
               </Suspense>
             </div>

@@ -50,13 +50,13 @@ const checks = [
   },
   {
     file: 'src/pages/Admin.jsx',
-    label: 'Admin diagnostic and controls',
+    label: 'Focused Admin operations and access security',
     patterns: [
-      /admin_set_member_title/,
-      /admin_grant_mileage/,
-      /admin_award_badge/,
-      /admin-profile-diagnostics/,
-      /deleteCommunityPayload/,
+      /신작 정보 관리/,
+      /자동화 후보 입력/,
+      /접속 비밀번호 변경/,
+      /changePassword/,
+      /관리자 화면 잠그기/,
     ],
   },
   {

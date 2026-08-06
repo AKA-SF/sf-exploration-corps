@@ -1,3 +1,5 @@
+import { verifyRequestAdminAccess } from './_adminAccess.js';
+
 function getSupabaseApiConfig() {
   const url = process.env.SUPABASE_URL || process.env.VITE_SUPABASE_URL;
   const anonKey = process.env.SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY;
@@ -58,7 +60,10 @@ export async function requireAuthenticatedUser(request, response) {
   try {
     return await getRequestUser(request);
   } catch (error) {
-    response.status(error.status || 401).json({ error: error.message || 'Login session is required' });
+    const status = error.status === 503 ? 503 : 401;
+    response.status(status).json({
+      error: status === 503 ? 'Authentication is unavailable' : 'Login session is required',
+    });
     return null;
   }
 }
@@ -73,4 +78,21 @@ export async function requireAdminUser(request, response) {
   }
 
   return user;
+}
+
+export async function requireAdminAccess(request, response) {
+  const user = await requireAdminUser(request, response);
+  if (!user) return null;
+
+  try {
+    const access = await verifyRequestAdminAccess(request, user);
+    if (!access) {
+      response.status(401).json({ error: 'Admin access password is required' });
+      return null;
+    }
+    return user;
+  } catch {
+    response.status(503).json({ error: 'Admin access verification is unavailable' });
+    return null;
+  }
 }

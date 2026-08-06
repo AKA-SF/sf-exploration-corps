@@ -1,6 +1,7 @@
 .git
 .hermes
 .omh
+.omc
 dist
 node_modules
 playwright-report

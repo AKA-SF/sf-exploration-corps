@@ -1,5 +1,5 @@
 import { clearApiCachePrefix, getCachedJson } from './_apiCache.js';
-import { getOptionalUser, requireAdminUser, requireAuthenticatedUser } from './_adminAuth.js';
+import { getOptionalUser, requireAdminAccess, requireAuthenticatedUser } from './_adminAuth.js';
 import { supabaseRestRequest, supabaseRpcRequest } from './_supabaseRest.js';
 
 const DEFAULT_QUESTIONS_PAGE_SIZE = 40;
@@ -224,7 +224,7 @@ async function listQuestions(request, response, query) {
   const includeCommentCounts = query.includeCommentCounts === '1';
   const wantsMineOnly = query.mineOnly === '1';
 
-  const adminUser = wantsAdminList ? await requireAdminUser(request, response) : null;
+  const adminUser = wantsAdminList ? await requireAdminAccess(request, response) : null;
   if (wantsAdminList && !adminUser) return;
 
   let user = null;
@@ -536,16 +536,16 @@ async function archiveComment(request, response, body) {
 function sendSupabaseError(response, error) {
   if (isMissingCommunityTable(error)) {
     response.status(503).json({
-      error: '커뮤니티 Supabase 테이블이 아직 준비되지 않았습니다. supabase/community.sql을 Supabase SQL Editor에서 실행해주세요.',
+      error: '커뮤니티 기능을 준비 중입니다.',
       setupRequired: true,
     });
     return;
   }
 
-  response.status(error.status || 500).json({
-    details: error.details,
-    error: error.message || '커뮤니티 요청에 실패했습니다.',
-  });
+  const status = Number.isInteger(error.status) && error.status >= 400 && error.status < 500
+    ? error.status
+    : 500;
+  response.status(status).json({ error: '커뮤니티 요청을 처리하지 못했습니다.' });
 }
 
 export default async function handler(request, response) {

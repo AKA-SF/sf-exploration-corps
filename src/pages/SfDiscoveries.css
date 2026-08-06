@@ -5,6 +5,15 @@
   color: #d8e5e3;
 }
 
+.sf-discovery-detail-page {
+  width: min(1180px, calc(100% - 56px));
+  margin: 0 auto;
+  padding: 36px 0 110px;
+  color: #d8e5e3;
+}
+.sf-discovery-detail-page > .sf-discoveries-back { margin-bottom: 10px; }
+.editorial-draft-preview-notice { margin: 0 0 18px; padding: 10px 12px; color: #ffcf66; border: 1px solid rgba(255, 176, 0, 0.35); background: rgba(255, 176, 0, 0.08); font-size: 11px; text-align: center; }
+
 .sf-discoveries-hero {
   display: grid;
   gap: 14px;
@@ -80,6 +89,7 @@
 @media (max-width: 980px) { .sf-discoveries-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (max-width: 720px) {
   .sf-discoveries-page { width: min(100% - 32px, 620px); padding: 24px 0 calc(100px + env(safe-area-inset-bottom)); }
+  .sf-discovery-detail-page { width: min(100% - 32px, 620px); padding: 24px 0 calc(100px + env(safe-area-inset-bottom)); }
   .sf-discoveries-hero { padding: 16px 0 32px; }
   .sf-discoveries-hero h1 { font-size: 46px; }
   .sf-discoveries-controls { align-items: stretch; flex-direction: column; padding: 18px 0; }

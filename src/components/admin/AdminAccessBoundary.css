@@ -1,0 +1,159 @@
+.admin-access-page {
+  width: 100%;
+  min-height: 100%;
+  display: grid;
+  place-items: center;
+  padding: clamp(20px, 5vw, 56px);
+  color: #243337;
+  background:
+    linear-gradient(rgba(39, 101, 109, 0.045) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(39, 101, 109, 0.045) 1px, transparent 1px),
+    #eef4f3;
+  background-size: 28px 28px;
+}
+
+.admin-access-card {
+  width: min(460px, 100%);
+  display: grid;
+  justify-items: start;
+  gap: 14px;
+  border: 1px solid #c7d8d7;
+  border-radius: 18px;
+  padding: clamp(26px, 5vw, 42px);
+  background: rgba(250, 253, 252, 0.96);
+  box-shadow: 0 24px 70px rgba(23, 47, 51, 0.09);
+}
+
+.admin-access-card > svg,
+.admin-access-mark {
+  color: #27656d;
+}
+
+.admin-access-mark {
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #b9d1cf;
+  border-radius: 50%;
+  background: #e3efed;
+}
+
+.admin-access-card > span {
+  color: #61777a;
+  font-size: 11px;
+  font-weight: 850;
+  letter-spacing: 0.12em;
+}
+
+.admin-access-card h1 {
+  margin: 0;
+  color: #172f33;
+  font-size: clamp(29px, 6vw, 40px);
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+}
+
+.admin-access-card > p {
+  margin: 0;
+  color: #526a6d;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.admin-access-form {
+  width: 100%;
+  display: grid;
+  gap: 9px;
+  margin-top: 4px;
+}
+
+.admin-access-form label {
+  color: #314c50;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.admin-access-form input {
+  width: 100%;
+  min-height: 48px;
+  border: 1px solid #afc6c4;
+  border-radius: 10px;
+  padding: 0 13px;
+  color: #172f33;
+  background: #fff;
+  font: inherit;
+}
+
+.admin-access-card button,
+.admin-access-card a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #8db5b2;
+  border-radius: 10px;
+  padding: 0 16px;
+  color: #1e5b61;
+  background: #edf6f5;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 850;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.admin-access-form button {
+  width: 100%;
+  margin-top: 5px;
+  color: #f8fbfa;
+  border-color: #27656d;
+  background: #27656d;
+}
+
+.admin-access-card button:hover,
+.admin-access-card button:focus-visible,
+.admin-access-card a:hover,
+.admin-access-card a:focus-visible,
+.admin-access-form input:focus-visible {
+  outline: 3px solid rgba(138, 79, 19, 0.28);
+  outline-offset: 2px;
+}
+
+.admin-access-card button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.admin-access-error,
+.admin-access-retry {
+  margin: 0;
+  color: #9f3434;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.admin-access-retry {
+  color: #76551c;
+}
+
+@media (max-width: 560px) {
+  .admin-access-page {
+    align-items: start;
+    padding: 18px;
+  }
+
+  .admin-access-card {
+    margin-top: 7vh;
+    border-radius: 14px;
+    padding: 25px 21px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-access-card,
+  .admin-access-card * {
+    scroll-behavior: auto;
+    transition: none !important;
+  }
+}

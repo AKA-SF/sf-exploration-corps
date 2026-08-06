@@ -1,643 +1,185 @@
-import { useMemo, useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
-  Activity,
-  AlertTriangle,
-  BadgeCheck,
-  Database,
-  Gift,
-  History,
-  MessageSquareText,
-  NotebookPen,
+  ArrowUpRight,
+  BookOpenCheck,
+  KeyRound,
+  LockKeyhole,
   RadioTower,
-  ShieldCheck,
-  Trash2,
-  Users,
+  Sparkles,
 } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
-import { useAuth } from '../context/authContextValue';
-import { rankTable } from '../data/profileProgress';
-import { supabase } from '../lib/supabaseClient';
-import {
-  errorMessage,
-  filterMembers,
-  formatDate,
-  getAdminAccessToken,
-  hasAdminRole,
-  initialMemberAction,
-  initialMemberFilters,
-  memberDisplayTitle,
-  memberTitleDiagnostics,
-  shortId,
-} from './admin/adminUtils';
-import { useAdminDashboard } from './admin/useAdminDashboard';
+import { useAdminAccess } from '../context/adminAccessContext';
 import './Admin.css';
 
+const emptyPasswordForm = {
+  confirmPassword: '',
+  currentPassword: '',
+  newPassword: '',
+};
+
 export default function Admin() {
-  const { isConfigured, loading, user } = useAuth();
-  const [selectedMemberId, setSelectedMemberId] = useState('');
-  const [memberAction, setMemberAction] = useState(initialMemberAction);
-  const [memberFilters, setMemberFilters] = useState(initialMemberFilters);
-  const [noteDraftMemberId, setNoteDraftMemberId] = useState('');
-  const [noteDraft, setNoteDraft] = useState('');
-  const [questionComments, setQuestionComments] = useState({});
-  const [actionStatus, setActionStatus] = useState('idle');
-  const [actionMessage, setActionMessage] = useState('');
-  const isAdmin = hasAdminRole(user);
-  const {
-    activities,
-    adminLogs,
-    checks,
-    comments,
-    counts,
-    loadAdminDashboard,
-    memberNotes,
-    members,
-    message,
-    questions,
-    radioMessages,
-    status,
-    userBadges,
-  } = useAdminDashboard({ isAdmin, user });
+  const { changePassword, lock } = useAdminAccess();
+  const [passwordForm, setPasswordForm] = useState(emptyPasswordForm);
+  const [securityStatus, setSecurityStatus] = useState('idle');
+  const [securityMessage, setSecurityMessage] = useState('');
 
-  const selectedMember = useMemo(() => (
-    members.find(member => member.id === selectedMemberId) ?? members[0] ?? null
-  ), [members, selectedMemberId]);
+  function updatePasswordField(key, value) {
+    setPasswordForm(current => ({ ...current, [key]: value }));
+  }
 
-  const selectedMemberBadges = useMemo(() => (
-    userBadges.filter(badge => badge.user_id === selectedMember?.id)
-  ), [selectedMember?.id, userBadges]);
-  const selectedMemberNote = useMemo(() => (
-    memberNotes.find(note => note.user_id === selectedMember?.id) ?? null
-  ), [memberNotes, selectedMember?.id]);
-  const selectedMemberDiagnostics = useMemo(() => (
-    memberTitleDiagnostics(selectedMember, rankTable)
-  ), [selectedMember]);
-  const filteredMembers = useMemo(() => (
-    filterMembers(members, memberFilters)
-  ), [memberFilters, members]);
-  const selectedMemberTitle = selectedMemberDiagnostics.displayTitle;
-  const memberActionTitle = memberAction.title || selectedMemberTitle;
-  const currentNoteValue = noteDraftMemberId === selectedMember?.id
-    ? noteDraft
-    : selectedMemberNote?.note ?? '';
-
-  const dashboardCards = useMemo(() => ([
-    { icon: Users, label: '회원', value: counts.members, note: '등록된 탐사 대원' },
-    { icon: Activity, label: '활동 기록', value: counts.activityLogs, note: 'MP와 배지 기반 데이터' },
-    { icon: NotebookPen, label: '커뮤니티 글', value: counts.communityQuestions, note: 'Supabase 게시판 전체 글' },
-    { icon: MessageSquareText, label: '작품 댓글', value: counts.workComments, note: '작품 카드 교신' },
-    { icon: BadgeCheck, label: '독서 상태', value: counts.workStatuses, note: '읽고 싶어요/읽고 있어요/완료' },
-    { icon: Gift, label: '지급 배지', value: counts.userBadges, note: '수동/히든 배지 포함' },
-    { icon: RadioTower, label: '무전 메시지', value: counts.radioMessages, note: '네트워크 탭 공개 신호' },
-    { icon: NotebookPen, label: '관리 메모', value: counts.memberNotes, note: '회원 비공개 운영 메모' },
-    { icon: History, label: '관리 로그', value: counts.adminActions, note: '삭제/권한/메모 기록' },
-  ]), [counts]);
-
-  async function runAdminAction(task, successMessage) {
-    setActionStatus('loading');
-    setActionMessage('');
-    try {
-      await task();
-      await loadAdminDashboard();
-      setActionStatus('ready');
-      setActionMessage(successMessage);
-    } catch (error) {
-      setActionStatus('error');
-      setActionMessage(errorMessage(error));
+  async function submitPasswordChange(event) {
+    event.preventDefault();
+    setSecurityMessage('');
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setSecurityStatus('error');
+      setSecurityMessage('새 비밀번호 확인이 일치하지 않습니다.');
+      return;
     }
-  }
 
-  async function deleteCommunityPayload(payload) {
-    const token = await getAdminAccessToken(supabase);
-    const response = await fetch('/api/questions', {
-      method: 'DELETE',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || '커뮤니티 항목 삭제에 실패했습니다.');
-  }
-
-  async function recordAdminAction(actionType, targetType, targetId, targetLabel, metadata = {}) {
-    const { error } = await supabase.rpc('admin_record_action', {
-      p_action_type: actionType,
-      p_metadata: metadata,
-      p_target_id: targetId,
-      p_target_label: targetLabel,
-      p_target_type: targetType,
-    });
-    if (error) throw error;
-  }
-
-  async function loadQuestionComments(questionId) {
-    setActionStatus('loading');
-    setActionMessage('');
+    setSecurityStatus('saving');
     try {
-      const response = await fetch(`/api/questions?id=${encodeURIComponent(questionId)}`, { cache: 'no-store' });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || '댓글을 불러오지 못했습니다.');
-      setQuestionComments(current => ({ ...current, [questionId]: data.comments ?? [] }));
-      setActionStatus('ready');
-      setActionMessage('댓글 목록을 불러왔습니다.');
+      await changePassword({
+        currentPassword: passwordForm.currentPassword,
+        newPassword: passwordForm.newPassword,
+      });
+      setPasswordForm(emptyPasswordForm);
+      setSecurityStatus('saved');
+      setSecurityMessage('접속 비밀번호를 변경했습니다. 기존 접속 세션은 더 이상 사용할 수 없습니다.');
     } catch (error) {
-      setActionStatus('error');
-      setActionMessage(errorMessage(error));
+      setSecurityStatus('error');
+      setSecurityMessage(error.message || '접속 비밀번호를 변경하지 못했습니다.');
     }
-  }
-
-  function deleteCommunityPost(questionId) {
-    const question = questions.find(item => item.id === questionId);
-    runAdminAction(
-      async () => {
-        await deleteCommunityPayload({ mode: 'post', questionId });
-        await recordAdminAction('community_post_delete', 'community_post', questionId, question?.title ?? questionId);
-      },
-      '커뮤니티 글을 보관 처리했습니다.',
-    );
-  }
-
-  function deleteCommunityComment(questionId, commentId) {
-    runAdminAction(
-      async () => {
-        await deleteCommunityPayload({ commentId, mode: 'comment' });
-        await recordAdminAction('community_comment_delete', 'community_comment', commentId, questionId);
-        await loadQuestionComments(questionId);
-      },
-      '커뮤니티 댓글을 삭제했습니다.',
-    );
-  }
-
-  function deleteSupabaseRow(table, id, successMessage) {
-    runAdminAction(async () => {
-      const { error } = await supabase.from(table).delete().eq('id', id);
-      if (error) throw error;
-      await recordAdminAction(`${table}_delete`, table, id, table);
-    }, successMessage);
-  }
-
-  function updateMemberAction(key, value) {
-    setMemberAction(current => ({ ...current, [key]: value }));
-  }
-
-  function updateMemberFilter(key, value) {
-    setMemberFilters(current => ({ ...current, [key]: value }));
-  }
-
-  function updateNoteDraft(value) {
-    setNoteDraftMemberId(selectedMember?.id ?? '');
-    setNoteDraft(value);
-  }
-
-  function saveMemberNote() {
-    if (!selectedMember) return;
-    runAdminAction(async () => {
-      const { error } = await supabase.rpc('admin_upsert_member_note', {
-        p_note: currentNoteValue,
-        p_target_user_id: selectedMember.id,
-      });
-      if (error) throw error;
-    }, `${selectedMember.nickname} 대원의 관리자 메모를 저장했습니다.`);
-  }
-
-  function setMemberTitle() {
-    if (!selectedMember) return;
-    runAdminAction(async () => {
-      const { error } = await supabase.rpc('admin_set_member_title', {
-        next_title: memberActionTitle,
-        target_user_id: selectedMember.id,
-      });
-      if (error) throw error;
-    }, `${selectedMember.nickname} 대원의 등급을 조정했습니다.`);
-  }
-
-  function grantMileage() {
-    if (!selectedMember) return;
-    runAdminAction(async () => {
-      const { error } = await supabase.rpc('admin_grant_mileage', {
-        points: Number(memberAction.mp),
-        reason: memberAction.reason || '관리자 MP 부여',
-        target_user_id: selectedMember.id,
-      });
-      if (error) throw error;
-    }, `${selectedMember.nickname} 대원에게 MP를 부여했습니다.`);
-  }
-
-  function awardBadge() {
-    if (!selectedMember) return;
-    runAdminAction(async () => {
-      const { error } = await supabase.rpc('admin_award_badge', {
-        badge_description: memberAction.badgeDescription || '관리자가 수동으로 지급한 히든 배지입니다.',
-        badge_id: memberAction.badgeId,
-        badge_title: memberAction.badgeTitle,
-        target_user_id: selectedMember.id,
-      });
-      if (error) throw error;
-    }, `${selectedMember.nickname} 대원에게 히든 배지를 지급했습니다.`);
-  }
-
-  function revokeBadge(badgeId) {
-    if (!selectedMember) return;
-    runAdminAction(async () => {
-      const { error } = await supabase.rpc('admin_revoke_badge', {
-        p_badge_id: badgeId,
-        p_target_user_id: selectedMember.id,
-      });
-      if (error) throw error;
-    }, '히든 배지를 회수했습니다.');
-  }
-
-  if (!loading && !user) return <Navigate to="/login" replace />;
-
-  if (loading) {
-    return (
-      <PageTransition className="admin-page">
-        <section className="admin-locked panel">
-          <ShieldCheck size={28} />
-          <span className="mono">ACCESS CHECK</span>
-          <h2>관리자 권한 확인 중</h2>
-          <p>로그인 세션과 관리자 권한을 확인하고 있습니다.</p>
-        </section>
-      </PageTransition>
-    );
-  }
-
-  if (!isConfigured) {
-    return (
-      <PageTransition className="admin-page">
-        <section className="admin-locked panel">
-          <Database size={24} />
-          <h2>Supabase 연결 필요</h2>
-          <p>관리자 페이지를 사용하려면 Supabase 환경 변수가 먼저 연결되어야 합니다.</p>
-        </section>
-      </PageTransition>
-    );
-  }
-
-  if (!loading && user && !isAdmin) {
-    return (
-      <PageTransition className="admin-page">
-        <section className="admin-locked panel">
-          <ShieldCheck size={28} />
-          <span className="mono">ADMIN ACCESS REQUIRED</span>
-          <h2>관리자 권한이 필요합니다</h2>
-          <p>Supabase Authentication의 사용자 app metadata에 role 값을 admin으로 지정한 계정만 접근할 수 있습니다.</p>
-          <Link to="/profile">프로필로 돌아가기</Link>
-        </section>
-      </PageTransition>
-    );
   }
 
   return (
-    <PageTransition className="admin-page">
+    <PageTransition className="admin-page admin-hub">
       <header className="admin-header panel">
         <div>
-          <span className="mono">ARCHIVE CONTROL ROOM</span>
-          <h1>관리자 대시보드</h1>
-          <p>회원 권한, 커뮤니티 게시글, 댓글, 무전 신호, 히든 배지를 한 화면에서 관리하는 운영용 대시보드입니다.</p>
+          <span className="mono">QUIET OBSERVATORY · ADMIN</span>
+          <h1>관리자 관측실</h1>
+          <p>지금 실제로 운영하는 콘텐츠 작업만 남겼습니다. 초안은 여기서 검토하고, 공개는 마지막 확인 뒤에만 진행합니다.</p>
         </div>
         <div className="admin-header-actions">
-          <Link className="admin-header-link mono" to="/admin/discoveries">신작 정보 관리</Link>
-          <Link className="admin-header-link mono" to="/">홈으로</Link>
+          <Link className="admin-header-link" to="/discover">공개 화면</Link>
+          <Link className="admin-header-link" to="/">홈으로</Link>
         </div>
       </header>
 
-      {(status === 'error' || actionStatus === 'error' || actionMessage) && (
-        <section className={`admin-alert panel ${actionStatus === 'ready' ? 'is-success' : ''}`}>
-          <AlertTriangle size={18} />
-          <p>{actionMessage || message}</p>
-          {(status === 'error' || actionStatus === 'error') && <span>관리자 SQL 정책이 아직 적용되지 않았을 수 있습니다.</span>}
-        </section>
-      )}
-
-      <section className="admin-grid">
-        {dashboardCards.map(card => {
-          const Icon = card.icon;
-          return (
-            <article className="admin-stat-card panel" key={card.label}>
-              <Icon size={18} />
-              <span className="mono">{card.label}</span>
-              <strong>{status === 'loading' ? '...' : card.value}</strong>
-              <p>{card.note}</p>
-            </article>
-          );
-        })}
-      </section>
-
-      <section className="admin-member-control panel">
-        <div className="admin-section-head">
-          <span className="mono">CREW CONTROL</span>
-          <strong>회원 권한 / MP / 히든 배지</strong>
-        </div>
-
-        <div className="admin-member-filters">
-          <label>
-            <span>회원 검색</span>
-            <input
-              placeholder="닉네임, 등급, ID"
-              value={memberFilters.query}
-              onChange={event => updateMemberFilter('query', event.target.value)}
-            />
-          </label>
-          <label>
-            <span>등급</span>
-            <select value={memberFilters.title} onChange={event => updateMemberFilter('title', event.target.value)}>
-              <option value="all">전체 등급</option>
-              {rankTable.map(rank => <option key={rank.title} value={rank.title}>{rank.title}</option>)}
-            </select>
-          </label>
-          <label>
-            <span>최소 MP</span>
-            <input type="number" value={memberFilters.minMp} onChange={event => updateMemberFilter('minMp', event.target.value)} />
-          </label>
-          <label>
-            <span>최대 MP</span>
-            <input type="number" value={memberFilters.maxMp} onChange={event => updateMemberFilter('maxMp', event.target.value)} />
-          </label>
-          <label>
-            <span>정렬</span>
-            <select value={memberFilters.sort} onChange={event => updateMemberFilter('sort', event.target.value)}>
-              <option value="recent">최근 가입순</option>
-              <option value="mp-desc">MP 높은순</option>
-              <option value="mp-asc">MP 낮은순</option>
-              <option value="name">닉네임순</option>
-            </select>
-          </label>
-        </div>
-
-        <div className="admin-member-layout">
-          <div className="admin-member-list">
-            {filteredMembers.map(member => (
-              <button
-                className={`admin-member-button ${selectedMember?.id === member.id ? 'is-active' : ''}`}
-                key={member.id}
-                onClick={() => {
-                  const note = memberNotes.find(item => item.user_id === member.id);
-                  setSelectedMemberId(member.id);
-                  setMemberAction(current => ({ ...current, title: memberDisplayTitle(member) || rankTable[0].title }));
-                  setNoteDraftMemberId(member.id);
-                  setNoteDraft(note?.note ?? '');
-                }}
-                type="button"
-              >
-                <strong>{member.nickname || '이름 없음'}</strong>
-                <span>{memberDisplayTitle(member) || '등급 없음'} / {member.mileage} MP / {shortId(member.id)}</span>
-              </button>
-            ))}
-            {status !== 'loading' && filteredMembers.length === 0 && <p className="admin-empty">검색 조건에 맞는 회원이 없습니다.</p>}
+      <main className="admin-hub-layout">
+        <section className="admin-hub-main" aria-labelledby="admin-operations-title">
+          <div className="admin-hub-heading">
+            <span className="mono">ACTIVE OPERATIONS</span>
+            <h2 id="admin-operations-title">운영 작업</h2>
           </div>
 
-          {selectedMember && (
-            <div className="admin-member-editor">
-              <div className="admin-editor-summary">
-                <strong>{selectedMember.nickname}</strong>
-                <span>{selectedMemberTitle} / {selectedMember.mileage} MP</span>
-              </div>
+          <Link className="admin-operation-card is-primary panel" to="/admin/discoveries">
+            <div className="admin-operation-icon" aria-hidden="true"><BookOpenCheck /></div>
+            <div className="admin-operation-copy">
+              <div className="admin-operation-meta"><span>핵심 기능</span><i>운영 중</i></div>
+              <h3>신작 정보 관리</h3>
+              <p>신작, 공개 예정작, 편집 추천을 초안부터 검수·발행까지 한곳에서 관리합니다.</p>
+              <ul aria-label="지원하는 정보 유형">
+                <li>신작</li>
+                <li>공개 예정</li>
+                <li>편집 추천</li>
+              </ul>
+            </div>
+            <ArrowUpRight className="admin-operation-arrow" aria-hidden="true" />
+          </Link>
 
-              <div className="admin-profile-diagnostics" aria-label="프로필 등급 진단">
-                <div>
-                  <span>프로필 표시 예상</span>
-                  <strong>{selectedMemberDiagnostics.displayTitle}</strong>
-                </div>
-                <div>
-                  <span>DB 저장 등급</span>
-                  <strong>{selectedMemberDiagnostics.dbTitle || '없음'}</strong>
-                </div>
-                <div>
-                  <span>수동 등급</span>
-                  <strong>{selectedMemberDiagnostics.manualTitle || '없음'}</strong>
-                </div>
-                <div>
-                  <span>MP 자동 등급</span>
-                  <strong>{selectedMemberDiagnostics.autoTitle}</strong>
-                </div>
-                <div>
-                  <span>마지막 DB 갱신</span>
-                  <strong>{selectedMember.updated_at ? formatDate(selectedMember.updated_at) : 'UNKNOWN'}</strong>
-                </div>
-                <div>
-                  <span>동기화 규칙</span>
-                  <strong>{selectedMemberDiagnostics.hasManualOverride ? '수동 등급 우선' : 'MP 자동 등급'}</strong>
-                </div>
-              </div>
+          <article className="admin-automation-note panel">
+            <div className="admin-operation-icon" aria-hidden="true"><Sparkles /></div>
+            <div>
+              <span className="mono">NEXT CONNECTION</span>
+              <h3>자동화 후보 입력</h3>
+              <p>향후 조사·서지·출판 일정 자동화는 새 글을 바로 공개하지 않고, 검토할 초안 후보만 이 작업함으로 전달합니다.</p>
+            </div>
+          </article>
 
-              <label>
-                <span>등급 권한</span>
-                <select value={memberActionTitle} onChange={event => updateMemberAction('title', event.target.value)}>
-                  {rankTable.map(rank => <option key={rank.title} value={rank.title}>{rank.title}</option>)}
-                </select>
-              </label>
-              <button className="admin-action-button" disabled={actionStatus === 'loading'} onClick={setMemberTitle} type="button">등급 저장</button>
+          <article className="admin-principles panel">
+            <div className="admin-operation-icon" aria-hidden="true"><RadioTower /></div>
+            <div>
+              <span className="mono">OPERATING RULE</span>
+              <h3>가벼운 운영 원칙</h3>
+              <ol>
+                <li><strong>먼저 저장</strong><span>새 정보는 항상 비공개 초안으로 시작합니다.</span></li>
+                <li><strong>직접 검수</strong><span>출처·표지 권리·공개일을 확인합니다.</span></li>
+                <li><strong>마지막 발행</strong><span>저장된 최신 상태만 사용자가 직접 공개합니다.</span></li>
+              </ol>
+            </div>
+          </article>
+        </section>
 
-              <div className="admin-form-row">
-                <label>
-                  <span>MP</span>
-                  <input min="-500" step="5" type="number" value={memberAction.mp} onChange={event => updateMemberAction('mp', event.target.value)} />
-                </label>
-                <label>
-                  <span>사유</span>
-                  <input value={memberAction.reason} onChange={event => updateMemberAction('reason', event.target.value)} />
-                </label>
-              </div>
-              <button className="admin-action-button" disabled={actionStatus === 'loading'} onClick={grantMileage} type="button">MP 부여</button>
+        <aside className="admin-security panel" aria-labelledby="admin-security-title">
+          <div className="admin-security-heading">
+            <div className="admin-operation-icon" aria-hidden="true"><KeyRound /></div>
+            <div>
+              <span className="mono">ACCESS SECURITY</span>
+              <h2 id="admin-security-title">접속 보안</h2>
+            </div>
+          </div>
+          <p>관리자 계정 로그인과 별도로 접속 세션을 보호합니다.</p>
 
-              <div className="admin-badge-form">
+          <details className="admin-security-disclosure">
+            <summary>접속 비밀번호 변경</summary>
+            <div className="admin-security-disclosure__body">
+              <p>새 비밀번호는 8자 이상으로 설정해 주세요.</p>
+              <form className="admin-security-form" onSubmit={submitPasswordChange}>
                 <label>
-                  <span>히든 배지 ID</span>
-                  <input placeholder="secret-signal" value={memberAction.badgeId} onChange={event => updateMemberAction('badgeId', event.target.value)} />
-                </label>
-                <label>
-                  <span>배지명</span>
-                  <input placeholder="미확인 신호" value={memberAction.badgeTitle} onChange={event => updateMemberAction('badgeTitle', event.target.value)} />
-                </label>
-                <label>
-                  <span>설명</span>
-                  <textarea placeholder="숨겨진 조건을 달성했습니다." value={memberAction.badgeDescription} onChange={event => updateMemberAction('badgeDescription', event.target.value)} />
-                </label>
-                <button className="admin-action-button" disabled={actionStatus === 'loading'} onClick={awardBadge} type="button">히든 배지 지급</button>
-              </div>
-
-              <div className="admin-awarded-badges">
-                <span className="mono">AWARDED BADGES</span>
-                {selectedMemberBadges.map(item => (
-                  <div className="admin-badge-row" key={`${item.user_id}-${item.badge_id}`}>
-                    <div>
-                      <strong>{item.badges?.title ?? item.badge_id}</strong>
-                      <span>{item.badges?.description ?? item.badge_id}</span>
-                    </div>
-                    <button className="admin-danger-button" onClick={() => revokeBadge(item.badge_id)} type="button">회수</button>
-                  </div>
-                ))}
-                {selectedMemberBadges.length === 0 && <p className="admin-empty">지급된 배지가 없습니다.</p>}
-              </div>
-
-              <div className="admin-note-editor">
-                <label>
-                  <span>관리자 메모</span>
-                  <textarea
-                    placeholder="운영진, 워크숍 참여자, 테스트 계정 등 비공개 메모를 남겨둘 수 있습니다."
-                    value={currentNoteValue}
-                    onChange={event => updateNoteDraft(event.target.value)}
+                  <span>현재 비밀번호</span>
+                  <input
+                    autoComplete="current-password"
+                    maxLength={128}
+                    onChange={event => updatePasswordField('currentPassword', event.target.value)}
+                    required
+                    type="password"
+                    value={passwordForm.currentPassword}
                   />
                 </label>
-                <button className="admin-action-button" disabled={actionStatus === 'loading'} onClick={saveMemberNote} type="button">메모 저장</button>
-                {selectedMemberNote?.updated_at && <em className="admin-note-date">최근 수정 {formatDate(selectedMemberNote.updated_at)}</em>}
-              </div>
-            </div>
-          )}
-        </div>
-      </section>
-
-      <section className="admin-panel-grid">
-        <article className="admin-section panel">
-          <div className="admin-section-head">
-            <span className="mono">RECENT ACTIVITY</span>
-            <strong>최근 활동</strong>
-          </div>
-          <div className="admin-list">
-            {activities.map(activity => (
-              <div className="admin-list-row" key={activity.id}>
-                <div>
-                  <strong>{activity.metadata?.title || activity.action_type}</strong>
-                  <span>{activity.action_type} / {activity.genre || '미분류'} / +{activity.points} MP</span>
-                </div>
-                <em>{formatDate(activity.created_at)}</em>
-              </div>
-            ))}
-            {status !== 'loading' && activities.length === 0 && <p className="admin-empty">표시할 활동 데이터가 없습니다.</p>}
-          </div>
-        </article>
-
-        <article className="admin-section panel">
-          <div className="admin-section-head">
-            <span className="mono">ADMIN LOG</span>
-            <strong>관리자 활동 로그</strong>
-          </div>
-          <div className="admin-list">
-            {adminLogs.map(log => (
-              <div className="admin-list-row" key={log.id}>
-                <div>
-                  <strong>{log.action_type}</strong>
-                  <span>{log.target_label || log.target_id || log.target_type} / {shortId(log.admin_user_id)}</span>
-                </div>
-                <em>{formatDate(log.created_at)}</em>
-              </div>
-            ))}
-            {status !== 'loading' && adminLogs.length === 0 && (
-              <p className="admin-empty">아직 표시할 관리자 활동 로그가 없습니다. SQL을 다시 실행하면 이후 기록이 쌓입니다.</p>
-            )}
-          </div>
-        </article>
-
-        <article className="admin-section panel">
-          <div className="admin-section-head">
-            <span className="mono">DATA SYNC</span>
-            <strong>연결 상태</strong>
-          </div>
-          <div className="admin-check-grid">
-            {checks.map(check => (
-              <div className={`admin-check ${check.ok ? 'is-ok' : 'is-error'}`} key={check.key}>
-                <span>{check.label}</span>
-                <strong>{check.ok ? `${check.count} items` : 'ERROR'}</strong>
-              </div>
-            ))}
-            {status === 'loading' && <p className="admin-empty">연결 상태 확인 중...</p>}
-          </div>
-        </article>
-
-        <article className="admin-section panel is-wide">
-          <div className="admin-section-head">
-            <span className="mono">COMMUNITY</span>
-            <strong>커뮤니티 글 / 댓글 관리</strong>
-          </div>
-          <div className="admin-list">
-            {questions.map(question => (
-              <div className="admin-community-item" key={question.id}>
-                <div className="admin-list-row">
-                  <Link to={`/questions/${question.id}`}>
-                    <strong>{question.title}</strong>
-                    <span>{question.author} / {question.category}</span>
-                  </Link>
-                  <div className="admin-row-actions">
-                    <em>{question.date || 'NO DATE'}</em>
-                    <button onClick={() => loadQuestionComments(question.id)} type="button">댓글</button>
-                    <button className="admin-danger-button" onClick={() => deleteCommunityPost(question.id)} type="button"><Trash2 size={14} /> 글 삭제</button>
-                  </div>
-                </div>
-
-                {questionComments[question.id]?.length > 0 && (
-                  <div className="admin-comment-list">
-                    {questionComments[question.id].map(comment => (
-                      <div className="admin-comment-row" key={comment.id}>
-                        <div>
-                          <strong>{comment.name}</strong>
-                          <span>{comment.content}</span>
-                        </div>
-                        <button className="admin-danger-button" onClick={() => deleteCommunityComment(question.id, comment.id)} type="button">댓글 삭제</button>
-                      </div>
-                    ))}
-                  </div>
+                <label>
+                  <span>새 비밀번호</span>
+                  <input
+                    autoComplete="new-password"
+                    maxLength={128}
+                    minLength={8}
+                    onChange={event => updatePasswordField('newPassword', event.target.value)}
+                    required
+                    type="password"
+                    value={passwordForm.newPassword}
+                  />
+                </label>
+                <label>
+                  <span>새 비밀번호 확인</span>
+                  <input
+                    autoComplete="new-password"
+                    maxLength={128}
+                    minLength={8}
+                    onChange={event => updatePasswordField('confirmPassword', event.target.value)}
+                    required
+                    type="password"
+                    value={passwordForm.confirmPassword}
+                  />
+                </label>
+                {securityMessage && (
+                  <p className={`admin-security-message is-${securityStatus}`} role={securityStatus === 'error' ? 'alert' : 'status'}>
+                    {securityMessage}
+                  </p>
                 )}
-              </div>
-            ))}
-            {status !== 'loading' && questions.length === 0 && <p className="admin-empty">표시할 게시글이 없습니다.</p>}
-          </div>
-        </article>
-
-        <article className="admin-section panel">
-          <div className="admin-section-head">
-            <span className="mono">WORK COMMENTS</span>
-            <strong>최근 작품 댓글</strong>
-          </div>
-          <div className="admin-list">
-            {comments.map(comment => (
-              <div className="admin-list-row" key={comment.id}>
-                <div>
-                  <strong>{comment.work_title}</strong>
-                  <span>{comment.author_name}: {comment.body}</span>
-                </div>
-                <button
-                  className="admin-danger-button"
-                  onClick={() => deleteSupabaseRow('work_comments', comment.id, '작품 댓글을 삭제했습니다.')}
-                  type="button"
-                >
-                  삭제
+                <button disabled={securityStatus === 'saving'} type="submit">
+                  {securityStatus === 'saving' ? '변경 중…' : '비밀번호 변경'}
                 </button>
-              </div>
-            ))}
-            {status !== 'loading' && comments.length === 0 && <p className="admin-empty">표시할 작품 댓글이 없습니다.</p>}
-          </div>
-        </article>
+              </form>
+            </div>
+          </details>
 
-        <article className="admin-section panel">
-          <div className="admin-section-head">
-            <span className="mono">RADIO STREAM</span>
-            <strong>최근 무전</strong>
-          </div>
-          <div className="admin-list">
-            {radioMessages.map(radioMessage => (
-              <div className="admin-list-row" key={radioMessage.id}>
-                <div>
-                  <strong>{radioMessage.author_name}</strong>
-                  <span>{radioMessage.parent_id ? `답신 to ${radioMessage.recipient_name || '탐사자'}: ` : ''}{radioMessage.body}</span>
-                </div>
-                <button
-                  className="admin-danger-button"
-                  onClick={() => deleteSupabaseRow('radio_messages', radioMessage.id, '무전 메시지를 삭제했습니다.')}
-                  type="button"
-                >
-                  삭제
-                </button>
-              </div>
-            ))}
-            {status !== 'loading' && radioMessages.length === 0 && <p className="admin-empty">표시할 무전 메시지가 없습니다.</p>}
-          </div>
-        </article>
-      </section>
+          <div className="admin-security-divider" />
+          <button className="admin-lock-button" onClick={() => void lock()} type="button">
+            <LockKeyhole aria-hidden="true" /> 관리자 화면 잠그기
+          </button>
+          <small>공용 기기에서는 작업을 마친 뒤 화면을 잠가 주세요.</small>
+        </aside>
+      </main>
     </PageTransition>
   );
 }

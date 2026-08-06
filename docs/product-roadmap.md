@@ -184,6 +184,32 @@ Home은 모든 기능을 축소해 모아 놓는 메가 대시보드가 아니�
 - 출처·마지막 갱신 시점
 - 탐사 영역의 검색·필터 IA 통합
 
+편집 추천 운영 계약:
+
+- `신작 / 공개예정 / 편집 추천`은 서로 다른 콘텐츠 유형으로 유지한다.
+- 편집 추천은 정확히 3권, 국내 정식 한국어판 서지, 독립적인 복수 출처, 표지 alt·권리 상태를 갖춘 구조화 기사다.
+- 작업 흐름은 `선정 승인 → DRAFT 저장 → 편집 검수 APPROVED → 사용자 최종 발행`으로 분리하며, 일반 저장 경로는 `PUBLISHED`를 만들 수 없다.
+- 스킬은 조사·역할 배정·승인 게이트만 지휘하고, 앱과 Supabase RPC가 저장·검증·공개 투영을 소유한다.
+- 공개 상세 RPC는 `PUBLISHED`만 반환하고 selection approval·내부 메모·이미지 권리 검수 메모는 공개 payload에서 제거한다.
+- 표지는 공식 출판사 또는 허용된 API의 HTTPS 원격 자산을 우선하며, 검증되지 않은 이미지를 로컬에 복제하지 않는다.
+
+Admin 운영·자동화 계약:
+
+- Admin 홈은 현재 운영하는 `신작 정보 관리`와 접속 보안만 노출하며, 게임화 수동 조작·회원 메모·빈 통계·커뮤니티 inline 관리는 기본 화면에서 제거한다.
+- Admin 진입은 Supabase `app_metadata.role/roles=admin` 확인과 별도의 서버측 접속 비밀번호 세션을 모두 요구한다. 접속 비밀번호는 client bundle·브라우저 저장소·migration에 평문으로 저장하지 않는다.
+- 비밀번호 hash와 session version은 관리자 전용 저장소에 보관하고, 변경 시 현재 비밀번호를 재검증한 뒤 기존 세션을 무효화한다.
+- 신작 조사·국내판 서지·출판 일정 자동화는 `NEW_RELEASE` 또는 `UPCOMING`의 비공개 초안 후보만 전달한다.
+- 자동화·스킬·커넥터는 후보 조사와 provenance 보강까지만 담당한다. Admin과 사용자가 저장·수정·검수·발행을 소유하며 자동 발행은 허용하지 않는다.
+- 후보 입력 경계는 제목·유형·출시일·출처 URL·대표 이미지 provenance를 보존하고, 확정되지 않은 필드는 빈 값 또는 검토 필요 상태로 둔다.
+
+2026-08-06 로컬 구현 후보(Production 미승인):
+
+- 첫 테마 `한여름의 기후 SF` 3권 구조화 원고와 Aladin ISBN 표지 3건
+- `20260806012000_add_sf_editorial_articles.sql`의 editorial payload·단계·검증 발행 RPC·공개 상세 RPC
+- Admin의 승인 초안 loader·임시저장·미리보기·발행 준비·2단계 최종 발행 분리
+- `/sf-discoveries/:slug` 공개 상세 route와 desktop/mobile container-responsive 기사
+- Production migration·Preview·공개 발행은 사용자 최종 승인 전 적용하지 않는다.
+
 데이터가 충분하지 않으면 대형 그래프를 만들지 않고 명시적 텍스트 연결부터 시작한다.
 
 ### Phase 3 — 공개 커뮤니티

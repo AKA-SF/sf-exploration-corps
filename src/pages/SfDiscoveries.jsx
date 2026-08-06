@@ -55,9 +55,13 @@ function DiscoveryCard({ item }) {
         <div><dt><CalendarDays aria-hidden="true" /> 공개 일정</dt><dd>{formatDate(item.release_date)}</dd></div>
         <div><dt>정보 갱신</dt><dd>{formatDate(item.updated_at, '최근 갱신')}</dd></div>
       </dl>
-      <a href={item.source_url} rel="noreferrer" target="_blank">
-        {item.source_name}에서 원문 확인 <ArrowUpRight aria-hidden="true" />
-      </a>
+      {item.has_editorial_detail ? (
+        <Link to={`/discover/${item.slug}`}>편집 추천 읽기 <ArrowUpRight aria-hidden="true" /></Link>
+      ) : (
+        <a href={item.source_url} rel="noreferrer" target="_blank">
+          {item.source_name}에서 원문 확인 <ArrowUpRight aria-hidden="true" />
+        </a>
+      )}
     </article>
   );
 }
