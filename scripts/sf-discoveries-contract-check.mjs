@@ -98,7 +98,7 @@ test('Home and the discovery archive expose only real sourced items with loading
   assert.match(page, /스포일러 보호를 위해 요약을 숨겼습니다/);
   assert.match(homeApi, /discoveriesUnavailable:\s*discoveriesResult\.status !== 'fulfilled'/);
   assert.match(homeApi, /preferStale:\s*false/);
-  assert.match(homeApi, /stale-while-revalidate=60/);
+  assert.match(homeApi, /Cache-Control', 'no-store'/);
 });
 
 test('admin discovery editor is a role-gated route with draft, publish and delete controls', async () => {

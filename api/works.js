@@ -19,6 +19,18 @@ export function shouldResolveWorkCover(index, coverLimit) {
   return index < Math.max(0, Number(coverLimit) || 0);
 }
 
+export function hydrateSelectedWorkCovers(works, {
+  aladinApiKey = process.env.ALADIN_TTB_KEY || process.env.VITE_ALADIN_TTB_KEY,
+  resolveCover = getCachedAladinCover,
+} = {}) {
+  return mapWithConcurrency(Array.isArray(works) ? works : [], 4, async work => ({
+    ...work,
+    cover: work.cover || (work.source === 'books'
+      ? await resolveCover(work, aladinApiKey)
+      : ''),
+  }));
+}
+
 const apiCache = globalThis.__sfWorksApiCache ??= {
   worksWithoutCovers: null,
   worksWithoutCoversExpiresAt: 0,

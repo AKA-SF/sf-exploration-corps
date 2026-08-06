@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import { buildHomeFeed } from '../api/_homeFeed.js';
+import { buildHomeFeed, getKoreanDiscoveryDate } from '../api/_homeFeed.js';
 import { getHomeFeedSourceStatus, hasUsableArchiveSource } from '../api/home-feed.js';
 import { shouldResolveWorkCover } from '../api/works.js';
 
@@ -37,11 +37,77 @@ test('buildHomeFeed returns a compact deterministic homepage snapshot', () => {
   assert.deepEqual(feed.counts, { concepts: 2, logs: 4, media: 3, questions: 3, works: 8 });
 });
 
+test('오늘의 발견은 한국 날짜별로 네 작품을 고정해 선택한다', () => {
+  const works = Array.from({ length: 20 }, (_, index) => ({ code: `W-${index + 1}` }));
+  const buildFor = discoveryDate => buildHomeFeed({ discoveryDate, works });
+
+  const first = buildFor('2026-08-06');
+  const repeated = buildFor('2026-08-06');
+  const nextDay = buildFor('2026-08-07');
+
+  assert.equal(first.dailyDiscoveryDate, '2026-08-06');
+  assert.equal(first.featuredWorks.length, 4);
+  assert.deepEqual(first.featuredWorks, repeated.featuredWorks);
+  assert.notDeepEqual(first.featuredWorks, works.slice(0, 4));
+  assert.notDeepEqual(first.featuredWorks, nextDay.featuredWorks);
+});
+
+test('오늘의 발견 날짜는 한국 자정에 바뀐다', () => {
+  assert.equal(getKoreanDiscoveryDate(new Date('2026-08-06T14:59:59.999Z')), '2026-08-06');
+  assert.equal(getKoreanDiscoveryDate(new Date('2026-08-06T15:00:00.000Z')), '2026-08-07');
+});
+
+test('오늘의 발견은 후보가 네 개보다 적으면 중복 없이 있는 만큼만 보여준다', () => {
+  const works = [{ code: 'W-1' }, { code: 'W-2' }, { code: 'W-3' }];
+  const feed = buildHomeFeed({ discoveryDate: '2026-08-06', works });
+
+  assert.equal(feed.featuredWorks.length, 3);
+  assert.equal(new Set(feed.featuredWorks.map(work => work.code)).size, 3);
+});
+
+test('오늘의 발견은 전체 작품 수와 별개로 표지를 보강한 네 작품을 사용한다', () => {
+  const works = Array.from({ length: 20 }, (_, index) => ({ code: `W-${index + 1}` }));
+  const featuredWorks = works.slice(8, 12).map(work => ({ ...work, cover: `${work.code}.jpg` }));
+  const feed = buildHomeFeed({ discoveryDate: '2026-08-06', featuredWorks, works });
+
+  assert.deepEqual(feed.featuredWorks, featuredWorks);
+  assert.equal(feed.counts.works, 20);
+});
+
 test('archive reads preserve the last good snapshot instead of blocking on Notion', async () => {
   const cacheSource = await read('api/_persistentCache.js');
   assert.match(cacheSource, /DB-STALE/);
   assert.match(cacheSource, /allowStale:\s*true/);
   assert.match(cacheSource, /preferStale/);
+});
+
+test('동시 첫 요청은 날짜별 cache에서 먼저 확정된 한 선택을 공유한다', async () => {
+  const cacheModule = await import('../api/_persistentCache.js');
+  assert.equal(typeof cacheModule.getOrCreateDurableCachedJson, 'function');
+
+  const candidate = [{ code: 'CANDIDATE' }];
+  const winner = [{ code: 'WINNER' }];
+  let reads = 0;
+  let inserted;
+  const result = await cacheModule.getOrCreateDurableCachedJson(
+    'daily-discovery:test',
+    1000,
+    async () => candidate,
+    {
+      insertIfAbsent: async (_key, value) => { inserted = value; },
+      read: async () => {
+        reads += 1;
+        return reads === 1 ? null : { expired: false, payload: winner, updatedAt: 'now' };
+      },
+    },
+  );
+
+  assert.deepEqual(inserted, candidate);
+  assert.deepEqual(result.value, winner);
+  assert.equal(result.cache, 'DB-HIT');
+
+  const cacheSource = await read('api/_persistentCache.js');
+  assert.match(cacheSource, /resolution=ignore-duplicates/);
 });
 
 test('a signals-only partial refresh cannot overwrite the last good home snapshot', () => {
@@ -90,6 +156,25 @@ test('home data requests do not opt out of public HTTP caching', async () => {
   assert.doesNotMatch(source, /cache:\s*['"]no-store['"]/);
 });
 
+test('홈 피드는 CDN에 전날 응답을 남기지 않고 열린 화면도 한국 자정에 갱신한다', async () => {
+  const dailyRefresh = await import('../src/pages/home/dailyDiscoveryRefresh.js').catch(() => ({}));
+  assert.equal(typeof dailyRefresh.millisecondsUntilNextKoreanDay, 'function');
+  assert.equal(
+    dailyRefresh.millisecondsUntilNextKoreanDay(new Date('2026-08-06T14:59:59.000Z')),
+    1000,
+  );
+  assert.equal(
+    dailyRefresh.millisecondsUntilNextKoreanDay(new Date('2026-08-06T15:00:00.000Z')),
+    24 * 60 * 60 * 1000,
+  );
+
+  const homeFeed = await read('api/home-feed.js');
+  const home = await read('src/pages/HomeV2.jsx');
+  assert.match(homeFeed, /Cache-Control', 'no-store'/);
+  assert.match(home, /millisecondsUntilNextKoreanDay/);
+  assert.match(home, /setTimeout/);
+});
+
 test('archive snapshot storage is deployed as a migration and refresh is scheduled', async () => {
   const migration = await read('supabase/migrations/20260804005000_create_public_archive_cache.sql');
   const vercel = JSON.parse(await read('vercel.json'));
@@ -111,7 +196,13 @@ test('home-feed and archive-sync endpoints are present', async () => {
   assert.match(homeFeed, /buildHomeFeed/);
   assert.match(homeFeed, /get_published_sf_discoveries/);
   assert.match(homeFeed, /discoveries:\s*discoveriesResult\.status === 'fulfilled'/);
-  assert.match(homeFeed, /loadWorksSnapshot\(\{ includeCovers: true, coverLimit: 4, refresh \}\)/);
+  assert.match(homeFeed, /loadWorksSnapshot\(\{ refresh \}\)/);
+  assert.match(homeFeed, /daily-discovery:v1:\$\{discoveryDate\}/);
+  assert.match(homeFeed, /`\$\{HOME_FEED_CACHE_KEY\}:\$\{discoveryDate\}`/);
+  assert.match(homeFeed, /loadDailyFeaturedWorks/);
+  assert.match(homeFeed, /worksResult\.status === 'fulfilled' && works\.length > 0/);
+  assert.match(homeFeed, /selectDailyFeaturedWorks/);
+  assert.match(homeFeed, /hydrateSelectedWorkCovers/);
   assert.match(home, /src=\{work\.image \|\| work\.cover\}/);
   assert.match(sync, /isAuthorizedArchiveRefresh/);
   assert.match(sync, /loadHomeFeedSnapshot/);
@@ -123,6 +214,34 @@ test('homepage cover hydration is limited to the four featured works', () => {
   assert.equal(shouldResolveWorkCover(4, 4), false);
   assert.equal(shouldResolveWorkCover(114, 4), false);
   assert.equal(shouldResolveWorkCover(114), true);
+});
+
+test('선택된 오늘의 발견만 필요한 책 표지를 보강한다', async () => {
+  const worksModule = await import('../api/works.js');
+  assert.equal(typeof worksModule.hydrateSelectedWorkCovers, 'function');
+
+  const calls = [];
+  const works = [
+    { code: 'BOOK-1', cover: '', source: 'books' },
+    { code: 'BOOK-2', cover: 'existing.jpg', source: 'books' },
+    { code: 'MEDIA-1', cover: '', source: 'media-works' },
+  ];
+  const hydrated = await worksModule.hydrateSelectedWorkCovers(works, {
+    aladinApiKey: 'test-key',
+    resolveCover: async work => {
+      calls.push(work.code);
+      return `${work.code}.jpg`;
+    },
+  });
+
+  assert.deepEqual(calls, ['BOOK-1']);
+  assert.deepEqual(hydrated.map(work => work.cover), ['BOOK-1.jpg', 'existing.jpg', '']);
+});
+
+test('Aladin 표지 조회는 API 키를 HTTPS로만 전송한다', async () => {
+  const source = await read('api/_worksAladin.js');
+  assert.match(source, /https:\/\/www\.aladin\.co\.kr\/ttb\/api\//);
+  assert.doesNotMatch(source, /['"]http:\/\/www\.aladin\.co\.kr\/ttb\/api\//);
 });
 
 test('expensive forced refreshes require the private sync secret', async () => {

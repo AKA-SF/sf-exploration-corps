@@ -1,13 +1,30 @@
 import { requireAuthorizedArchiveRefresh } from './_archiveSyncAuth.js';
-import { buildHomeFeed } from './_homeFeed.js';
-import { getDurableCachedJson } from './_persistentCache.js';
+import {
+  buildHomeFeed,
+  getKoreanDiscoveryDate,
+  selectDailyFeaturedWorks,
+} from './_homeFeed.js';
+import { getDurableCachedJson, getOrCreateDurableCachedJson } from './_persistentCache.js';
 import { supabaseRpcRequest } from './_supabaseRest.js';
 import { loadConceptsSnapshot } from './concepts.js';
 import { loadMediaSnapshot } from './media.js';
-import { loadWorksSnapshot } from './works.js';
+import { hydrateSelectedWorkCovers, loadWorksSnapshot } from './works.js';
 
-const HOME_FEED_CACHE_KEY = 'home-feed:v6-featured-covers';
+const HOME_FEED_CACHE_KEY = 'home-feed:v7-daily-discovery';
 const HOME_FEED_TTL_MS = 5 * 60 * 1000;
+const DAILY_DISCOVERY_TTL_MS = 48 * 60 * 60 * 1000;
+
+export async function loadDailyFeaturedWorks(works, discoveryDate) {
+  const snapshot = await getOrCreateDurableCachedJson(
+    `daily-discovery:v1:${discoveryDate}`,
+    DAILY_DISCOVERY_TTL_MS,
+    () => selectDailyFeaturedWorks(works, discoveryDate),
+    { preferStale: false },
+  );
+  return Array.isArray(snapshot.value)
+    ? snapshot.value.slice(0, 4)
+    : selectDailyFeaturedWorks(works, discoveryDate);
+}
 
 export function hasUsableArchiveSource(results) {
   return results.some((result, index) => {
@@ -29,9 +46,9 @@ export function getHomeFeedSourceStatus(results) {
   ]));
 }
 
-async function loadHomeFeedSources({ refresh }) {
+async function loadHomeFeedSources({ discoveryDate, refresh }) {
   const sources = await Promise.allSettled([
-    loadWorksSnapshot({ includeCovers: true, coverLimit: 4, refresh }),
+    loadWorksSnapshot({ refresh }),
     loadMediaSnapshot({ refresh }),
     loadConceptsSnapshot({ refresh }),
     supabaseRpcRequest('get_visible_exploration_logs', { body: { p_limit: 3 } }),
@@ -43,24 +60,37 @@ async function loadHomeFeedSources({ refresh }) {
   }
 
   const sourceStatus = getHomeFeedSourceStatus(sources);
+  const works = worksResult.status === 'fulfilled' ? worksResult.value.works : [];
+  const selectedWorks = worksResult.status === 'fulfilled' && works.length > 0
+    ? await loadDailyFeaturedWorks(works, discoveryDate)
+    : [];
+  let featuredWorks = selectedWorks;
+  try {
+    featuredWorks = await hydrateSelectedWorkCovers(selectedWorks);
+  } catch {
+    // A cover lookup must not make the deterministic daily selection unavailable.
+  }
   return buildHomeFeed({
     concepts: conceptsResult.status === 'fulfilled' ? conceptsResult.value.concepts : [],
+    discoveryDate,
     discoveries: discoveriesResult.status === 'fulfilled' ? discoveriesResult.value : [],
     discoveriesUnavailable: discoveriesResult.status !== 'fulfilled',
+    featuredWorks,
     logs: signalsResult.status === 'fulfilled' ? signalsResult.value : [],
     media: mediaResult.status === 'fulfilled' ? mediaResult.value.media : [],
     questions: [],
     sourceStatus,
     syncedAt: new Date().toISOString(),
-    works: worksResult.status === 'fulfilled' ? worksResult.value.works : [],
+    works,
   });
 }
 
 export function loadHomeFeedSnapshot({ refresh = false } = {}) {
+  const discoveryDate = getKoreanDiscoveryDate();
   return getDurableCachedJson(
-    HOME_FEED_CACHE_KEY,
+    `${HOME_FEED_CACHE_KEY}:${discoveryDate}`,
     HOME_FEED_TTL_MS,
-    () => loadHomeFeedSources({ refresh }),
+    () => loadHomeFeedSources({ discoveryDate, refresh }),
     { preferStale: false, refresh },
   );
 }
@@ -75,7 +105,7 @@ export default async function handler(request, response) {
   const refresh = requestUrl.searchParams.get('refresh') === '1';
   if (refresh && !requireAuthorizedArchiveRefresh(request, response)) return;
 
-  response.setHeader('Cache-Control', 'public, s-maxage=300, stale-while-revalidate=60');
+  response.setHeader('Cache-Control', 'no-store');
 
   try {
     const snapshot = await loadHomeFeedSnapshot({ refresh });

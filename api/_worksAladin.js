@@ -1,5 +1,5 @@
-const ALADIN_LOOKUP_ENDPOINT = 'http://www.aladin.co.kr/ttb/api/ItemLookUp.aspx';
-const ALADIN_SEARCH_ENDPOINT = 'http://www.aladin.co.kr/ttb/api/ItemSearch.aspx';
+const ALADIN_LOOKUP_ENDPOINT = 'https://www.aladin.co.kr/ttb/api/ItemLookUp.aspx';
+const ALADIN_SEARCH_ENDPOINT = 'https://www.aladin.co.kr/ttb/api/ItemSearch.aspx';
 const COVER_CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 const EMPTY_COVER_CACHE_TTL_MS = 6 * 60 * 60 * 1000;
 

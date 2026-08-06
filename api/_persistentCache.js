@@ -61,6 +61,50 @@ async function writePersistentCache(key, value, ttlMs) {
   }
 }
 
+async function writePersistentCacheIfAbsent(key, value, ttlMs) {
+  if (!hasServerSupabaseCache()) return false;
+
+  const expiresAt = new Date(Date.now() + ttlMs).toISOString();
+  await supabaseRestRequest(CACHE_TABLE, {
+    body: {
+      cache_key: key,
+      expires_at: expiresAt,
+      payload: value,
+    },
+    method: 'POST',
+    prefer: 'resolution=ignore-duplicates,return=minimal',
+    service: true,
+  });
+  return true;
+}
+
+export async function getOrCreateDurableCachedJson(
+  key,
+  ttlMs,
+  loader,
+  {
+    insertIfAbsent = writePersistentCacheIfAbsent,
+    read = readPersistentCache,
+  } = {},
+) {
+  const existing = await read(key);
+  if (existing) {
+    return { cache: 'DB-HIT', updatedAt: existing.updatedAt, value: existing.payload };
+  }
+
+  const candidate = await loader();
+  try {
+    await insertIfAbsent(key, candidate, ttlMs);
+    const winner = await read(key);
+    if (winner) {
+      return { cache: 'DB-HIT', updatedAt: winner.updatedAt, value: winner.payload };
+    }
+  } catch {
+    // Deterministic candidate remains safe when durable cache is unavailable.
+  }
+  return { cache: 'MISS', value: candidate };
+}
+
 export async function clearDurableCachePrefix(prefix) {
   clearApiCachePrefix(prefix);
   if (!prefix || !hasServerSupabaseCache()) return;

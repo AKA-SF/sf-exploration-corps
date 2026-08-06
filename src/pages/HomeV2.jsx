@@ -15,6 +15,7 @@ import {
 import { useAuth } from '../context/authContextValue';
 import { readExplorationDraft } from '../features/exploration-logs/explorationDraftStorage';
 import { HOME_EVENT_NAMES, trackProductEvent } from '../lib/productAnalytics';
+import { millisecondsUntilNextKoreanDay } from './home/dailyDiscoveryRefresh';
 import './HomeV2.css';
 
 const RADAR_POSITIONS = [
@@ -126,6 +127,28 @@ function HomeV2() {
       });
     return () => controller.abort();
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    let controller;
+    let timer;
+
+    const scheduleNextDay = () => {
+      timer = window.setTimeout(async () => {
+        controller = new AbortController();
+        setFeedStatus('loading');
+        await loadFeed(controller.signal);
+        if (active) scheduleNextDay();
+      }, millisecondsUntilNextKoreanDay() + 250);
+    };
+
+    scheduleNextDay();
+    return () => {
+      active = false;
+      controller?.abort();
+      window.clearTimeout(timer);
+    };
+  }, [loadFeed]);
 
   const featuredWorks = feed?.featuredWorks ?? [];
   const latestDiscoveries = feed?.latestDiscoveries ?? [];
