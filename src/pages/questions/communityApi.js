@@ -1,4 +1,8 @@
 import { getSupabaseClient } from '../../lib/getSupabaseClient';
+import {
+  clearCommunityQuestionsCache,
+  fetchCachedCommunityQuestions,
+} from './communityQuestionsCache';
 
 const COMMUNITY_API_PATH = '/api/questions';
 
@@ -51,10 +55,24 @@ export async function requestCommunityApi({
 }
 
 export function fetchCommunityQuestions({ auth = false, cursor = '', pageSize = 40, ...query } = {}) {
-  return requestCommunityApi({
+  const requestQuery = { ...query, cursor, pageSize };
+  const loader = () => requestCommunityApi({
     auth,
     errorMessage: 'Question archive unavailable',
-    query: { ...query, cursor, pageSize },
+    query: requestQuery,
+  });
+  if (auth) return loader();
+  return fetchCachedCommunityQuestions(toQueryString(requestQuery), loader);
+}
+
+export function prefetchCommunityQuestions() {
+  return fetchCommunityQuestions({ includeCommentCounts: 1, pageSize: 40 });
+}
+
+function requestCommunityMutation(options) {
+  return requestCommunityApi(options).then(data => {
+    clearCommunityQuestionsCache();
+    return data;
   });
 }
 
@@ -67,7 +85,7 @@ export function fetchCommunityQuestionDetail({ id, ownerToken = '' }) {
 }
 
 export function createCommunityQuestion(body) {
-  return requestCommunityApi({
+  return requestCommunityMutation({
     auth: true,
     body,
     errorMessage: '저장에 실패했습니다.',
@@ -76,7 +94,7 @@ export function createCommunityQuestion(body) {
 }
 
 export function createCommunityComment(body) {
-  return requestCommunityApi({
+  return requestCommunityMutation({
     auth: true,
     body: { mode: 'comment', ...body },
     errorMessage: '댓글 저장에 실패했습니다.',
@@ -85,7 +103,7 @@ export function createCommunityComment(body) {
 }
 
 export function updateCommunityQuestion(body) {
-  return requestCommunityApi({
+  return requestCommunityMutation({
     auth: true,
     body: { mode: 'post', ...body },
     errorMessage: '글 수정에 실패했습니다.',
@@ -94,7 +112,7 @@ export function updateCommunityQuestion(body) {
 }
 
 export function deleteCommunityQuestion(body) {
-  return requestCommunityApi({
+  return requestCommunityMutation({
     auth: true,
     body: { mode: 'post', ...body },
     errorMessage: '글 삭제에 실패했습니다.',
@@ -103,7 +121,7 @@ export function deleteCommunityQuestion(body) {
 }
 
 export function updateCommunityComment(body) {
-  return requestCommunityApi({
+  return requestCommunityMutation({
     auth: true,
     body: { mode: 'comment', ...body },
     errorMessage: '댓글 수정에 실패했습니다.',
@@ -112,7 +130,7 @@ export function updateCommunityComment(body) {
 }
 
 export function deleteCommunityComment(body) {
-  return requestCommunityApi({
+  return requestCommunityMutation({
     auth: true,
     body: { mode: 'comment', ...body },
     errorMessage: '댓글 삭제에 실패했습니다.',

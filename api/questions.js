@@ -176,13 +176,15 @@ function getCommunitySetupPayload() {
 function buildPostQuery({
   admin = false,
   category = '',
+  includeCommentCounts = false,
   mineOnly = false,
   offset = 0,
   pageSize = DEFAULT_QUESTIONS_PAGE_SIZE,
   user,
 } = {}) {
   const params = new URLSearchParams();
-  params.set('select', 'id,user_id,author_name,category,title,body,attachment_url,view_count,status,created_at,updated_at');
+  const commentCountSelection = includeCommentCounts ? ',community_comments(count)' : '';
+  params.set('select', `id,user_id,author_name,category,title,body,attachment_url,view_count,status,created_at,updated_at${commentCountSelection}`);
   params.set('order', 'created_at.desc');
   params.set('limit', String(pageSize));
   params.set('offset', String(offset));
@@ -239,6 +241,58 @@ async function fetchCommentCounts(postIds, request) {
   return counts;
 }
 
+function parseContentRangeTotal(contentRange, fallbackTotal) {
+  const match = String(contentRange ?? '').match(/\/(\d+)$/);
+  if (!match) return fallbackTotal;
+  const total = Number(match[1]);
+  return Number.isFinite(total) ? total : fallbackTotal;
+}
+
+function getEmbeddedCommentCount(post) {
+  const count = post?.community_comments?.[0]?.count;
+  return Number.isFinite(Number(count)) ? Number(count) : 0;
+}
+
+export async function fetchPublicQuestionPage({
+  category = '',
+  includeCommentCounts = false,
+  offset = 0,
+  pageSize = DEFAULT_QUESTIONS_PAGE_SIZE,
+  request,
+  requestRest = supabaseRestRequest,
+} = {}) {
+  const { contentRange, data } = await requestRest(
+    buildPostQuery({
+      category,
+      includeCommentCounts,
+      offset,
+      pageSize,
+    }),
+    {
+      includeResponseMetadata: true,
+      prefer: 'count=exact',
+      request,
+    },
+  );
+  const posts = Array.isArray(data) ? data : [];
+  const totalCount = parseContentRangeTotal(contentRange, offset + posts.length);
+  const questions = posts.map((post, index) => mapPostToQuestion(post, {
+    commentCount: includeCommentCounts ? getEmbeddedCommentCount(post) : 0,
+    displayNumber: totalCount - offset - index,
+    index,
+    offset,
+  }));
+  const nextOffset = offset + posts.length;
+  const hasMore = posts.length > 0 && nextOffset < totalCount;
+
+  return {
+    hasMore,
+    nextCursor: hasMore ? String(nextOffset) : '',
+    questions,
+    totalCount,
+  };
+}
+
 async function listQuestions(request, response, query) {
   const { offset, pageSize } = getPaginationParams(query);
   const wantsAdminList = query.admin === '1';
@@ -265,8 +319,22 @@ async function listQuestions(request, response, query) {
     pageSize,
     userId: wantsMineOnly ? user?.id || '' : '',
   })}`;
+  const isAnonymousPublicList = !wantsAdminList
+    && !wantsMineOnly
+    && !request.headers.authorization
+    && !request.headers.Authorization;
 
   const loader = async () => {
+    if (isAnonymousPublicList) {
+      return fetchPublicQuestionPage({
+        category: query.category,
+        includeCommentCounts,
+        offset,
+        pageSize,
+        request,
+      });
+    }
+
     const listOptions = {
       admin: wantsAdminList,
       category: query.category,
@@ -307,10 +375,7 @@ async function listQuestions(request, response, query) {
     };
   };
 
-  const shouldCache = !wantsAdminList
-    && !wantsMineOnly
-    && !request.headers.authorization
-    && !request.headers.Authorization;
+  const shouldCache = isAnonymousPublicList;
   let payload;
   try {
     payload = shouldCache

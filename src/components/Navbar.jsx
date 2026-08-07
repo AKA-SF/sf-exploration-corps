@@ -1,7 +1,25 @@
+import { useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
 import { Compass, MessageSquareText, PenLine, Radio, UserRound } from 'lucide-react';
 
+const prefetchCommunity = () => {
+  const connection = navigator.connection ?? navigator.mozConnection ?? navigator.webkitConnection;
+  if (connection?.saveData || ['slow-2g', '2g'].includes(connection?.effectiveType)) {
+    return Promise.resolve();
+  }
+  return import('../pages/questions/communityApi')
+    .then(({ prefetchCommunityQuestions }) => prefetchCommunityQuestions())
+    .catch(() => undefined);
+};
+
 const Navbar = () => {
+  useEffect(() => {
+    const scheduleIdle = window.requestIdleCallback ?? (callback => window.setTimeout(callback, 800));
+    const cancelIdle = window.cancelIdleCallback ?? window.clearTimeout;
+    const idleId = scheduleIdle(prefetchCommunity, { timeout: 1500 });
+    return () => cancelIdle(idleId);
+  }, []);
+
   return (
     <nav aria-label="주요 메뉴" className="navbar">
       <NavLink
@@ -23,7 +41,12 @@ const Navbar = () => {
         <span className="nav-label-primary">네트워크</span>
         <span className="nav-label-secondary mono">SIGNALS</span>
       </NavLink>
-      <NavLink to="/questions" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+      <NavLink
+        to="/questions"
+        className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}
+        onFocus={prefetchCommunity}
+        onPointerEnter={prefetchCommunity}
+      >
         <MessageSquareText aria-hidden="true" />
         <span className="nav-label-primary">커뮤니티</span>
         <span className="nav-label-secondary mono">BOARD</span>

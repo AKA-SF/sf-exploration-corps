@@ -28,6 +28,7 @@ function parseSupabaseResponse(text, response) {
 
 export async function supabaseRestRequest(path, {
   body,
+  includeResponseMetadata = false,
   method = 'GET',
   prefer = '',
   request,
@@ -71,6 +72,13 @@ export async function supabaseRestRequest(path, {
     error.details = data;
     error.status = response.status;
     throw error;
+  }
+
+  if (includeResponseMetadata) {
+    return {
+      contentRange: response.headers.get('content-range'),
+      data,
+    };
   }
 
   return data;
