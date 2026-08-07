@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../context/authContextValue';
 import { readExplorationDraft } from '../features/exploration-logs/explorationDraftStorage';
+import SfDiscoveryDialog from '../features/sf-discoveries/SfDiscoveryDialog';
+import { discoverySourceLinkLabel } from '../features/sf-discoveries/sfDiscoveryPresentation';
 import { HOME_EVENT_NAMES, trackProductEvent } from '../lib/productAnalytics';
 import { millisecondsUntilNextKoreanDay } from './home/dailyDiscoveryRefresh';
 import './HomeV2.css';
@@ -97,6 +99,7 @@ function HomeV2() {
   const [feed, setFeed] = useState(null);
   const [feedStatus, setFeedStatus] = useState('loading');
   const [feedCacheStatus, setFeedCacheStatus] = useState('');
+  const [selectedDiscovery, setSelectedDiscovery] = useState(null);
   const draft = useMemo(
     () => authLoading ? {} : readExplorationDraft(user?.id),
     [authLoading, user?.id],
@@ -186,6 +189,7 @@ function HomeV2() {
   const trackHomeAction = (action, surface) => {
     trackProductEvent(HOME_EVENT_NAMES.CTA, { action, state: visitorState, surface });
   };
+  const closeDiscovery = useCallback(() => setSelectedDiscovery(null), []);
 
   return (
     <main className="home-v2">
@@ -359,10 +363,24 @@ function HomeV2() {
           <div className="home-v2-news__grid">
             {latestDiscoveries.map(item => (
               <article className={`home-v2-news__card home-v2-news__card--${item.kind?.toLowerCase()}`} key={item.id}>
-                <span className="mono">{DISCOVERY_KIND_LABELS[item.kind] || 'SF 정보'} · {DISCOVERY_MEDIA_LABELS[item.media_type] || '기타'}</span>
-                <h3>{item.title}</h3>
-                <p>{item.is_spoiler ? '스포일러 보호를 위해 요약을 숨겼습니다.' : item.summary}</p>
-                <div><small>{item.release_date ? `${compactDate(item.release_date)} 공개` : '공개 일정 미정'}</small><a href={item.source_url} rel="noreferrer" target="_blank">{item.source_name} <ArrowRight aria-hidden="true" /></a></div>
+                <button className="home-v2-news__open" onClick={() => setSelectedDiscovery(item)} type="button">
+                  {item.image_url && (
+                    <span className="home-v2-news__cover">
+                      <img alt={item.image_alt || `${item.title} 표지`} loading="lazy" src={item.image_url} />
+                    </span>
+                  )}
+                  <span className="home-v2-news__kind mono">{DISCOVERY_KIND_LABELS[item.kind] || 'SF 정보'} · {DISCOVERY_MEDIA_LABELS[item.media_type] || '기타'}</span>
+                  <h3>{item.title}</h3>
+                  {(item.author_text || item.publisher_text) && (
+                    <span className="home-v2-news__bibliography">
+                      {item.author_text && <span>{item.author_text}</span>}
+                      {item.publisher_text && <small>{item.publisher_text}</small>}
+                    </span>
+                  )}
+                  <span className="home-v2-news__summary">{item.is_spoiler ? '스포일러 보호를 위해 요약을 숨겼습니다.' : item.summary}</span>
+                  <span className="home-v2-news__detail">상세·댓글 보기 <ArrowRight aria-hidden="true" /></span>
+                </button>
+                <div className="home-v2-news__footer"><small>{item.release_date ? `${compactDate(item.release_date)} 공개` : '공개 일정 미정'}</small><a href={item.source_url} rel="noreferrer" target="_blank">{discoverySourceLinkLabel(item)} <ArrowRight aria-hidden="true" /></a></div>
               </article>
             ))}
           </div>
@@ -400,6 +418,7 @@ function HomeV2() {
           ? `${hasPartialSourceFailure ? '일부 자료 연결 지연' : feedCacheStatus.includes('STALE') ? '마지막 정상 자료' : '자료 갱신'} · ${compactDate(feed.syncedAt)}`
           : '자료 연결 대기 중'}</span>
       </footer>
+      {selectedDiscovery && <SfDiscoveryDialog item={selectedDiscovery} onClose={closeDiscovery} user={user} />}
     </main>
   );
 }

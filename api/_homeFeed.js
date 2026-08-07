@@ -80,7 +80,7 @@ export function buildHomeFeed({
       : asArray(featuredWorks).slice(0, 4),
     discoveriesUnavailable: Boolean(discoveriesUnavailable),
     latestMedia: normalizedMedia.slice(0, 2),
-    latestDiscoveries: normalizedDiscoveries.slice(0, 3),
+    latestDiscoveries: normalizedDiscoveries.slice(0, 4),
     latestSignals: normalizedLogs.slice(0, 3),
     sourceStatus: normalizedSourceStatus,
     syncedAt,

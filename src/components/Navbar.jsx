@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { Compass, PenLine, Radio, UserRound } from 'lucide-react';
+import { Compass, MessageSquareText, PenLine, Radio, UserRound } from 'lucide-react';
 
 const Navbar = () => {
   return (
@@ -22,6 +22,11 @@ const Navbar = () => {
         <Radio aria-hidden="true" />
         <span className="nav-label-primary">네트워크</span>
         <span className="nav-label-secondary mono">SIGNALS</span>
+      </NavLink>
+      <NavLink to="/questions" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
+        <MessageSquareText aria-hidden="true" />
+        <span className="nav-label-primary">커뮤니티</span>
+        <span className="nav-label-secondary mono">BOARD</span>
       </NavLink>
       <NavLink to="/profile" className={({ isActive }) => isActive ? 'nav-item active' : 'nav-item'}>
         <UserRound aria-hidden="true" />

@@ -9,6 +9,7 @@ export default function CommentsPanel({
   editStatus,
   form,
   isAuthenticated,
+  loadStatus,
   message,
   onChange,
   onDeleteComment,
@@ -25,13 +26,17 @@ export default function CommentsPanel({
   const canSubmitEdit = hasEditContent && editStatus !== 'submitting';
 
   return (
-    <section className="comments-panel" aria-label="댓글">
+    <section className="comments-panel" aria-busy={loadStatus === 'loading'} aria-label="댓글">
       <div className="comments-list">
         <div className="comments-heading">
           <span>COMMENTS</span>
-          <strong>{comments.length}</strong>
+          <strong>{loadStatus === 'loading' ? '…' : comments.length}</strong>
         </div>
-        {comments.length > 0 ? comments.map((comment, index) => (
+        {loadStatus === 'loading' ? (
+          <p className="comments-empty" role="status">댓글을 불러오는 중입니다.</p>
+        ) : loadStatus === 'error' ? (
+          <p className="comments-empty" role="status">댓글을 불러오지 못했습니다.</p>
+        ) : comments.length > 0 ? comments.map((comment, index) => (
           <article className="comment-item" key={comment.id || `${comment.date}-${comment.name}-${index}`}>
             <div>
               <strong>{comment.name || '익명'}</strong>

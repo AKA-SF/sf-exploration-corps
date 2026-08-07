@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, CheckCircle2, Eye, FilePlus2, Newspaper, Save, Send, ShieldCheck, Trash2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Eye, FilePlus2, Newspaper, RefreshCw, Save, Send, ShieldCheck, Trash2 } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import EditorialArticle from '../components/editorial/EditorialArticle';
 import EditorialArticleFields from '../components/editorial/EditorialArticleFields';
@@ -179,6 +179,32 @@ export default function AdminDiscoveries() {
       setMessage(error.message || '승인된 초안을 불러오지 못했습니다.');
     }
   };
+  const syncAladinNewReleases = async () => {
+    if (!supabase) return;
+    setStatus('saving');
+    setMessage('알라딘 SF 신간을 확인하고 있습니다.');
+    try {
+      const { data, error } = await supabase.auth.getSession();
+      if (error || !data.session?.access_token) throw error || new Error('관리자 로그인 세션이 필요합니다.');
+      const response = await fetch('/api/aladin', {
+        body: JSON.stringify({ action: 'sync-new-releases', limit: 10 }),
+        cache: 'no-store',
+        credentials: 'same-origin',
+        headers: {
+          Authorization: `Bearer ${data.session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || '알라딘 신간 조사를 완료하지 못했습니다.');
+      setMessage(`신규 초안 ${result.created || 0}권 · 중복 ${result.duplicates || 0}권 · 검토 필요 ${result.rejected || 0}권`);
+      await loadItems();
+    } catch (error) {
+      setStatus('error');
+      setMessage(error.message || '알라딘 신간 조사를 완료하지 못했습니다.');
+    }
+  };
   const markEditorialApproved = () => {
     if (!editorialValidation.valid) {
       setMessage(editorialValidation.errors[0]);
@@ -265,7 +291,7 @@ export default function AdminDiscoveries() {
     <PageTransition className="admin-page admin-discoveries-page">
       <header className="admin-header panel">
         <div><span className="mono">EDITORIAL CONTROL</span><h1>새로 포착된 SF 관리</h1><p>초안 저장과 최종 발행을 분리합니다. 게시된 글의 수정 사항은 저장 즉시 공개 화면에 반영됩니다.</p></div>
-        <div className="admin-header-actions"><Link className="admin-header-link" to="/admin"><ArrowLeft aria-hidden="true" /> 대시보드</Link><Link className="admin-header-link" to="/discover">공개 화면</Link></div>
+        <div className="admin-header-actions"><button className="admin-header-link" disabled={status === 'saving'} onClick={() => void syncAladinNewReleases()} type="button"><RefreshCw aria-hidden="true" /> 알라딘 최신 10권 조사</button><Link className="admin-header-link" to="/admin"><ArrowLeft aria-hidden="true" /> 대시보드</Link><Link className="admin-header-link" to="/discover">공개 화면</Link></div>
       </header>
 
       {message && <div className={`admin-alert panel ${status === 'error' ? '' : 'is-success'}`} role={status === 'error' ? 'alert' : 'status'}><p>{message}</p></div>}
@@ -308,6 +334,19 @@ export default function AdminDiscoveries() {
             <label><span>대표 출처명</span><input maxLength="120" onChange={event => updateField('source_name', event.target.value)} required value={draft.source_name} /></label>
             <label><span>대표 출처 URL</span><input onChange={event => updateField('source_url', event.target.value)} pattern="https://.*" required type="url" value={draft.source_url} /></label>
           </div>
+          {draft.source_provider === 'ALADIN' && (
+            <section className="admin-automation-source" aria-label="자동 조사 원본 정보">
+              <div><span className="mono">AUTOMATED DRAFT</span><strong>알라딘 SF 신간 자동 조사</strong></div>
+              <dl>
+                <div><dt>저자·역자 표기</dt><dd>{draft.author_text || '검토 필요'}</dd></div>
+                <div><dt>출판사</dt><dd>{draft.publisher_text || '검토 필요'}</dd></div>
+                <div><dt>ISBN13</dt><dd>{draft.isbn13 || '검토 필요'}</dd></div>
+                <div><dt>표지 권리</dt><dd>{draft.cover_rights_status === 'UNVERIFIED' ? '미검증 · 발행 전 확인' : draft.cover_rights_status || '검토 필요'}</dd></div>
+                <div><dt>최초 확인</dt><dd>{draft.automation_first_seen_at ? new Date(draft.automation_first_seen_at).toLocaleString('ko-KR') : '확인 불가'}</dd></div>
+              </dl>
+              <p>자동 생성된 비공개 초안입니다. 서지·요약·표지 출처를 검토한 뒤에만 최종 발행하세요.</p>
+            </section>
+          )}
           <div className="admin-discovery-fields two-columns">
             <label><span>공개·출시일</span><input onChange={event => updateField('release_date', event.target.value)} type="date" value={draft.release_date} /></label>
             <label><span>정렬 우선순위</span><input max="1000" min="-1000" onChange={event => updateField('sort_priority', event.target.value)} type="number" value={draft.sort_priority} /></label>

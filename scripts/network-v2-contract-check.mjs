@@ -59,9 +59,12 @@ test('Network2 is not constrained to the legacy device surface', async () => {
 });
 
 test('Network2 keeps the quiet grid background without animated geometry', async () => {
-  const background = await read('src/components/InteractiveBackground.jsx');
-  assert.match(background, /const isNetwork = location\.pathname\.startsWith\('\/network'\)/);
-  assert.match(background, /const showGeometry = isVisualSurface && !isNetwork/);
+  const [app, appCss] = await Promise.all([
+    read('src/App.jsx'),
+    read('src/App.css'),
+  ]);
+  assert.doesNotMatch(app, /InteractiveBackground/);
+  assert.doesNotMatch(appCss, /\.geo-spin|\.geo-triangle|\.bg-geometry/);
 });
 
 test('Network2 empty state teaches the exploration loop and public boundary without sample signals', async () => {

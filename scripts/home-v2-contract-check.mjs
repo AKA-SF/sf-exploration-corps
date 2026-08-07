@@ -6,12 +6,18 @@ const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
 test('Home2 is the root route and loads one compact public feed', async () => {
   const app = await read('src/App.jsx');
+  const api = await read('api/home-feed.js');
+  const feedBuilder = await read('api/_homeFeed.js');
   const home = await read('src/pages/HomeV2.jsx');
+  const css = await read('src/pages/HomeV2.css');
 
   assert.match(app, /import\('\.\/pages\/HomeV2'\)/);
   assert.match(app, /path="\/" element={<HomeV2\s*\/>}/);
   assert.match(home, /fetch\('\/api\/home-feed'/);
   assert.doesNotMatch(home, /\/api\/(works|media|concepts|exploration-log)/);
+  assert.match(api, /get_published_sf_discoveries[\s\S]*p_limit:\s*4/);
+  assert.match(feedBuilder, /latestDiscoveries:\s*normalizedDiscoveries\.slice\(0,\s*4\)/);
+  assert.match(css, /\.home-v2-news__grid\s*\{[^}]*grid-template-columns:\s*repeat\(4,/);
 });
 
 test('Home2 presents discovery, record and connection as real routes', async () => {
@@ -73,11 +79,11 @@ test('Home2 exposes state-aware continuation and privacy-safe analytics', async 
   assert.doesNotMatch(analytics, /userId|email|title|memo/);
 });
 
-test('global mobile navigation exposes four Korean primary destinations', async () => {
+test('global mobile navigation exposes five Korean primary destinations', async () => {
   const navbar = await read('src/components/Navbar.jsx');
   const css = await read('src/App.css');
 
-  for (const label of ['탐색', '기록', '네트워크', '내 정보']) {
+  for (const label of ['탐색', '기록', '네트워크', '커뮤니티', '내 정보']) {
     assert.match(navbar, new RegExp(label));
   }
   assert.doesNotMatch(navbar, /to="\/badges"/);

@@ -52,7 +52,7 @@ async function loadHomeFeedSources({ discoveryDate, refresh }) {
     loadMediaSnapshot({ refresh }),
     loadConceptsSnapshot({ refresh }),
     supabaseRpcRequest('get_visible_exploration_logs', { body: { p_limit: 3 } }),
-    supabaseRpcRequest('get_published_sf_discoveries', { body: { p_limit: 3, p_offset: 0 } }),
+    supabaseRpcRequest('get_published_sf_discoveries', { body: { p_limit: 4, p_offset: 0 } }),
   ]);
   const [worksResult, mediaResult, conceptsResult, signalsResult, discoveriesResult] = sources;
   if (!hasUsableArchiveSource(sources)) {

@@ -1,4 +1,5 @@
 import { clearApiCachePrefix, getCachedJson } from './_apiCache.js';
+import { verifySameOrigin } from './_adminAccess.js';
 import { getOptionalUser, requireAdminAccess, requireAuthenticatedUser } from './_adminAuth.js';
 import { supabaseRestRequest, supabaseRpcRequest } from './_supabaseRest.js';
 
@@ -6,6 +7,7 @@ const DEFAULT_QUESTIONS_PAGE_SIZE = 40;
 const COMMUNITY_BODY_MAX_BYTES = 128 * 1024;
 const QUESTIONS_LIST_CACHE_TTL_MS = 20 * 1000;
 const COMMUNITY_CATEGORIES = ['자유글', '작품추천', '질문', '토론'];
+const PRIVATE_NO_STORE = 'private, no-store';
 
 function clearQuestionCaches() {
   clearApiCachePrefix('questions:');
@@ -134,6 +136,25 @@ function parseJsonBody(request) {
 
 function sanitizeText(value, maxLength = 8000) {
   return String(value ?? '').trim().slice(0, maxLength);
+}
+
+function normalizeAttachmentUrl(value) {
+  const source = sanitizeText(value, 1200);
+  if (!source) return null;
+  let url;
+  try {
+    url = new URL(source);
+  } catch {
+    const error = new Error('첨부 링크는 올바른 http 또는 https URL이어야 합니다.');
+    error.status = 400;
+    throw error;
+  }
+  if (!['http:', 'https:'].includes(url.protocol)) {
+    const error = new Error('첨부 링크는 올바른 http 또는 https URL이어야 합니다.');
+    error.status = 400;
+    throw error;
+  }
+  return url.toString();
 }
 
 function isMissingCommunityTable(error) {
@@ -332,17 +353,14 @@ async function showQuestionDetail(request, response, query) {
     return;
   }
 
-  try {
-    const nextCount = await supabaseRpcRequest('increment_community_post_view', {
+  const [nextCount, comments] = await Promise.all([
+    supabaseRpcRequest('increment_community_post_view', {
       body: { p_post_id: post.id },
       request,
-    });
-    if (Number.isFinite(Number(nextCount))) post.view_count = Number(nextCount);
-  } catch {
-    // 조회수 기록은 부가 기능이라 실패해도 글 읽기는 유지합니다.
-  }
-
-  const comments = await fetchCommentsForPost(post.id, request);
+    }).catch(() => null),
+    fetchCommentsForPost(post.id, request),
+  ]);
+  if (nextCount !== null && Number.isFinite(Number(nextCount))) post.view_count = Number(nextCount);
   const canEdit = Boolean(user?.id && post.user_id === user.id);
   response.status(200).json({
     comments: (comments ?? []).map(comment => mapComment(comment, user)),
@@ -353,9 +371,7 @@ async function showQuestionDetail(request, response, query) {
   });
 }
 
-async function createQuestion(request, response, body) {
-  const user = await requireAuthenticatedUser(request, response);
-  if (!user) return;
+async function createQuestion(request, response, body, user) {
 
   const title = sanitizeText(body.title, 140);
   const content = sanitizeText(body.content, 8000);
@@ -366,8 +382,8 @@ async function createQuestion(request, response, body) {
 
   const rows = await supabaseRestRequest('community_posts', {
     body: {
-      attachment_url: sanitizeText(body.attachmentUrl, 1200) || null,
-      author_name: sanitizeText(body.name, 40) || getUserAuthorName(user),
+      attachment_url: normalizeAttachmentUrl(body.attachmentUrl),
+      author_name: getUserAuthorName(user),
       body: content,
       category: normalizeCommunityCategory(body.category),
       title,
@@ -385,9 +401,7 @@ async function createQuestion(request, response, body) {
   });
 }
 
-async function createComment(request, response, body) {
-  const user = await requireAuthenticatedUser(request, response);
-  if (!user) return;
+async function createComment(request, response, body, user) {
 
   const questionId = sanitizeText(body.questionId, 80);
   const content = sanitizeText(body.content, 2000);
@@ -398,7 +412,7 @@ async function createComment(request, response, body) {
 
   const rows = await supabaseRestRequest('community_comments', {
     body: {
-      author_name: sanitizeText(body.name, 40) || getUserAuthorName(user),
+      author_name: getUserAuthorName(user),
       body: content,
       post_id: questionId,
       user_id: user.id,
@@ -415,9 +429,7 @@ async function createComment(request, response, body) {
   });
 }
 
-async function updateQuestion(request, response, body) {
-  const user = await requireAuthenticatedUser(request, response);
-  if (!user) return;
+async function updateQuestion(request, response, body, user) {
 
   const id = sanitizeText(body.questionId || body.id, 80);
   const title = sanitizeText(body.title, 140);
@@ -429,7 +441,7 @@ async function updateQuestion(request, response, body) {
 
   const rows = await supabaseRestRequest(`community_posts?id=eq.${encodeURIComponent(id)}&user_id=eq.${encodeURIComponent(user.id)}`, {
     body: {
-      attachment_url: sanitizeText(body.attachmentUrl, 1200) || null,
+      attachment_url: normalizeAttachmentUrl(body.attachmentUrl),
       body: content,
       category: normalizeCommunityCategory(body.category),
       title,
@@ -451,9 +463,7 @@ async function updateQuestion(request, response, body) {
   });
 }
 
-async function updateComment(request, response, body) {
-  const user = await requireAuthenticatedUser(request, response);
-  if (!user) return;
+async function updateComment(request, response, body, user) {
 
   const id = sanitizeText(body.commentId || body.id, 80);
   const content = sanitizeText(body.content, 2000);
@@ -481,9 +491,7 @@ async function updateComment(request, response, body) {
   });
 }
 
-async function archiveQuestion(request, response, body) {
-  const user = await requireAuthenticatedUser(request, response);
-  if (!user) return;
+async function archiveQuestion(request, response, body, user) {
 
   const id = sanitizeText(body.questionId || body.id, 80);
   if (!id) {
@@ -507,9 +515,7 @@ async function archiveQuestion(request, response, body) {
   response.status(200).json({ ok: true });
 }
 
-async function archiveComment(request, response, body) {
-  const user = await requireAuthenticatedUser(request, response);
-  if (!user) return;
+async function archiveComment(request, response, body, user) {
 
   const id = sanitizeText(body.commentId || body.id, 80);
   if (!id) {
@@ -549,7 +555,7 @@ function sendSupabaseError(response, error) {
 }
 
 export default async function handler(request, response) {
-  response.setHeader('Cache-Control', 'no-store');
+  response.setHeader('Cache-Control', PRIVATE_NO_STORE);
   const query = request.query ?? {};
 
   try {
@@ -562,33 +568,41 @@ export default async function handler(request, response) {
       return;
     }
 
+    if (request.method !== 'GET' && !verifySameOrigin(request)) {
+      response.status(403).json({ error: 'Forbidden' });
+      return;
+    }
+
+    const user = await requireAuthenticatedUser(request, response);
+    if (!user) return;
+
     const body = await parseJsonBody(request);
     const mode = body.mode || 'post';
 
     if (request.method === 'POST') {
       if (mode === 'comment') {
-        await createComment(request, response, body);
+        await createComment(request, response, body, user);
         return;
       }
-      await createQuestion(request, response, body);
+      await createQuestion(request, response, body, user);
       return;
     }
 
     if (request.method === 'PATCH') {
       if (mode === 'comment') {
-        await updateComment(request, response, body);
+        await updateComment(request, response, body, user);
         return;
       }
-      await updateQuestion(request, response, body);
+      await updateQuestion(request, response, body, user);
       return;
     }
 
     if (request.method === 'DELETE') {
       if (mode === 'comment') {
-        await archiveComment(request, response, body);
+        await archiveComment(request, response, body, user);
         return;
       }
-      await archiveQuestion(request, response, body);
+      await archiveQuestion(request, response, body, user);
       return;
     }
 

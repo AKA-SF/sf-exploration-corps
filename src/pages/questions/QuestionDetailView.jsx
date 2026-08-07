@@ -36,7 +36,7 @@ export default function QuestionDetailView({
   }
 
   return (
-    <article className={`question-detail ${localReadingMode ? 'is-reading-local' : ''}`}>
+    <article aria-busy={loadStatus === 'loading'} className={`question-detail ${localReadingMode ? 'is-reading-local' : ''}`}>
       <button
         className="question-reading-toggle"
         onClick={onReadingModeToggle}

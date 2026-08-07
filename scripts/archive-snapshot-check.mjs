@@ -18,7 +18,8 @@ test('buildHomeFeed returns a compact deterministic homepage snapshot', () => {
       { id: 'D-1', title: '첫 번째 신작' },
       { id: 'D-2', title: '두 번째 신작' },
       { id: 'D-3', title: '세 번째 신작' },
-      { id: 'D-4', title: 'Home 범위 밖의 신작' },
+      { id: 'D-4', title: '네 번째 신작' },
+      { id: 'D-5', title: 'Home 범위 밖의 신작' },
     ],
     logs: [{ code: 'L-1' }, { code: 'L-2' }, { code: 'L-3' }, { code: 'L-4' }],
     media: [{ code: 'M-1' }, { code: 'M-2' }, { code: 'M-3' }],
@@ -32,7 +33,7 @@ test('buildHomeFeed returns a compact deterministic homepage snapshot', () => {
   assert.equal(feed.latestSignals.length, 3);
   assert.equal(feed.latestMedia.length, 2);
   assert.equal(feed.featuredConcepts.length, 2);
-  assert.deepEqual(feed.latestDiscoveries.map(item => item.id), ['D-1', 'D-2', 'D-3']);
+  assert.deepEqual(feed.latestDiscoveries.map(item => item.id), ['D-1', 'D-2', 'D-3', 'D-4']);
   assert.equal(feed.communityQuestions.length, 2);
   assert.deepEqual(feed.counts, { concepts: 2, logs: 4, media: 3, questions: 3, works: 8 });
 });

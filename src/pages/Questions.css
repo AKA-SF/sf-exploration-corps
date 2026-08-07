@@ -1,7 +1,3 @@
-.app-wrapper:has(.questions-page) .navbar {
-  display: none;
-}
-
 .page-container:has(.questions-page) {
   padding: 0;
   padding-bottom: 0;
@@ -9,6 +5,12 @@
     radial-gradient(circle at 82% 12%, rgba(25, 247, 241, 0.12), transparent 28%),
     radial-gradient(circle at 16% 26%, rgba(124, 199, 255, 0.09), transparent 24%),
     linear-gradient(180deg, rgba(1, 4, 7, 0.98), rgba(1, 8, 12, 0.96));
+}
+
+@media (min-width: 721px) {
+  .desktop-home .page-container:has(.questions-page) {
+    padding-left: 100px;
+  }
 }
 
 .questions-page {
@@ -733,6 +735,26 @@
   line-height: 1.75;
 }
 
+.question-login-link {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 44px;
+  margin-top: 14px;
+  align-items: center;
+  border: 1px solid rgba(25, 247, 241, 0.34);
+  padding: 0 14px;
+  color: var(--cyan);
+  font-size: 13px;
+  font-weight: 900;
+  text-decoration: none;
+}
+
+.question-login-link:hover,
+.question-login-link:focus-visible {
+  border-color: rgba(255, 238, 177, 0.95);
+  color: #fff;
+}
+
 .question-form {
   display: grid;
   gap: 18px;
@@ -1257,11 +1279,26 @@
 }
 
 @media (max-width: 720px) {
+  .app-wrapper:has(.questions-page) .navbar {
+    position: fixed;
+  }
+
+  .page-container:has(.questions-page) {
+    margin-bottom: 0;
+  }
+
   .questions-page {
     width: 100%;
     max-width: 100vw;
     overflow-x: hidden;
-    padding: 20px 12px 56px;
+    padding: 20px 12px calc(12px + var(--mobile-nav-height));
+  }
+
+  .question-reading-toggle {
+    position: static;
+    display: flex;
+    width: fit-content;
+    margin: 0 0 18px auto;
   }
 
   .questions-header,
@@ -1290,9 +1327,9 @@
   .questions-header p {
     max-width: 100%;
     font-size: 14px;
-    line-break: anywhere;
-    overflow-wrap: anywhere;
-    word-break: break-all;
+    line-break: strict;
+    overflow-wrap: break-word;
+    word-break: keep-all;
   }
 
   .questions-filter {
@@ -1434,7 +1471,7 @@
 
   .question-detail h2 {
     margin-right: 0;
-    padding-right: 86px;
+    padding-right: 0;
     font-size: clamp(28px, 9vw, 40px);
   }
 

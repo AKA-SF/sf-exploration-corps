@@ -1,4 +1,5 @@
 import { MessageSquare, Send } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export default function QuestionWritePanel({
   authorName,
@@ -16,6 +17,7 @@ export default function QuestionWritePanel({
         <span>WRITE POST</span>
         <h2>새 글 쓰기</h2>
         <p>{isAuthenticated ? `${authorName} 대원 계정으로 저장됩니다.` : '로그인한 대원만 글을 저장할 수 있습니다.'}</p>
+        {!isAuthenticated && <Link className="question-login-link" to="/login">로그인하기</Link>}
       </div>
 
       <form className="question-form" onSubmit={onSubmit}>
@@ -24,7 +26,6 @@ export default function QuestionWritePanel({
           <input
             name="title"
             onChange={onChange}
-            placeholder="예: 인간과 인공지능의 경계는 어디서 무너질까?"
             type="text"
             value={form.title}
           />
@@ -35,7 +36,6 @@ export default function QuestionWritePanel({
           <textarea
             name="content"
             onChange={onChange}
-            placeholder="작품명, 장면, 떠오른 생각을 자유롭게 적어주세요."
             rows="7"
             value={form.content}
           />
@@ -56,14 +56,13 @@ export default function QuestionWritePanel({
           <input
             name="attachmentUrl"
             onChange={onChange}
-            placeholder="자료 파일, 이미지, 참고 링크 URL"
             type="url"
             value={form.attachmentUrl}
           />
         </label>
 
         <div className="question-form-actions">
-          <p className={`question-status is-${status}`}>
+          <p aria-live="polite" className={`question-status is-${status}`} role="status">
             {status === 'success' && message}
             {status === 'error' && message}
             {status === 'submitting' && '새 글을 저장 중입니다.'}

@@ -9,6 +9,7 @@ export default function QuestionsBoard({
   loadStatus,
   onCategoryChange,
   onLoadMore,
+  onQuestionSelect,
   questions,
   visibleQuestions,
 }) {
@@ -53,7 +54,13 @@ export default function QuestionsBoard({
           <span>조회수</span>
         </div>
         {visibleQuestions.length > 0 ? visibleQuestions.map(question => (
-          <Link className="question-row" key={question.id} to={`/questions/${question.id}`}>
+          <Link
+            className="question-row"
+            key={question.id}
+            onClick={() => onQuestionSelect(question)}
+            state={{ question }}
+            to={`/questions/${question.id}`}
+          >
             <span className="question-code">{question.code}</span>
             <span className="question-category">{normalizeQuestionCategory(question.category)}</span>
             <strong>

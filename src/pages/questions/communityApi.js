@@ -23,7 +23,9 @@ function toQueryString(query = {}) {
 async function parseCommunityResponse(response, fallbackMessage) {
   const data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    throw new Error(data?.notion?.message || data?.error || fallbackMessage);
+    const error = new Error(data?.notion?.message || data?.error || fallbackMessage);
+    error.status = response.status;
+    throw error;
   }
   return data;
 }

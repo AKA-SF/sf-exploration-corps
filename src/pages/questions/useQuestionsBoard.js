@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useActivityToast } from '../../context/activityToastContextValue';
 import { recordUserActivity } from '../../lib/activityLogger';
 import {
@@ -40,11 +40,13 @@ const getOwnerToken = user => {
   return '';
 };
 
-export default function useQuestionsBoard({ onQuestionDeleted, questionId, user }) {
+export default function useQuestionsBoard({ onQuestionDeleted, questionId, questionPreview, user }) {
   const { showActivityToast } = useActivityToast();
+  const detailRequestSequence = useRef(0);
   const [questions, setQuestions] = useState(fallbackQuestions);
-  const [activeQuestion, setActiveQuestion] = useState(null);
+  const [activeQuestion, setActiveQuestion] = useState(questionPreview ?? null);
   const [comments, setComments] = useState([]);
+  const [commentsLoadStatus, setCommentsLoadStatus] = useState(questionId ? 'loading' : 'idle');
   const [questionForm, setQuestionForm] = useState(emptyQuestionForm);
   const [commentForm, setCommentForm] = useState(emptyCommentForm);
   const [questionEditForm, setQuestionEditForm] = useState(emptyQuestionForm);
@@ -85,18 +87,31 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     loadQuestions({ cursor: nextCursor, append: true });
   }, [hasMoreQuestions, loadQuestions, nextCursor]);
 
+  const prepareQuestionDetail = useCallback(question => {
+    detailRequestSequence.current += 1;
+    setActiveQuestion(question);
+    setComments([]);
+    setCommentsLoadStatus('loading');
+    setLoadStatus('loading');
+  }, []);
+
   const loadQuestionDetail = useCallback(async id => {
+    const requestSequence = ++detailRequestSequence.current;
     const ownerToken = getOwnerToken(user);
     fetchCommunityQuestionDetail({ id, ownerToken })
       .then(data => {
+        if (requestSequence !== detailRequestSequence.current) return;
         setActiveQuestion(data.question);
         setComments(Array.isArray(data.comments) ? data.comments : []);
+        setCommentsLoadStatus('ready');
         setLoadStatus('ready');
       })
-      .catch(() => {
+      .catch(error => {
+        if (requestSequence !== detailRequestSequence.current) return;
         setActiveQuestion(null);
         setComments([]);
-        setLoadStatus('error');
+        setCommentsLoadStatus('error');
+        setLoadStatus(error?.status === 404 ? 'not-found' : 'error');
       });
   }, [user]);
 
@@ -104,6 +119,7 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     if (questionId) {
       loadQuestionDetail(questionId);
     } else {
+      detailRequestSequence.current += 1;
       loadQuestions();
     }
   }, [loadQuestionDetail, loadQuestions, questionId]);
@@ -402,6 +418,7 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     commentForm,
     commentMessage,
     comments,
+    commentsLoadStatus,
     commentStatus,
     deleteComment,
     deleteQuestion,
@@ -410,6 +427,7 @@ export default function useQuestionsBoard({ onQuestionDeleted, questionId, user 
     hasMoreQuestions,
     loadStatus,
     loadMoreQuestions,
+    prepareQuestionDetail,
     questionEditForm,
     questionEditMessage,
     questionEditStatus,

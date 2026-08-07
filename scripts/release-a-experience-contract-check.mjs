@@ -20,13 +20,14 @@ test('저장 결과는 가짜 분석이나 인위적인 대기 없이 비공개 
   assert.doesNotMatch(page, /setTimeout|RISK|GALACTIC_COORD|뇌파|위험/);
 });
 
-test('개인 화면은 CRT와 노이즈 없이 HomeV2의 조용한 관측소 배경을 공유한다', async () => {
-  const [background, appCss] = await Promise.all([
-    read('src/components/InteractiveBackground.jsx'),
+test('개인 화면은 회전 장식 없이 HomeV2의 조용한 관측소 배경을 공유한다', async () => {
+  const [app, appCss] = await Promise.all([
+    read('src/App.jsx'),
     read('src/App.css'),
   ]);
 
-  assert.doesNotMatch(background, /className={`noise-bg|className={`crt-overlay|className="scanline"/);
+  assert.doesNotMatch(app, /InteractiveBackground/);
+  assert.doesNotMatch(appCss, /\.geo-spin|\.geo-triangle|\.bg-geometry/);
   assert.match(appCss, /\.page-container:has\(\.log-entry-container\)/);
   assert.match(appCss, /\.page-container:has\(\.profile-home\)/);
   assert.match(appCss, /radial-gradient\(circle at 78% 10%, rgba\(21, 149, 151, 0\.14\)/);

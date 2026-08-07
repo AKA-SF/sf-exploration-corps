@@ -10,6 +10,7 @@ const triggerPath = 'supabase/migrations/20260805012000_update_sf_discovery_stat
 const triggerRepairPath = 'supabase/migrations/20260805013000_repair_sf_discovery_trigger.sql';
 const editorialPath = 'supabase/migrations/20260806012000_add_sf_editorial_articles.sql';
 const publishedEditRepairPath = 'supabase/migrations/20260806021000_allow_published_sf_discovery_edits.sql';
+const discussionPath = 'supabase/migrations/20260807010000_add_sf_discovery_discussions.sql';
 
 test('editing published discoveries preserves publication until an explicit state transition', async () => {
   const { normalizeDiscoveryInput, publishedEditorialWorkflowChanged } = await import('../src/features/sf-discoveries/sfDiscoveryInput.js');
@@ -127,11 +128,16 @@ test('publication status trigger remains valid after the legacy boolean column i
   assert.doesNotMatch(trigger, /new\.is_published/i);
 });
 
-test('public API is read-only and admin writes stay behind the authenticated Supabase repository', async () => {
+test('public discovery writes stay admin-only while comments require an authenticated same-origin request', async () => {
   const api = await read('api/discoveries.js');
   const repository = await read('src/features/sf-discoveries/sfDiscoveryRepository.js');
 
-  assert.match(api, /request\.method !== 'GET'/);
+  assert.match(api, /request\.method === 'POST'/);
+  assert.match(api, /requireAuthenticatedUser/);
+  assert.match(api, /verifySameOrigin/);
+  assert.match(api, /create_sf_discovery_comment/);
+  assert.match(api, /get_sf_discovery_comments/);
+  assert.match(api, /private, no-store/);
   assert.match(api, /get_published_sf_discoveries/);
   assert.match(repository, /hasAdminRole/);
   assert.match(repository, /\.from\('sf_discoveries'\)/);
@@ -142,10 +148,45 @@ test('public API is read-only and admin writes stay behind the authenticated Sup
   assert.match(repository, /deleteDiscovery[\s\S]*\.eq\('updated_at', updatedAt\)/);
 });
 
+test('discovery discussion migration exposes only reviewed comment fields and published parent records', async () => {
+  const sql = await read(discussionPath);
+  const listRpc = sql.match(/create function public\.get_sf_discovery_comments[\s\S]*?\$\$;/i)?.[0] ?? '';
+  const createRpc = sql.match(/create function public\.create_sf_discovery_comment[\s\S]*?\$\$;/i)?.[0] ?? '';
+  const listReturns = listRpc.match(/returns table\s*\(([^)]+)\)/is)?.[1] ?? '';
+
+  assert.match(sql, /create table public\.sf_discovery_comments/i);
+  assert.match(sql, /references public\.sf_discoveries\(id\) on delete cascade/i);
+  assert.match(sql, /revoke all on public\.sf_discovery_comments from public, anon, authenticated/i);
+  assert.match(sql, /author_text\s+text/i);
+  assert.match(sql, /publisher_text\s+text/i);
+  assert.match(listRpc, /publication_status\s*=\s*'PUBLISHED'/i);
+  assert.match(listRpc, /published_at\s*<=\s*now\(\)/i);
+  assert.match(listRpc, /order by c\.created_at desc, c\.id desc\s+limit 100/i);
+  assert.match(listRpc, /order by recent\.created_at asc, recent\.id asc/i);
+  assert.match(listReturns, /author_name/i);
+  assert.match(listReturns, /body/i);
+  assert.doesNotMatch(listReturns, /user_id/i);
+  assert.match(createRpc, /auth\.uid\(\)/i);
+  assert.match(createRpc, /auth\.jwt\(\)\s*->\s*'user_metadata'/i);
+  assert.doesNotMatch(createRpc, /p_author_name/i);
+  assert.match(createRpc, /char_length\(normalized_body\)\s+between\s+1\s+and\s+1000/i);
+  assert.match(createRpc, /publication_status\s*=\s*'PUBLISHED'/i);
+  assert.match(sql, /grant execute on function public\.get_sf_discovery_comments[\s\S]*to anon, authenticated/i);
+  assert.match(sql, /grant execute on function public\.create_sf_discovery_comment[\s\S]*to authenticated/i);
+});
+
 test('Home and the discovery archive expose only real sourced items with loading, empty and error states', async () => {
+  const { discoverySourceLinkLabel } = await import('../src/features/sf-discoveries/sfDiscoveryPresentation.js');
   const app = await read('src/App.jsx');
   const home = await read('src/pages/HomeV2.jsx');
+  const homeCss = await read('src/pages/HomeV2.css');
+  const navbar = await read('src/components/Navbar.jsx');
   const page = await read('src/pages/SfDiscoveries.jsx');
+  const pageCss = await read('src/pages/SfDiscoveries.css');
+  const editorialCss = await read('src/components/editorial/EditorialArticle.css');
+  const presentation = await read('src/features/sf-discoveries/sfDiscoveryPresentation.js');
+  const dialog = await read('src/features/sf-discoveries/SfDiscoveryDialog.jsx');
+  const dialogCss = await read('src/features/sf-discoveries/SfDiscoveryDialog.css');
   const homeApi = await read('api/home-feed.js');
 
   assert.match(app, /import\('\.\/pages\/SfDiscoveries'\)/);
@@ -154,6 +195,35 @@ test('Home and the discovery archive expose only real sourced items with loading
   assert.match(home, /discoveriesUnavailable/);
   assert.match(home, /새로 포착된 SF/);
   assert.match(home, /to="\/discover"/);
+  assert.match(home, /home-v2-news__cover/);
+  assert.match(home, /item\.image_url/);
+  assert.match(home, /discoverySourceLinkLabel\(item\)/);
+  const topNavigation = home.slice(
+    home.indexOf('<nav className="home-v2-header__nav"'),
+    home.indexOf('</nav>', home.indexOf('<nav className="home-v2-header__nav"')),
+  );
+  assert.doesNotMatch(topNavigation, /to="\/questions">커뮤니티<\/Link>/);
+  assert.match(navbar, /to="\/questions"/);
+  assert.match(navbar, /커뮤니티/);
+  assert.match(home, /item\.author_text/);
+  assert.match(home, /item\.publisher_text/);
+  assert.match(home, /home-v2-news__summary/);
+  assert.match(home, /SfDiscoveryDialog/);
+  assert.match(homeCss, /\.home-v2-news__cover\s*\{[^}]*aspect-ratio:\s*2\s*\/\s*3/s);
+  assert.match(homeCss, /\.home-v2-news__cover img[\s\S]*object-fit:\s*contain/);
+  assert.match(homeCss, /\.home-v2-news__summary\s*\{[^}]*-webkit-line-clamp:\s*4/s);
+  assert.match(dialog, /role="dialog"/);
+  assert.match(dialog, /aria-modal="true"/);
+  assert.match(dialog, /Escape/);
+  assert.match(dialog, /document\.body\.style\.overflow\s*=\s*'hidden'/);
+  assert.match(dialog, /createPortal/);
+  assert.match(dialog, /fetchDiscoveryComments/);
+  assert.match(dialog, /createDiscoveryComment/);
+  assert.match(dialog, /commentLoadStatus\s*===\s*'error'/);
+  assert.match(dialog, /commentLoadStatus\s*===\s*'ready'\s*&&\s*comments\.length\s*===\s*0/);
+  assert.match(dialog, /다시 시도/);
+  assert.match(dialogCss, /object-fit:\s*contain/);
+  assert.match(dialogCss, /@media\s*\(max-width:\s*720px\)/);
   assert.match(page, /\/api\/discoveries/);
   assert.match(page, /정보를 불러오는 중/);
   assert.match(page, /현재 공개된 관측 정보가 없습니다/);
@@ -162,6 +232,16 @@ test('Home and the discovery archive expose only real sourced items with loading
   assert.match(page, /target="_blank"/);
   assert.match(page, /rel="noreferrer"/);
   assert.match(page, /스포일러 보호를 위해 요약을 숨겼습니다/);
+  assert.match(page, /discoverySourceLinkLabel\(item\)/);
+  assert.match(page, /alt=\{item\.image_alt \|\| `\$\{item\.title\} 표지`\}/);
+  assert.match(pageCss, /\.sf-discovery-card__image\s*\{[^}]*object-fit:\s*contain/s);
+  assert.match(editorialCss, /\.editorial-book__cover\s*\{[^}]*object-fit:\s*contain/s);
+  assert.match(home, /home-v2-news__footer/);
+  assert.match(homeCss, /\.home-v2-news__footer\s*\{/);
+  assert.doesNotMatch(homeCss, /\.home-v2-news__card\s*>\s*div\s*\{/);
+  assert.match(presentation, /알라딘 링크/);
+  assert.equal(discoverySourceLinkLabel({ source_name: '알라딘 SF 신간 API', source_url: 'https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=1' }), '알라딘 링크');
+  assert.equal(discoverySourceLinkLabel({ source_name: '출판사', source_url: 'https://publisher.example/book' }), '출판사에서 원문 확인');
   assert.match(homeApi, /discoveriesUnavailable:\s*discoveriesResult\.status !== 'fulfilled'/);
   assert.match(homeApi, /preferStale:\s*false/);
   assert.match(homeApi, /Cache-Control', 'no-store'/);

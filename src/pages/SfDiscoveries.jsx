@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ArrowLeft, ArrowUpRight, CalendarDays, Newspaper, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { discoverySourceLinkLabel } from '../features/sf-discoveries/sfDiscoveryPresentation';
 import './SfDiscoveries.css';
 
 const KIND_OPTIONS = [
@@ -45,7 +46,7 @@ function DiscoveryCard({ item }) {
         <span>{KIND_LABELS[item.kind] || 'SF 정보'}</span>
         <span>{MEDIA_LABELS[item.media_type] || '기타'}</span>
       </div>
-      {item.image_url && <img alt={item.image_alt} className="sf-discovery-card__image" loading="lazy" src={item.image_url} />}
+      {item.image_url && <img alt={item.image_alt || `${item.title} 표지`} className="sf-discovery-card__image" loading="lazy" src={item.image_url} />}
       <div className="sf-discovery-card__body">
         <h2>{item.title}</h2>
         {item.is_spoiler && <span className="sf-discovery-card__spoiler">스포일러 포함</span>}
@@ -59,7 +60,7 @@ function DiscoveryCard({ item }) {
         <Link to={`/discover/${item.slug}`}>편집 추천 읽기 <ArrowUpRight aria-hidden="true" /></Link>
       ) : (
         <a href={item.source_url} rel="noreferrer" target="_blank">
-          {item.source_name}에서 원문 확인 <ArrowUpRight aria-hidden="true" />
+          {discoverySourceLinkLabel(item)} <ArrowUpRight aria-hidden="true" />
         </a>
       )}
     </article>

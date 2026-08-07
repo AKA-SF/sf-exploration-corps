@@ -20,7 +20,7 @@ export function shouldResolveWorkCover(index, coverLimit) {
 }
 
 export function hydrateSelectedWorkCovers(works, {
-  aladinApiKey = process.env.ALADIN_TTB_KEY || process.env.VITE_ALADIN_TTB_KEY,
+  aladinApiKey = process.env.ALADIN_TTB_KEY,
   resolveCover = getCachedAladinCover,
 } = {}) {
   return mapWithConcurrency(Array.isArray(works) ? works : [], 4, async work => ({
@@ -215,7 +215,7 @@ export async function loadWorksSnapshot({ coverLimit, includeCovers = false, ref
     throw error;
   }
 
-  const aladinApiKey = process.env.ALADIN_TTB_KEY || process.env.VITE_ALADIN_TTB_KEY;
+  const aladinApiKey = process.env.ALADIN_TTB_KEY;
   return includeCovers
     ? getWorksWithCovers(token, databaseId, mediaWorksDatabaseId, aladinApiKey, refresh, coverLimit)
     : getWorksWithoutCovers(token, databaseId, mediaWorksDatabaseId, refresh);
@@ -236,7 +236,7 @@ export default async function handler(request, response) {
   const {
     databaseId: mediaWorksDatabaseId,
   } = getNotionConfig('NOTION_MEDIA_WORKS_DATABASE_ID', DEFAULT_MEDIA_WORKS_DATABASE_ID);
-  const aladinApiKey = process.env.ALADIN_TTB_KEY || process.env.VITE_ALADIN_TTB_KEY;
+  const aladinApiKey = process.env.ALADIN_TTB_KEY;
   const requestUrl = new URL(request.url ?? '/api/works', `https://${request.headers.host ?? 'localhost'}`);
   const shouldRefresh = requestUrl.searchParams.get('refresh') === '1';
   const shouldIncludeCovers = requestUrl.searchParams.get('covers') !== '0';

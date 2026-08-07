@@ -20,13 +20,8 @@ npm run dev
 http://127.0.0.1:5174
 ```
 
-로컬에서 알라딘 API를 쓰려면 `.env`에 아래 값을 넣습니다.
-
-```env
-VITE_ALADIN_TTB_KEY=your_aladin_ttb_key_here
-```
-
-`.env`는 GitHub에 올리지 않습니다.
+알라딘 키는 브라우저용 `VITE_*` 환경변수에 넣지 않습니다. 로컬에서 실제 API를 확인할 때도
+Vercel server runtime을 사용하고 `ALADIN_TTB_KEY`를 server-only secret으로 설정합니다.
 
 ## Production API Proxy
 
@@ -43,7 +38,7 @@ Vercel 환경변수에는 아래 값을 넣습니다.
 ALADIN_TTB_KEY=your_aladin_ttb_key_here
 ```
 
-로컬 개발용 `VITE_ALADIN_TTB_KEY`와 배포용 `ALADIN_TTB_KEY`는 역할이 다릅니다.
+이 값은 GitHub, `.env` 예시, URL, 브라우저 bundle에 기록하지 않습니다.
 
 ## Deploy On Vercel
 

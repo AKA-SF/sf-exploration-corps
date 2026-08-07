@@ -5,7 +5,6 @@ import { Analytics } from '@vercel/analytics/react';
 import './App.css';
 
 import Navbar from './components/Navbar';
-import InteractiveBackground from './components/InteractiveBackground';
 import { ActivityToastProvider } from './context/ActivityToastContext';
 import { AuthProvider } from './context/AuthContext';
 import { MobileActionLayerProvider } from './context/MobileActionLayerContext';
@@ -92,7 +91,6 @@ function App() {
         <MobileActionLayerProvider value={mobileActionLayer}>
           <div className={`${isAdminSurface ? 'mobile-container desktop-admin' : isDesktopSurface ? 'mobile-container desktop-home' : isDeviceSurface ? 'mobile-container device-surface' : 'mobile-container'} ${isAdminSurface ? 'admin-mode' : isReadingMode ? 'reading-mode' : 'console-mode'} ${isLowPowerSurface ? 'low-power-surface' : ''}`}>
           <div className="app-wrapper">
-            {!isAdminSurface && <InteractiveBackground lowPower={isLowPowerSurface} />}
             {supportsSiteMode && (
               <button
                 className="site-mode-toggle"

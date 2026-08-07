@@ -35,7 +35,7 @@
 .editorial-book__cover-link { display: grid; gap: 10px; color: #8fa6a4; font-size: 10px; }
 .editorial-book__cover-link span { display: flex; align-items: center; gap: 5px; }
 .editorial-book__cover-link svg { width: 13px; }
-.editorial-book__cover { width: min(100%, 240px); aspect-ratio: 2 / 3; object-fit: cover; border: 1px solid color-mix(in srgb, var(--book-signal) 42%, transparent); box-shadow: 14px 18px 42px rgba(0, 0, 0, 0.3); }
+.editorial-book__cover { display: block; width: min(100%, 240px); aspect-ratio: 2 / 3; object-fit: contain; border: 1px solid color-mix(in srgb, var(--book-signal) 42%, transparent); background: #03080c; box-shadow: 14px 18px 42px rgba(0, 0, 0, 0.3); }
 .editorial-book__cover-empty { width: min(100%, 240px); aspect-ratio: 2 / 3; display: grid; place-items: center; align-content: center; gap: 12px; color: #809391; border: 1px dashed rgba(115, 238, 229, 0.25); }
 .editorial-book__bibliography { display: grid; gap: 8px; margin: 0; font-size: 11px; }
 .editorial-book__bibliography div { display: grid; grid-template-columns: 54px 1fr; gap: 8px; }

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { PenLine, X } from 'lucide-react';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
@@ -12,12 +12,21 @@ import useQuestionsBoard from './questions/useQuestionsBoard';
 import './Questions.css';
 import '../styles/MobileExperience.css';
 
+function focusableElements(container) {
+  if (!container) return [];
+  return [...container.querySelectorAll('a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])')];
+}
+
 export default function Questions() {
   const { questionId } = useParams();
+  const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const [localReadingMode, setLocalReadingMode] = useState(false);
   const [isComposerOpen, setIsComposerOpen] = useState(false);
+  const composerTriggerRef = useRef(null);
+  const composerDialogRef = useRef(null);
+  const composerCloseRef = useRef(null);
   const {
     activeCategory,
     activeQuestion,
@@ -33,6 +42,7 @@ export default function Questions() {
     commentForm,
     commentMessage,
     comments,
+    commentsLoadStatus,
     commentStatus,
     deleteComment,
     deleteQuestion,
@@ -41,6 +51,7 @@ export default function Questions() {
     isQuestionEditing,
     loadStatus,
     loadMoreQuestions,
+    prepareQuestionDetail,
     questionEditForm,
     questionEditMessage,
     questionEditStatus,
@@ -60,15 +71,53 @@ export default function Questions() {
     visibleQuestions,
   } = useQuestionsBoard({
     questionId,
+    questionPreview: questionId && location.state?.question?.id === questionId ? location.state.question : null,
     user,
     onQuestionDeleted: () => navigate('/questions'),
   });
+
+  useEffect(() => {
+    if (!isComposerOpen) return undefined;
+
+    const composerTrigger = composerTriggerRef.current;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    composerCloseRef.current?.focus();
+
+    const onKeyDown = event => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setIsComposerOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const focusable = focusableElements(composerDialogRef.current);
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      composerTrigger?.focus();
+    };
+  }, [isComposerOpen]);
 
   if (questionId) {
     return (
       <PageTransition className="questions-page">
         <QuestionsHeader
-          count={`${comments.length} COMMENTS`}
+          count={commentsLoadStatus === 'loading' ? 'COMMENTS LOADING' : `${comments.length} COMMENTS`}
           description="게시글 전체 내용과 댓글을 확인하는 공간입니다."
           eyebrow="COMMUNITY POST"
           homeLink="/questions"
@@ -91,25 +140,28 @@ export default function Questions() {
           onReadingModeToggle={() => setLocalReadingMode(value => !value)}
         />
 
-        <CommentsPanel
-          authorName={authorName}
-          editForm={commentEditForm}
-          editMessage={commentEditMessage}
-          editingCommentId={editingCommentId}
-          editStatus={commentEditStatus}
-          comments={comments}
-          form={commentForm}
-          isAuthenticated={Boolean(user)}
-          message={commentMessage}
-          onChange={updateCommentForm}
-          onDeleteComment={deleteComment}
-          onEditCancel={cancelCommentEdit}
-          onEditChange={updateCommentEditForm}
-          onEditStart={beginCommentEdit}
-          onEditSubmit={submitCommentEdit}
-          onSubmit={submitComment}
-          status={commentStatus}
-        />
+        {activeQuestion && (
+          <CommentsPanel
+            authorName={authorName}
+            editForm={commentEditForm}
+            editMessage={commentEditMessage}
+            editingCommentId={editingCommentId}
+            editStatus={commentEditStatus}
+            comments={comments}
+            form={commentForm}
+            isAuthenticated={Boolean(user)}
+            loadStatus={commentsLoadStatus}
+            message={commentMessage}
+            onChange={updateCommentForm}
+            onDeleteComment={deleteComment}
+            onEditCancel={cancelCommentEdit}
+            onEditChange={updateCommentEditForm}
+            onEditStart={beginCommentEdit}
+            onEditSubmit={submitCommentEdit}
+            onSubmit={submitComment}
+            status={commentStatus}
+          />
+        )}
       </PageTransition>
     );
   }
@@ -130,20 +182,21 @@ export default function Questions() {
         loadStatus={loadStatus}
         onCategoryChange={setActiveCategory}
         onLoadMore={loadMoreQuestions}
+        onQuestionSelect={prepareQuestionDetail}
         questions={questions}
         visibleQuestions={visibleQuestions}
       />
 
-      <button className="question-write-fab" onClick={() => setIsComposerOpen(true)} type="button">
+      <button className="question-write-fab" onClick={() => setIsComposerOpen(true)} ref={composerTriggerRef} type="button">
         <PenLine aria-hidden="true" />
         <span>새 글 쓰기</span>
       </button>
 
       {isComposerOpen && (
         <div className="question-write-modal" role="dialog" aria-modal="true" aria-label="새 글 쓰기">
-          <button className="question-write-backdrop" onClick={() => setIsComposerOpen(false)} type="button" aria-label="글쓰기 닫기" />
-          <div className="question-write-dialog">
-            <button className="question-write-close" onClick={() => setIsComposerOpen(false)} type="button">
+          <div aria-hidden="true" className="question-write-backdrop" onClick={() => setIsComposerOpen(false)} />
+          <div className="question-write-dialog" ref={composerDialogRef}>
+            <button className="question-write-close" onClick={() => setIsComposerOpen(false)} ref={composerCloseRef} type="button">
               <X aria-hidden="true" />
               닫기
             </button>
