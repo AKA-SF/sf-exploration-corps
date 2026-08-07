@@ -95,7 +95,9 @@ export async function loadMediaSnapshot({ refresh = false } = {}) {
 }
 
 export default async function handler(request, response) {
-  response.setHeader('Cache-Control', 'public, s-maxage=600, stale-while-revalidate=1800');
+  // The durable archive snapshot is refreshed immediately after an import.
+  // Do not let a CDN retain an older media list after that refresh succeeds.
+  response.setHeader('Cache-Control', 'no-store');
 
   if (request.method !== 'GET') {
     response.setHeader('Allow', 'GET');

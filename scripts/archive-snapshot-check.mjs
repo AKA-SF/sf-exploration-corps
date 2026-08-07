@@ -191,10 +191,12 @@ test('archive snapshot storage is deployed as a migration and refresh is manuall
 
 test('home-feed and archive-sync endpoints are present', async () => {
   const homeFeed = await read('api/home-feed.js');
+  const media = await read('api/media.js');
   const home = await read('src/pages/HomeV2.jsx');
   const sync = await read('api/archive-sync.js');
 
   assert.match(homeFeed, /getDurableCachedJson/);
+  assert.match(media, /Cache-Control', 'no-store'/);
   assert.match(homeFeed, /buildHomeFeed/);
   assert.match(homeFeed, /get_published_sf_discoveries/);
   assert.match(homeFeed, /discoveries:\s*discoveriesResult\.status === 'fulfilled'/);
