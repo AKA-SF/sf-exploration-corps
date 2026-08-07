@@ -10,15 +10,15 @@ export default function WorkArchiveFormPanel({
   status,
 }) {
   return (
-    <ModalShell ariaLabel="작품 아카이브 입력">
+    <ModalShell ariaLabel="작품 제보하기" className="work-detail-modal work-submit-modal">
       <article className="work-submit-panel">
         <header className="work-detail-head">
           <div>
             <span>NEW ARCHIVE SIGNAL</span>
-            <h3>작품 아카이브</h3>
-            <p>입력한 작품 신호는 노션 작품 아카이브 DB에 바로 저장됩니다.</p>
+            <h3>작품 제보하기</h3>
+            <p>SF 작품 정보를 입력하면 작품 아카이브에 저장됩니다.</p>
           </div>
-          <button onClick={onClose} type="button" aria-label="작품 아카이브 입력 닫기">×</button>
+          <button onClick={onClose} type="button" aria-label="작품 제보 창 닫기">×</button>
         </header>
 
         <form className="work-submit-form" onSubmit={onSubmit}>
@@ -81,13 +81,13 @@ export default function WorkArchiveFormPanel({
           </label>
           <div className="work-submit-actions">
             <p className={`work-comment-message is-${status}`}>
-              {status === 'idle' && '소설은 기존 책 DB에, 영화·게임·애니메이션은 별도 미디어 작품 DB에 저장됩니다.'}
-              {status === 'submitting' && '노션에 작품 신호를 저장 중입니다.'}
+              {status === 'idle' && '제목과 매체를 확인한 뒤 저장해 주세요.'}
+              {status === 'submitting' && '작품 정보를 저장 중입니다.'}
               {status !== 'idle' && status !== 'submitting' && message}
             </p>
             <button disabled={status === 'submitting'} type="submit">
               <Database aria-hidden="true" />
-              {status === 'submitting' ? '저장 중' : '노션에 저장'}
+              {status === 'submitting' ? '저장 중' : '작품 제보 저장'}
             </button>
           </div>
         </form>

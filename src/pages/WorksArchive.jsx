@@ -1,5 +1,5 @@
 import { useParams, useSearchParams } from 'react-router-dom';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
 import { getRandomWorks } from './home/homeUtils';
@@ -91,11 +91,23 @@ export default function WorksArchive() {
   });
   const relatedWorks = useMemo(() => getRelatedWorks(selectedWork, visibleWorks), [selectedWork, visibleWorks]);
   const requestedWorkCode = searchParams.get('work') || '';
+  const openedRoutedWorkCodeRef = useRef('');
 
   useEffect(() => {
-    if (!requestedWorkCode || selectedWork || status === 'loading') return;
+    if (!requestedWorkCode) {
+      openedRoutedWorkCodeRef.current = '';
+      return;
+    }
+    if (
+      selectedWork
+      || status === 'loading'
+      || openedRoutedWorkCodeRef.current === requestedWorkCode
+    ) return;
     const targetWork = works.find(work => work.code === requestedWorkCode);
-    if (targetWork) openWorkDetail(targetWork);
+    if (targetWork) {
+      openedRoutedWorkCodeRef.current = requestedWorkCode;
+      openWorkDetail(targetWork);
+    }
   }, [openWorkDetail, requestedWorkCode, selectedWork, status, works]);
 
   const closeRoutedWorkDetail = () => {

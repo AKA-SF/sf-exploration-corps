@@ -12,6 +12,9 @@ dist
 dist-ssr
 playwright-report/
 test-results/
+.hermes/
+.omh/
+.omc/
 
 # Local media/render outputs - keep these outside the public site bundle.
 av-generator-live/
