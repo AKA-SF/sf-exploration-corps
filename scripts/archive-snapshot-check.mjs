@@ -176,15 +176,16 @@ test('홈 피드는 CDN에 전날 응답을 남기지 않고 열린 화면도 �
   assert.match(home, /setTimeout/);
 });
 
-test('archive snapshot storage is deployed as a migration and refresh is scheduled', async () => {
+test('archive snapshot storage is deployed as a migration and refresh is manually dispatched', async () => {
   const migration = await read('supabase/migrations/20260804005000_create_public_archive_cache.sql');
   const vercel = JSON.parse(await read('vercel.json'));
   const githubSync = await read('.github/workflows/archive-snapshot-sync.yml');
 
   assert.match(migration, /create table if not exists public\.public_archive_cache/i);
   assert.match(migration, /revoke all on public\.public_archive_cache from anon, authenticated/i);
-  assert.ok(vercel.crons?.some(item => item.path === '/api/archive-sync'));
-  assert.match(githubSync, /\*\/15 \* \* \* \*/);
+  assert.ok(!vercel.crons?.some(item => item.path === '/api/archive-sync'));
+  assert.match(githubSync, /workflow_dispatch/);
+  assert.doesNotMatch(githubSync, /schedule:/);
   assert.match(githubSync, /ARCHIVE_SYNC_SECRET/);
 });
 
