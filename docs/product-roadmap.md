@@ -33,7 +33,9 @@ Home은 모든 기능을 축소해 모아 놓는 메가 대시보드가 아니�
 - 주 행동은 한 번에 하나가 명확해야 한다.
 - Home에 전체 검색·작성 폼·지도·설정·프로필 기능을 다시 합치지 않는다.
 - 전역 읽기 모드는 Home에서 렌더링하지 않는다.
-- 섹션 순서는 `탐사 순환 → 오늘의 발견 → 새로 포착된 SF → 최근 탐사 신호`를 기준으로 한다.
+- 섹션 순서는 `탐사 순환 → 오늘의 발견 → 새로 포착된 SF → 미디어 아카이브 → 최근 탐사 신호 → Contact`를 기준으로 한다.
+- Home 미디어는 통합 피드의 최신 실제 자료를 최대 2개만 표시하고, embed·autoplay·carousel·중복 검색/분류 UI를 추가하지 않는다.
+- Contact는 커뮤니티 참여와 협업 문의를 분리해 실제 `https`·`mailto` 링크로 제공하고, 큰 홍보 CTA보다 조용한 footer 접점을 우선한다.
 
 ### 데이터와 상태
 
@@ -57,6 +59,7 @@ Home은 모든 기능을 축소해 모아 놓는 메가 대시보드가 아니�
 - OAuth-only 계정에는 비밀번호 변경 작업을 노출하지 않는다.
 - 표시 이름은 auth metadata와 `profiles.nickname`을 동일 DB 트랜잭션에서 갱신하고 부분 성공 상태를 만들지 않는다.
 - localhost 화면 검토 모드는 실제 계정·세션·개인 기록을 만들거나 표시하지 않는다.
+- Google OAuth는 Google Cloud client·Supabase provider·Production/Preview redirect allow list·신규 profile 생성 회귀가 함께 검증된 뒤 별도 승인으로 활성화한다.
 
 ### 모바일
 
@@ -114,6 +117,10 @@ Home은 모든 기능을 축소해 모아 놓는 메가 대시보드가 아니�
 - [ ] 공개 RPC에서 spoiler 원문을 제거하는 transport redaction
 - [ ] 관리자 삭제에 `updated_at` 기반 낙관적 동시성 적용
 - [ ] migration smoke 식별자를 실행별 고유 값으로 변경
+
+### 계정
+
+- [ ] Google OAuth provider와 redirect allow list를 별도 Preview에서 구성하고, email 계정 연결·OAuth-only 비밀번호 UI·nickname profile 생성을 실제 테스트 계정으로 검증
 
 ### 운영
 
@@ -223,6 +230,13 @@ Admin 운영·자동화 계약:
 - Home의 `새로 포착된 SF`는 원본 비율 전체 표지, `제목 → 작가 → 출판사`, 제한된 요약을 제공한다.
 - 카드 상세는 같은 화면의 접근성 dialog로 열며 Escape·focus 순환/복귀·배경 스크롤 잠금·모바일 내부 스크롤을 보장한다.
 - 댓글은 공개 목록과 로그인 사용자 작성만 제공한다. 수정·반응·팔로우·알림·신고 UI는 이번 범위에 포함하지 않는다.
+
+2026-08-07 Home 미디어·Contact 로컬 구현 후보(Production 미승인):
+
+- `새로 포착된 SF`와 `최근 탐사 신호` 사이에 기존 `/api/home-feed.latestMedia` 최신 자료 최대 2개를 lazy thumbnail 카드로 연결한다.
+- Home에서는 YouTube thumbnail을 `sizes/srcset`으로 320·480·640px 중 화면 밀도에 맞춰 low-priority로 선택하고, 영상 embed·autoplay·추가 API·dependency를 도입하지 않는다.
+- 기존 마지막 대형 기록 CTA는 제거하고, footer에 카카오 오픈채팅과 `mailto:axismusic@naver.com` 협업 문의를 목적별로 분리한다.
+- Production 승격과 Google OAuth 활성화는 각각 별도의 명시적 사용자 승인을 요구한다.
 - 댓글 원본 테이블은 직접 공개하지 않고 projection RPC만 허용한다. 작성자 이름은 DB가 `auth.jwt()`에서 파생하고 `user_id`는 공개 응답에서 제거한다.
 - 상단과 모바일 하단 내비게이션의 `커뮤니티`는 기존 `/questions` 게시판으로 연결한다.
 - 출시 gate는 기능 30·데이터/권한 25·UX/접근성 20·모바일 15·회귀/재현성 10점, 총점 90점 이상·각 항목 70% 이상·P0/P1 0으로 한다.

@@ -128,7 +128,7 @@ export default function MediaArchive() {
         <div>
           <span>MEDIA ARCHIVE / FULL INDEX</span>
           <h1>{activeCategory.label}</h1>
-          <p>노션 미디어 아카이브에서 연결된 링크를 분류별로 모두 펼쳐보는 페이지입니다.</p>
+          <p>인터뷰와 영상, 고전 SF 영화를 분류별로 살펴보세요.</p>
         </div>
         <div className="media-archive-status">
           <Sparkles aria-hidden="true" />

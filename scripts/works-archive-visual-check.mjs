@@ -7,6 +7,7 @@ const archiveHeader = await readFile(new URL('../src/pages/works/WorksArchiveHea
 const archiveTabs = await readFile(new URL('../src/pages/works/WorksArchiveTabs.jsx', import.meta.url), 'utf8');
 const globalCss = await readFile(new URL('../src/index.css', import.meta.url), 'utf8');
 const mediaArchive = await readFile(new URL('../src/pages/MediaArchive.jsx', import.meta.url), 'utf8');
+const mediaArchiveCss = await readFile(new URL('../src/pages/MediaArchive.css', import.meta.url), 'utf8');
 const questionsBoard = await readFile(new URL('../src/pages/questions/QuestionsBoard.jsx', import.meta.url), 'utf8');
 
 test('works archive shares the quiet observatory palette with HomeV2', () => {
@@ -36,4 +37,12 @@ test('selected archive and board filters expose their state without relying on c
   assert.match(archiveTabs, /aria-current=.*['"]page['"]/);
   assert.match(mediaArchive, /aria-current=.*['"]page['"]/);
   assert.match(questionsBoard, /aria-pressed=\{activeCategory === category\}/);
+});
+
+test('media archive header uses product language and the shared flat archive hierarchy', () => {
+  assert.doesNotMatch(mediaArchive, /노션/);
+  assert.match(mediaArchive, /인터뷰와 영상, 고전 SF 영화를 분류별로 살펴보세요\./);
+  assert.match(mediaArchiveCss, /\.media-archive-header\s*\{[\s\S]*?border-bottom:\s*1px solid/);
+  assert.match(mediaArchiveCss, /\.media-back-link\s*\{[\s\S]*?min-height:\s*44px;[\s\S]*?border-radius:\s*999px;/);
+  assert.match(mediaArchiveCss, /\.media-archive-header p\s*\{[\s\S]*?word-break:\s*keep-all;/);
 });

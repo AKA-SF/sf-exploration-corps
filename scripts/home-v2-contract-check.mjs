@@ -41,8 +41,22 @@ test('Home2 has explicit loading, empty and error states', async () => {
   assert.match(home, /추천 작품 연결이 지연되고 있습니다/);
   assert.match(home, /sourceStatus\?\.concepts === 'unavailable'/);
   assert.match(home, /sourceStatus\?\.media === 'unavailable'/);
-  assert.match(home, /개념·미디어 연결이 지연되고 있습니다/);
+  assert.match(home, /미디어 자료 연결이 지연되고 있습니다/);
   assert.match(home, /일부 자료 연결 지연/);
+});
+
+test('Home2 places a capped media handoff before network and ends with direct contact routes', async () => {
+  const home = await read('src/pages/HomeV2.jsx');
+
+  assert.ok(home.indexOf('className="home-v2-news"') < home.indexOf('className="home-v2-media"'));
+  assert.ok(home.indexOf('className="home-v2-media"') < home.indexOf('className="home-v2-network"'));
+  assert.match(home, /feed\?\.latestMedia[\s\S]*\.slice\(0, 2\)/);
+  assert.match(home, /loading="lazy"/);
+  assert.match(home, /to="\/media\/media"/);
+  assert.match(home, /href="https:\/\/open\.kakao\.com\/o\/goYpZVui"/);
+  assert.match(home, /rel="noopener noreferrer"/);
+  assert.match(home, /href="mailto:axismusic@naver\.com"/);
+  assert.doesNotMatch(home, /당신이 읽은 SF는/);
 });
 
 test('Home2 radar represents only real public signals', async () => {

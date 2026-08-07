@@ -6,8 +6,12 @@ import {
   BookOpen,
   CircleDot,
   Compass,
+  ExternalLink,
   LogIn,
+  Mail,
+  MessageCircle,
   PenLine,
+  Play,
   Radio,
   Sparkles,
   UserRound,
@@ -44,6 +48,13 @@ function compactDate(value) {
 
 function workTitle(work) {
   return work?.title || work?.term || '미확인 작품 신호';
+}
+
+function homeMediaThumbnail(value = '', variant = 'mqdefault') {
+  return value.replace(
+    /\/(?:hq720|hqdefault|maxresdefault|mqdefault|sddefault)\.jpg(?=\?|$)/,
+    `/${variant}.jpg`,
+  );
 }
 
 function signalType(signal) {
@@ -155,6 +166,7 @@ function HomeV2() {
 
   const featuredWorks = feed?.featuredWorks ?? [];
   const latestDiscoveries = feed?.latestDiscoveries ?? [];
+  const latestMedia = (feed?.latestMedia ?? []).slice(0, 2);
   const signals = feed?.latestSignals ?? [];
   const sourceStatus = feed?.sourceStatus;
   const conceptsUnavailable = sourceStatus?.concepts === 'unavailable';
@@ -162,14 +174,8 @@ function HomeV2() {
   const signalsUnavailable = sourceStatus?.signals === 'unavailable';
   const worksUnavailable = sourceStatus?.works === 'unavailable';
   const hasPartialSourceFailure = Object.values(sourceStatus ?? {}).includes('unavailable');
-  const discoveryItem = feed?.featuredConcepts?.[0] || feed?.latestMedia?.[0];
-  const discoverySourceMessage = conceptsUnavailable && mediaUnavailable
-    ? '개념·미디어 연결이 지연되고 있습니다.'
-    : conceptsUnavailable
-      ? '개념 자료 연결이 지연되고 있습니다.'
-      : mediaUnavailable
-        ? '미디어 자료 연결이 지연되고 있습니다.'
-        : '';
+  const discoveryItem = feed?.featuredConcepts?.[0];
+  const discoverySourceMessage = conceptsUnavailable ? '개념 자료 연결이 지연되고 있습니다.' : '';
   const primaryAction = useMemo(() => {
     if (hasDraft) return { label: '작성 중인 기록 이어가기', to: '/log' };
     if (user) return { label: '새 탐사 시작하기', to: '/works/novels' };
@@ -192,8 +198,9 @@ function HomeV2() {
   const closeDiscovery = useCallback(() => setSelectedDiscovery(null), []);
 
   return (
-    <main className="home-v2">
-      <header className="home-v2-header">
+    <div className="home-v2">
+      <main>
+        <header className="home-v2-header">
         <Link className="home-v2-brand" to="/" aria-label="SF 탐사단 홈">
           <span className="home-v2-brand__mark" aria-hidden="true"><CircleDot /></span>
           <span><b>SF 탐사단</b><small className="mono">EXPLORATION CORPS</small></span>
@@ -405,6 +412,74 @@ function HomeV2() {
         )}
       </section>
 
+      <section className="home-v2-media" aria-labelledby="home-v2-media-title">
+        <div className="home-v2-section-heading home-v2-section-heading--row">
+          <div>
+            <p className="mono">확장 관측 · MEDIA SIGNALS</p>
+            <h2 id="home-v2-media-title">미디어 아카이브</h2>
+          </div>
+          <Link to="/media/media">미디어 아카이브 전체 보기 <ArrowRight aria-hidden="true" /></Link>
+        </div>
+
+        {feedStatus === 'loading' && (
+          <div className="home-v2-media__loading" role="status" aria-live="polite">
+            <span /><span /><b className="sr-only">미디어 신호를 불러오는 중입니다.</b>
+          </div>
+        )}
+        {(feedStatus === 'error' || mediaUnavailable) && (
+          <div className="home-v2-feed-state" role="alert">
+            <Play aria-hidden="true" />
+            <p><strong>미디어 자료 연결이 지연되고 있습니다.</strong>전체 아카이브는 계속 이용할 수 있습니다.</p>
+            <Link to="/media/media">미디어 아카이브 열기</Link>
+          </div>
+        )}
+        {feedStatus === 'ready' && !mediaUnavailable && latestMedia.length === 0 && (
+          <div className="home-v2-feed-state">
+            <Play aria-hidden="true" />
+            <p><strong>새 미디어 신호를 기다리고 있습니다.</strong>검증된 실제 자료만 이곳에 연결합니다.</p>
+            <Link to="/media/media">미디어 아카이브 열기</Link>
+          </div>
+        )}
+        {latestMedia.length > 0 && (
+          <div className="home-v2-media__grid">
+            {latestMedia.map(item => (
+              <a
+                className="home-v2-media__card"
+                href={item.link}
+                key={item.code}
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                <span className="home-v2-media__thumb">
+                  {item.thumbnail
+                    ? (
+                      <img
+                        alt=""
+                        decoding="async"
+                        fetchPriority="low"
+                        height="180"
+                        loading="lazy"
+                        sizes="(max-width: 360px) 96px, (max-width: 720px) 116px, (max-width: 900px) 42vw, 250px"
+                        src={homeMediaThumbnail(item.thumbnail)}
+                        srcSet={`${homeMediaThumbnail(item.thumbnail)} 320w, ${homeMediaThumbnail(item.thumbnail, 'hqdefault')} 480w, ${homeMediaThumbnail(item.thumbnail, 'sddefault')} 640w`}
+                        width="320"
+                      />
+                    )
+                    : <Play aria-hidden="true" />}
+                </span>
+                <span className="home-v2-media__body">
+                  <span className="home-v2-media__meta mono">{item.category || 'SF 미디어'} · {item.medium || '자료'}</span>
+                  <strong>{item.title}</strong>
+                  <span className="home-v2-media__description">{item.description || item.publisher || '연결된 SF 미디어 신호입니다.'}</span>
+                  <small>{[item.publisher, item.date || item.year].filter(Boolean).join(' · ')}</small>
+                  <span className="home-v2-media__open">새 창에서 자료 보기 <ExternalLink aria-hidden="true" /></span>
+                </span>
+              </a>
+            ))}
+          </div>
+        )}
+      </section>
+
       <section className="home-v2-network" aria-labelledby="home-v2-network-title">
         <div className="home-v2-section-heading home-v2-section-heading--row">
           <div><p className="mono">공개 중계 · PUBLIC RELAY</p><h2 id="home-v2-network-title">최근 탐사 신호</h2></div>
@@ -423,21 +498,40 @@ function HomeV2() {
         )}
       </section>
 
-      <section className="home-v2-final-cta">
-        <span className="mono">당신의 신호 · YOUR SIGNAL MATTERS</span>
-        <h2>당신이 읽은 SF는<br />어떤 미래를 남겼나요?</h2>
-        <Link className="home-v2-button home-v2-button--primary" onClick={() => trackHomeAction(hasDraft ? 'resume' : 'log', 'final_cta')} to="/log">{hasDraft ? '작성 중인 기록 이어가기' : '탐사 기록 시작하기'} <ArrowRight aria-hidden="true" /></Link>
-      </section>
-
-      <footer className="home-v2-footer">
-        <span>SF 탐사단 · Seoul Sector</span>
-        <nav aria-label="보조 메뉴"><Link to="/questions">커뮤니티</Link><Link to="/exploration-log">리뷰 아카이브</Link><Link to="/profile">내 정보</Link></nav>
-        <span className="mono">{feed?.syncedAt
-          ? `${hasPartialSourceFailure ? '일부 자료 연결 지연' : feedCacheStatus.includes('STALE') ? '마지막 정상 자료' : '자료 갱신'} · ${compactDate(feed.syncedAt)}`
-          : '자료 연결 대기 중'}</span>
+      </main>
+      <footer className="home-v2-contact" aria-labelledby="home-v2-contact-title">
+        <div className="home-v2-contact__intro">
+          <span className="mono">CONTACT · OPEN CHANNEL</span>
+          <h2 id="home-v2-contact-title">탐사단과 연결하기</h2>
+          <p>함께 SF를 읽고 이야기하거나, 새로운 협업을 제안해 주세요.</p>
+        </div>
+        <div className="home-v2-contact__channels">
+          <a
+            className="home-v2-contact__link"
+            href="https://open.kakao.com/o/goYpZVui"
+            rel="noopener noreferrer"
+            target="_blank"
+          >
+            <MessageCircle aria-hidden="true" />
+            <span><small className="mono">COMMUNITY</small><strong>SF 탐사단 오픈채팅방 참여하기</strong><span>읽은 작품과 새로운 SF 소식을 가볍게 나눕니다.</span></span>
+            <ExternalLink aria-hidden="true" />
+          </a>
+          <a className="home-v2-contact__link" href="mailto:axismusic@naver.com">
+            <Mail aria-hidden="true" />
+            <span><small className="mono">COLLABORATION</small><strong>협업 문의</strong><span>axismusic@naver.com</span></span>
+            <ArrowRight aria-hidden="true" />
+          </a>
+        </div>
+        <div className="home-v2-footer home-v2-contact__utility">
+          <span>SF 탐사단 · Seoul Sector</span>
+          <nav aria-label="보조 메뉴"><Link to="/questions">커뮤니티</Link><Link to="/exploration-log">리뷰 아카이브</Link><Link to="/profile">내 정보</Link></nav>
+          <span className="mono">{feed?.syncedAt
+            ? `${hasPartialSourceFailure ? '일부 자료 연결 지연' : feedCacheStatus.includes('STALE') ? '마지막 정상 자료' : '자료 갱신'} · ${compactDate(feed.syncedAt)}`
+            : '자료 연결 대기 중'}</span>
+        </div>
       </footer>
       {selectedDiscovery && <SfDiscoveryDialog item={selectedDiscovery} onClose={closeDiscovery} user={user} />}
-    </main>
+    </div>
   );
 }
 
