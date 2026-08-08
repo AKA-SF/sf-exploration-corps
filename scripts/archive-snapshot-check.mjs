@@ -197,6 +197,8 @@ test('home-feed and archive-sync endpoints are present', async () => {
 
   assert.match(homeFeed, /getDurableCachedJson/);
   assert.match(media, /Cache-Control', 'no-store'/);
+  assert.match(media, /\['이미지', 'Image', 'Thumbnail', '썸네일'\]/);
+  assert.match(media, /v3-article-images/);
   assert.match(homeFeed, /buildHomeFeed/);
   assert.match(homeFeed, /get_published_sf_discoveries/);
   assert.match(homeFeed, /discoveries:\s*discoveriesResult\.status === 'fulfilled'/);

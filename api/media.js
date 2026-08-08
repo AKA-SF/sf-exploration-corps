@@ -5,7 +5,7 @@ import { requireAuthorizedArchiveRefresh } from './_archiveSyncAuth.js';
 
 const DEFAULT_MEDIA_DATABASE_ID = '36898dbef69d80fc98caf262593fc53b';
 const MEDIA_CACHE_TTL_MS = 10 * 60 * 1000;
-const MEDIA_CACHE_VERSION = 'v2-thumbnails';
+const MEDIA_CACHE_VERSION = 'v3-article-images';
 
 function getYouTubeId(link) {
   if (!link) return '';
@@ -63,6 +63,7 @@ function mapPageToMedia(page, index) {
     'Created time',
   ]));
   const tags = multiSelect(pick(properties, ['태그', 'Tags', '키워드', 'Keywords']));
+  const image = plainText(pick(properties, ['이미지', 'Image', 'Thumbnail', '썸네일']));
   const youtubeId = getYouTubeId(link);
 
   return {
@@ -76,7 +77,7 @@ function mapPageToMedia(page, index) {
     year,
     date,
     tags: tags.length > 0 ? tags : ['Media'],
-    thumbnail: getYouTubeThumbnail(youtubeId),
+    thumbnail: getYouTubeThumbnail(youtubeId) || image,
   };
 }
 
