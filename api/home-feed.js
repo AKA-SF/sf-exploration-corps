@@ -2,6 +2,7 @@ import { requireAuthorizedArchiveRefresh } from './_archiveSyncAuth.js';
 import {
   buildHomeFeed,
   getKoreanDiscoveryDate,
+  selectDailyFeaturedConcepts,
   selectDailyFeaturedWorks,
 } from './_homeFeed.js';
 import { getDurableCachedJson, getOrCreateDurableCachedJson } from './_persistentCache.js';
@@ -10,9 +11,21 @@ import { loadConceptsSnapshot } from './concepts.js';
 import { loadMediaSnapshot } from './media.js';
 import { hydrateSelectedWorkCovers, loadWorksSnapshot } from './works.js';
 
-const HOME_FEED_CACHE_KEY = 'home-feed:v7-daily-discovery';
+const HOME_FEED_CACHE_KEY = 'home-feed:v8-daily-concept';
 const HOME_FEED_TTL_MS = 5 * 60 * 1000;
 const DAILY_DISCOVERY_TTL_MS = 48 * 60 * 60 * 1000;
+
+export async function loadDailyFeaturedConcepts(concepts, discoveryDate) {
+  const snapshot = await getOrCreateDurableCachedJson(
+    `daily-concept:v1:${discoveryDate}`,
+    DAILY_DISCOVERY_TTL_MS,
+    () => selectDailyFeaturedConcepts(concepts, discoveryDate),
+    { preferStale: false },
+  );
+  return Array.isArray(snapshot.value)
+    ? snapshot.value.slice(0, 1)
+    : selectDailyFeaturedConcepts(concepts, discoveryDate);
+}
 
 export async function loadDailyFeaturedWorks(works, discoveryDate) {
   const snapshot = await getOrCreateDurableCachedJson(
@@ -61,6 +74,10 @@ async function loadHomeFeedSources({ discoveryDate, refresh }) {
 
   const sourceStatus = getHomeFeedSourceStatus(sources);
   const works = worksResult.status === 'fulfilled' ? worksResult.value.works : [];
+  const concepts = conceptsResult.status === 'fulfilled' ? conceptsResult.value.concepts : [];
+  const featuredConcepts = concepts.length > 0
+    ? await loadDailyFeaturedConcepts(concepts, discoveryDate)
+    : [];
   const selectedWorks = worksResult.status === 'fulfilled' && works.length > 0
     ? await loadDailyFeaturedWorks(works, discoveryDate)
     : [];
@@ -71,10 +88,11 @@ async function loadHomeFeedSources({ discoveryDate, refresh }) {
     // A cover lookup must not make the deterministic daily selection unavailable.
   }
   return buildHomeFeed({
-    concepts: conceptsResult.status === 'fulfilled' ? conceptsResult.value.concepts : [],
+    concepts,
     discoveryDate,
     discoveries: discoveriesResult.status === 'fulfilled' ? discoveriesResult.value : [],
     discoveriesUnavailable: discoveriesResult.status !== 'fulfilled',
+    featuredConcepts,
     featuredWorks,
     logs: signalsResult.status === 'fulfilled' ? signalsResult.value : [],
     media: mediaResult.status === 'fulfilled' ? mediaResult.value.media : [],

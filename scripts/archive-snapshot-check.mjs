@@ -32,7 +32,7 @@ test('buildHomeFeed returns a compact deterministic homepage snapshot', () => {
   assert.equal(feed.featuredWorks.length, 4);
   assert.equal(feed.latestSignals.length, 3);
   assert.equal(feed.latestMedia.length, 2);
-  assert.equal(feed.featuredConcepts.length, 2);
+  assert.equal(feed.featuredConcepts.length, 1);
   assert.deepEqual(feed.latestDiscoveries.map(item => item.id), ['D-1', 'D-2', 'D-3', 'D-4']);
   assert.equal(feed.communityQuestions.length, 2);
   assert.deepEqual(feed.counts, { concepts: 2, logs: 4, media: 3, questions: 3, works: 8 });
@@ -51,6 +51,20 @@ test('오늘의 발견은 한국 날짜별로 네 작품을 고정해 선택한�
   assert.deepEqual(first.featuredWorks, repeated.featuredWorks);
   assert.notDeepEqual(first.featuredWorks, works.slice(0, 4));
   assert.notDeepEqual(first.featuredWorks, nextDay.featuredWorks);
+});
+
+test('개념 신호는 한국 날짜별로 하나를 무작위 고정해 선택한다', () => {
+  const concepts = Array.from({ length: 20 }, (_, index) => ({ code: `C-${index + 1}` }));
+  const buildFor = discoveryDate => buildHomeFeed({ concepts, discoveryDate });
+
+  const first = buildFor('2026-08-06');
+  const repeated = buildFor('2026-08-06');
+  const nextDay = buildFor('2026-08-07');
+
+  assert.equal(first.featuredConcepts.length, 1);
+  assert.deepEqual(first.featuredConcepts, repeated.featuredConcepts);
+  assert.notDeepEqual(first.featuredConcepts, concepts.slice(0, 1));
+  assert.notDeepEqual(first.featuredConcepts, nextDay.featuredConcepts);
 });
 
 test('오늘의 발견 날짜는 한국 자정에 바뀐다', () => {
@@ -204,7 +218,9 @@ test('home-feed and archive-sync endpoints are present', async () => {
   assert.match(homeFeed, /discoveries:\s*discoveriesResult\.status === 'fulfilled'/);
   assert.match(homeFeed, /loadWorksSnapshot\(\{ refresh \}\)/);
   assert.match(homeFeed, /daily-discovery:v1:\$\{discoveryDate\}/);
+  assert.match(homeFeed, /daily-concept:v1:\$\{discoveryDate\}/);
   assert.match(homeFeed, /`\$\{HOME_FEED_CACHE_KEY\}:\$\{discoveryDate\}`/);
+  assert.match(homeFeed, /loadDailyFeaturedConcepts/);
   assert.match(homeFeed, /loadDailyFeaturedWorks/);
   assert.match(homeFeed, /worksResult\.status === 'fulfilled' && works\.length > 0/);
   assert.match(homeFeed, /selectDailyFeaturedWorks/);

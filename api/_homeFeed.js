@@ -2,13 +2,28 @@ function asArray(value) {
   return Array.isArray(value) ? value : [];
 }
 
-function hashDailyWork(value) {
+function hashDailyItem(value) {
   let hash = 2166136261;
   for (let index = 0; index < value.length; index += 1) {
     hash ^= value.charCodeAt(index);
     hash = Math.imul(hash, 16777619);
   }
   return hash >>> 0;
+}
+
+function selectDailyItems(items, discoveryDate, limit) {
+  return asArray(items)
+    .map((item, index) => {
+      const identity = item?.code || item?.id || item?.term || item?.title || `item-${index}`;
+      return {
+        identity: String(identity),
+        item,
+        score: hashDailyItem(`${discoveryDate}:${identity}`),
+      };
+    })
+    .sort((left, right) => left.score - right.score || left.identity.localeCompare(right.identity))
+    .slice(0, Math.max(0, limit))
+    .map(entry => entry.item);
 }
 
 export function getKoreanDiscoveryDate(date = new Date()) {
@@ -23,18 +38,11 @@ export function getKoreanDiscoveryDate(date = new Date()) {
 }
 
 export function selectDailyFeaturedWorks(works, discoveryDate, limit = 4) {
-  return asArray(works)
-    .map((work, index) => {
-      const identity = work?.code || work?.id || work?.title || `work-${index}`;
-      return {
-        identity: String(identity),
-        score: hashDailyWork(`${discoveryDate}:${identity}`),
-        work,
-      };
-    })
-    .sort((left, right) => left.score - right.score || left.identity.localeCompare(right.identity))
-    .slice(0, Math.max(0, limit))
-    .map(item => item.work);
+  return selectDailyItems(works, discoveryDate, limit);
+}
+
+export function selectDailyFeaturedConcepts(concepts, discoveryDate, limit = 1) {
+  return selectDailyItems(concepts, discoveryDate, limit);
 }
 
 export function buildHomeFeed({
@@ -42,6 +50,7 @@ export function buildHomeFeed({
   discoveryDate = getKoreanDiscoveryDate(),
   discoveries = [],
   discoveriesUnavailable = false,
+  featuredConcepts = null,
   featuredWorks = null,
   logs = [],
   media = [],
@@ -74,7 +83,9 @@ export function buildHomeFeed({
       works: normalizedSourceStatus.works === 'available' ? normalizedWorks.length : null,
     },
     dailyDiscoveryDate: discoveryDate,
-    featuredConcepts: normalizedConcepts.slice(0, 2),
+    featuredConcepts: featuredConcepts == null
+      ? selectDailyFeaturedConcepts(normalizedConcepts, discoveryDate)
+      : asArray(featuredConcepts).slice(0, 1),
     featuredWorks: featuredWorks == null
       ? selectDailyFeaturedWorks(normalizedWorks, discoveryDate)
       : asArray(featuredWorks).slice(0, 4),
