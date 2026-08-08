@@ -8,10 +8,77 @@
       "schedule": "15 0 * * *"
     }
   ],
-  "rewrites": [
+  "redirects": [
     {
-      "source": "/((?!api/.*).*)",
-      "destination": "/index.html"
+      "source": "/home-v2",
+      "destination": "/",
+      "permanent": true
+    },
+    {
+      "source": "/media/interviews",
+      "destination": "/media/media",
+      "permanent": true
     }
+  ],
+  "headers": [
+    {
+      "source": "/api/:path*",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow, nosnippet" }]
+    },
+    {
+      "source": "/admin/:path*",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/crew/:path*",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/result/:path*",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/profile",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/login",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/log",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/badges",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/__editorial-preview",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    }
+  ],
+  "rewrites": [
+    { "source": "/discover", "destination": "/seo/discover.html" },
+    { "source": "/works/novels", "destination": "/seo/works/novels.html" },
+    { "source": "/works/cinema", "destination": "/seo/works/cinema.html" },
+    { "source": "/works/games", "destination": "/seo/works/games.html" },
+    { "source": "/works/animation", "destination": "/seo/works/animation.html" },
+    { "source": "/media/media", "destination": "/seo/media/media.html" },
+    { "source": "/media/classic-films", "destination": "/seo/media/classic-films.html" },
+    { "source": "/exploration-log", "destination": "/seo/exploration-log.html" },
+    { "source": "/questions", "destination": "/seo/questions.html" },
+    { "source": "/network", "destination": "/seo/network.html" },
+    { "source": "/discover/:slug", "destination": "/index.html" },
+    { "source": "/questions/:questionId", "destination": "/index.html" },
+    { "source": "/log", "destination": "/index.html" },
+    { "source": "/result/:id", "destination": "/index.html" },
+    { "source": "/network/:id", "destination": "/index.html" },
+    { "source": "/badges", "destination": "/index.html" },
+    { "source": "/profile", "destination": "/index.html" },
+    { "source": "/crew/:crewCode/message", "destination": "/index.html" },
+    { "source": "/login", "destination": "/index.html" },
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/admin/discoveries", "destination": "/index.html" }
   ]
 }
