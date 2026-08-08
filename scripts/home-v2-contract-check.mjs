@@ -22,6 +22,8 @@ test('Home2 is the root route and loads one compact public feed', async () => {
 
 test('Home2 presents discovery, record and connection as real routes', async () => {
   const home = await read('src/pages/HomeV2.jsx');
+  assert.match(home, /<small className="mono">SF EXPLORER<\/small>/);
+  assert.doesNotMatch(home, /<small className="mono">EXPLORATION CORPS<\/small>/);
   assert.match(home, /발견/);
   assert.match(home, /기록/);
   assert.match(home, /연결/);

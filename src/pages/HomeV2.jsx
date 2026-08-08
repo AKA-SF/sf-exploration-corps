@@ -203,7 +203,7 @@ function HomeV2() {
         <header className="home-v2-header">
         <Link className="home-v2-brand" to="/" aria-label="SF 탐사단 홈">
           <span className="home-v2-brand__mark" aria-hidden="true"><CircleDot /></span>
-          <span><b>SF 탐사단</b><small className="mono">EXPLORATION CORPS</small></span>
+          <span><b>SF 탐사단</b><small className="mono">SF EXPLORER</small></span>
         </Link>
         <nav className="home-v2-header__nav" aria-label="상단 메뉴">
           <Link to="/works/novels">탐색</Link>
