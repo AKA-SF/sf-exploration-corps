@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
 import { getWorkCategorySlug, workCategories } from '../../data/workArchive';
-import { fallbackWorks } from '../home/homeContent';
 
 function getWorkSearchText(work) {
   return [
@@ -15,7 +14,7 @@ function getWorkSearchText(work) {
 }
 
 export default function useWorksArchivePage(categorySlug) {
-  const [works, setWorks] = useState(fallbackWorks);
+  const [works, setWorks] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [status, setStatus] = useState('loading');
   const activeCategory = workCategories.find(category => category.slug === categorySlug) ?? workCategories[0];
@@ -30,12 +29,12 @@ export default function useWorksArchivePage(categorySlug) {
       })
       .then(data => {
         if (!isMounted) return;
-        setWorks(Array.isArray(data.works) && data.works.length > 0 ? data.works : fallbackWorks);
+        setWorks(Array.isArray(data.works) ? data.works : []);
         setStatus('ready');
       })
       .catch(() => {
         if (!isMounted) return;
-        setWorks(fallbackWorks);
+        setWorks([]);
         setStatus('error');
       });
 

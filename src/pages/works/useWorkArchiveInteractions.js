@@ -28,7 +28,6 @@ const workStatusLabels = {
 };
 
 export default function useWorkArchiveInteractions({
-  setRandomWorkCodes,
   setWorks,
   user,
 }) {
@@ -173,7 +172,6 @@ export default function useWorkArchiveInteractions({
 
       if (data.work) {
         setWorks(current => [data.work, ...current]);
-        setRandomWorkCodes(current => [data.work.code, ...current.filter(code => code !== data.work.code)].slice(0, 6));
       }
 
       setWorkSubmitForm(emptyWorkSubmitForm);

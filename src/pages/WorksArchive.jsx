@@ -2,17 +2,16 @@ import { useParams, useSearchParams } from 'react-router-dom';
 import { useEffect, useMemo, useRef } from 'react';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
-import { getRandomWorks } from './home/homeUtils';
-import WorkArchiveFormPanel from './home/WorkArchiveFormPanel';
-import WorkDetailPanel from './home/WorkDetailPanel';
-import useWorkArchiveInteractions from './home/useWorkArchiveInteractions';
+import WorkArchiveFormPanel from './works/WorkArchiveFormPanel';
+import WorkDetailPanel from './works/WorkDetailPanel';
 import WorksArchiveGrid from './works/WorksArchiveGrid';
 import WorksArchiveHeader from './works/WorksArchiveHeader';
 import WorksArchiveSearch from './works/WorksArchiveSearch';
 import WorksArchiveTabs from './works/WorksArchiveTabs';
+import useWorkArchiveInteractions from './works/useWorkArchiveInteractions';
 import useWorksArchivePage from './works/useWorksArchivePage';
 import './WorksArchive.css';
-import './home/WorksArchiveSection.css';
+import './works/WorksArchivePanels.css';
 import '../styles/MobileExperience.css';
 
 function getWorkSearchText(work) {
@@ -84,8 +83,6 @@ export default function WorksArchive() {
     workSubmitMessage,
     workSubmitStatus,
   } = useWorkArchiveInteractions({
-    getRandomWorks,
-    setRandomWorkCodes: () => {},
     setWorks,
     user,
   });

@@ -41,7 +41,7 @@ test('selected archive and board filters expose their state without relying on c
 
 test('media archive header uses product language and the shared flat archive hierarchy', () => {
   assert.doesNotMatch(mediaArchive, /노션/);
-  assert.match(mediaArchive, /인터뷰와 영상, 고전 SF 영화를 분류별로 살펴보세요\./);
+  assert.match(mediaArchive, /SF 관련 미디어와 SF 고전 영화를 분류별로 살펴보세요\./);
   assert.match(mediaArchiveCss, /\.media-archive-header\s*\{[\s\S]*?border-bottom:\s*1px solid/);
   assert.match(mediaArchiveCss, /\.media-back-link\s*\{[\s\S]*?min-height:\s*44px;[\s\S]*?border-radius:\s*999px;/);
   assert.match(mediaArchiveCss, /\.media-archive-header p\s*\{[\s\S]*?word-break:\s*keep-all;/);

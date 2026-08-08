@@ -167,12 +167,12 @@ test('partial source failures stay distinct from successful empty collections', 
 });
 
 test('home data requests do not opt out of public HTTP caching', async () => {
-  const source = await read('src/pages/home/useHomeData.js');
+  const source = await read('src/pages/HomeV2.jsx');
   assert.doesNotMatch(source, /cache:\s*['"]no-store['"]/);
 });
 
 test('홈 피드는 CDN에 전날 응답을 남기지 않고 열린 화면도 한국 자정에 갱신한다', async () => {
-  const dailyRefresh = await import('../src/pages/home/dailyDiscoveryRefresh.js').catch(() => ({}));
+  const dailyRefresh = await import('../src/pages/home-v2/dailyDiscoveryRefresh.js').catch(() => ({}));
   assert.equal(typeof dailyRefresh.millisecondsUntilNextKoreanDay, 'function');
   assert.equal(
     dailyRefresh.millisecondsUntilNextKoreanDay(new Date('2026-08-06T14:59:59.000Z')),

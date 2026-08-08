@@ -20,6 +20,17 @@ test('Home2 is the root route and loads one compact public feed', async () => {
   assert.match(css, /\.home-v2-news__grid\s*\{[^}]*grid-template-columns:\s*repeat\(4,/);
 });
 
+test('legacy Home is removed and active features do not import from its directory', async () => {
+  const homeV2 = await read('src/pages/HomeV2.jsx');
+  const worksArchive = await read('src/pages/WorksArchive.jsx');
+  const worksPage = await read('src/pages/works/useWorksArchivePage.js');
+
+  await assert.rejects(read('src/pages/Home.jsx'), error => error?.code === 'ENOENT');
+  assert.doesNotMatch(worksArchive, /\.\/home\//);
+  assert.doesNotMatch(worksPage, /\.\.\/home\//);
+  assert.match(homeV2, /\.\/home-v2\/dailyDiscoveryRefresh/);
+});
+
 test('Home2 presents discovery, record and connection as real routes', async () => {
   const home = await read('src/pages/HomeV2.jsx');
   assert.match(home, /<small className="mono">SF EXPLORER<\/small>/);

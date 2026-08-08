@@ -21,7 +21,7 @@ import { readExplorationDraft } from '../features/exploration-logs/explorationDr
 import SfDiscoveryDialog from '../features/sf-discoveries/SfDiscoveryDialog';
 import { discoverySourceLinkLabel } from '../features/sf-discoveries/sfDiscoveryPresentation';
 import { HOME_EVENT_NAMES, trackProductEvent } from '../lib/productAnalytics';
-import { millisecondsUntilNextKoreanDay } from './home/dailyDiscoveryRefresh';
+import { millisecondsUntilNextKoreanDay } from './home-v2/dailyDiscoveryRefresh';
 import './HomeV2.css';
 
 const RADAR_POSITIONS = [
