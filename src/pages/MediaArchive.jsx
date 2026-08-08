@@ -10,17 +10,13 @@ import './MediaArchive.css';
 import '../styles/MobileExperience.css';
 
 const mediaCategories = [
-  { label: 'SF 작가 인터뷰', slug: 'interviews' },
   { label: 'SF 관련 미디어', slug: 'media' },
-  { label: '고전 SF 영화', slug: 'classic-films' },
+  { label: 'SF 고전 영화', slug: 'classic-films' },
 ];
 
 function categoryToSlug(category = '') {
   const normalized = category.replace(/\s/g, '').toLowerCase();
-  if (normalized.includes('작가') || normalized.includes('인터뷰') || normalized.includes('interview')) return 'interviews';
   if (normalized.includes('고전') || normalized.includes('영화') || normalized.includes('film') || normalized.includes('movie')) return 'classic-films';
-  if (normalized.includes('기사') || normalized.includes('article') || normalized.includes('news')) return 'media';
-  if (normalized.includes('미디어') || normalized.includes('media') || normalized.includes('콘텐츠') || normalized.includes('자료') || normalized.includes('video')) return 'media';
   return 'media';
 }
 
@@ -41,7 +37,7 @@ function sortMediaByLatest(items) {
 export default function MediaArchive() {
   const { user } = useAuth();
   const { showActivityToast } = useActivityToast();
-  const { categorySlug = 'interviews' } = useParams();
+  const { categorySlug = 'media' } = useParams();
   const [items, setItems] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [status, setStatus] = useState('loading');
@@ -128,7 +124,7 @@ export default function MediaArchive() {
         <div>
           <span>MEDIA ARCHIVE / FULL INDEX</span>
           <h1>{activeCategory.label}</h1>
-          <p>인터뷰와 영상, 고전 SF 영화를 분류별로 살펴보세요.</p>
+          <p>SF 관련 미디어와 SF 고전 영화를 분류별로 살펴보세요.</p>
         </div>
         <div className="media-archive-status">
           <Sparkles aria-hidden="true" />

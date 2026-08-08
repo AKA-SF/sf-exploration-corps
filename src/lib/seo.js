@@ -35,11 +35,7 @@ const routeMeta = [
     title: 'SF 애니메이션 아카이브 | SF 탐사단',
     description: 'SF 애니메이션 작품을 장르와 핵심 질문으로 탐사하는 SF 탐사단 작품 아카이브입니다.',
   },
-  {
-    match: pathname => pathname.startsWith('/media/interviews'),
-    title: 'SF 작가 인터뷰 아카이브 | SF 탐사단',
-    description: 'SF 작가와 창작자의 인터뷰, 강연, 대담 영상을 모아 읽기와 토론의 단서로 연결합니다.',
-  },
+
   {
     match: pathname => pathname.startsWith('/media/media'),
     title: 'SF 관련 미디어 아카이브 | SF 탐사단',
@@ -47,8 +43,8 @@ const routeMeta = [
   },
   {
     match: pathname => pathname.startsWith('/media/classic-films'),
-    title: '고전 SF 영화 아카이브 | SF 탐사단',
-    description: '고전 SF 영화와 오래된 미래 상상력을 모아 현재의 SF 읽기와 연결하는 미디어 아카이브입니다.',
+    title: 'SF 고전 영화 아카이브 | SF 탐사단',
+    description: 'SF 고전 영화와 오래된 미래 상상력을 모아 현재의 SF 읽기와 연결하는 미디어 아카이브입니다.',
   },
   {
     match: pathname => pathname === '/exploration-log',

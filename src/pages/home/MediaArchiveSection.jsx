@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Link } from 'react-router-dom';
-import { ChevronRight, Play } from 'lucide-react';
+import { ChevronRight, Newspaper, Play } from 'lucide-react';
 
 function MediaArchiveSection({
   activeMediaArchivePath,
@@ -17,7 +17,7 @@ function MediaArchiveSection({
           <span>ARCHIVE NODE 03</span>
           <h2>미디어 아카이브</h2>
           <p>
-            SF 작가 인터뷰, 관련 미디어, 고전 SF 영화를 모아두는 영상과 읽을거리 저장소입니다.
+            SF 관련 미디어와 SF 고전 영화를 모아두는 영상과 읽을거리 저장소입니다.
           </p>
         </div>
 
@@ -48,7 +48,7 @@ function MediaArchiveSection({
               target="_blank"
             >
               <div className="media-thumb">
-                {item.thumbnail ? <img src={item.thumbnail} alt={`${item.title} 썸네일`} loading="lazy" /> : <Play aria-hidden="true" />}
+                {item.thumbnail ? <img src={item.thumbnail} alt={`${item.title} 썸네일`} loading="lazy" /> : item.medium === 'Article' ? <Newspaper aria-hidden="true" /> : <Play aria-hidden="true" />}
               </div>
               <div className="media-card-body">
                 <span>{item.code} / {item.medium}</span>

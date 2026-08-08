@@ -156,10 +156,9 @@ export const conceptEntries = [
   },
 ];
 
-export const mediaCategories = ['SF 작가 인터뷰', 'SF 관련 미디어', '고전 SF 영화'];
+export const mediaCategories = ['SF 관련 미디어', 'SF 고전 영화'];
 
 export const mediaCategorySlugs = {
-  'SF 작가 인터뷰': 'interviews',
   'SF 관련 미디어': 'media',
-  '고전 SF 영화': 'classic-films',
+  'SF 고전 영화': 'classic-films',
 };

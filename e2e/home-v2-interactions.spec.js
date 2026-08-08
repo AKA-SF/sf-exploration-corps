@@ -26,9 +26,9 @@ const latestMedia = [
     year: '2026',
   },
   {
-    category: '고전 SF 영화',
+    category: 'SF 고전 영화',
     code: 'MED-002',
-    description: '고전 SF 영화의 맥락을 살펴보는 영상입니다.',
+    description: 'SF 고전 영화의 맥락을 살펴보는 영상입니다.',
     link: 'https://example.com/media-two',
     medium: 'YouTube',
     publisher: '고전 영화 채널',
@@ -38,7 +38,7 @@ const latestMedia = [
     year: '1979',
   },
   {
-    category: 'SF 작가 인터뷰',
+    category: 'SF 관련 미디어',
     code: 'MED-003',
     description: 'Home 최대 노출 수를 검증하기 위한 세 번째 신호입니다.',
     link: 'https://example.com/media-three',

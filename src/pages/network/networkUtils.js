@@ -127,7 +127,7 @@ export function getActivitySignal(activity) {
   if (actionType === 'media_visit') {
     return {
       body: `미디어 신호 열람 // ${title}`,
-      href: '/media/interviews',
+      href: '/media/media',
       status: 'MEDIA_SIGNAL',
     };
   }
