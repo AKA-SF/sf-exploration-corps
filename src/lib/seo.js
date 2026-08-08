@@ -2,7 +2,7 @@ const SITE_URL = 'https://www.sf-explorer.net';
 const SITE_NAME = 'SF 탐사단';
 const DEFAULT_TITLE = 'SF 탐사단 | 과학소설 아카이브와 탐사 커뮤니티';
 const DEFAULT_DESCRIPTION = 'SF 탐사단은 SF 소설, 영화, 게임, 애니메이션, 개념 사전, 미디어 자료, 커뮤니티 기록을 탐사 좌표처럼 연결하는 과학소설 아카이브입니다.';
-const OG_IMAGE = `${SITE_URL}/og-image.svg`;
+const OG_IMAGE = `${SITE_URL}/og-image.png`;
 
 const routeMeta = [
   {

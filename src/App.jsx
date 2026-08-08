@@ -105,10 +105,11 @@ function App() {
               <Suspense fallback={<RouteLoader />}>
                 <Routes location={location}>
                   <Route path="/" element={<HomeV2 />} />
-                  <Route path="/home-v2" element={<HomeV2 />} />
+                  <Route path="/home-v2" element={<Navigate to="/" replace />} />
                   <Route path="/discover" element={<SfDiscoveries />} />
                   <Route path="/discover/:slug" element={<SfDiscoveryDetail />} />
                   <Route path="/works/:categorySlug" element={<WorksArchive />} />
+                  <Route path="/media/interviews" element={<Navigate to="/media/media" replace />} />
                   <Route path="/media/:categorySlug" element={<MediaArchive />} />
                   <Route path="/exploration-log" element={<ExplorationLog />} />
                   <Route path="/questions" element={<Questions />} />
