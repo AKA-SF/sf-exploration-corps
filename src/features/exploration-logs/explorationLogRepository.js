@@ -137,5 +137,51 @@ export function createExplorationLogRepository(client) {
       throwIfError(error);
       return data ? mapStoredExplorationLog(data) : null;
     },
+
+    async setOwnExplorationLogVisibility({ userId, id, visibility }) {
+      requireUserId(userId);
+      if (typeof id !== 'string' || !id.trim()) throw new Error('id is required.');
+      const { data, error } = await supabase.rpc('set_own_exploration_log_visibility', {
+        p_id: id,
+        p_visibility: visibility,
+      });
+      throwIfError(error);
+      return mapStoredExplorationLog(data);
+    },
+
+    async updateOwnExplorationLog({ userId, id, input }) {
+      const safeUserId = requireUserId(userId);
+      if (typeof id !== 'string' || !id.trim()) throw new Error('id is required.');
+      const normalized = normalizeExplorationLogInput(input);
+      const { data, error } = await supabase
+        .from('exploration_logs')
+        .update({
+          title: normalized.title,
+          log_type: normalized.logType,
+          experiences: normalized.experiences,
+          emotions: normalized.emotions,
+          ideas: normalized.ideas,
+          memo: normalized.memo,
+          spoiler: normalized.spoiler,
+          visibility: 'PRIVATE_ARCHIVE',
+        })
+        .eq('id', id)
+        .eq('user_id', safeUserId)
+        .select('*')
+        .maybeSingle();
+      throwIfError(error);
+      return data ? mapStoredExplorationLog(data) : null;
+    },
+
+    async deleteOwnExplorationLog({ userId, id }) {
+      const safeUserId = requireUserId(userId);
+      if (typeof id !== 'string' || !id.trim()) throw new Error('id is required.');
+      const { error } = await supabase
+        .from('exploration_logs')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', safeUserId);
+      throwIfError(error);
+    },
   };
 }

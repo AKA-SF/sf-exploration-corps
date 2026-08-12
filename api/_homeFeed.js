@@ -92,7 +92,7 @@ export function buildHomeFeed({
     discoveriesUnavailable: Boolean(discoveriesUnavailable),
     latestMedia: normalizedMedia.slice(0, 2),
     latestDiscoveries: normalizedDiscoveries.slice(0, 4),
-    latestSignals: normalizedLogs.slice(0, 3),
+    latestSignals: normalizedLogs.slice(0, 4),
     sourceStatus: normalizedSourceStatus,
     syncedAt,
   };

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ArrowUpRight, MessageCircle, Send, X } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
+import ResilientImage from '../../components/ResilientImage';
 import { createDiscoveryComment, fetchDiscoveryComments } from './sfDiscoveryComments';
 import { discoverySourceLinkLabel } from './sfDiscoveryPresentation';
 import './SfDiscoveryDialog.css';
@@ -133,9 +134,11 @@ export default function SfDiscoveryDialog({ item, onClose, user }) {
 
         <div className="sf-discovery-dialog__article">
           <div className="sf-discovery-dialog__cover">
-            {item.image_url
-              ? <img alt={item.image_alt || `${item.title} 표지`} src={item.image_url} />
-              : <span>표지 정보 없음</span>}
+            <ResilientImage
+              alt={item.image_alt || `${item.title} 표지`}
+              fallback={<span>표지 정보 없음</span>}
+              src={item.image_url}
+            />
           </div>
           <div className="sf-discovery-dialog__copy">
             <span className="mono">새로 포착된 SF · 관측 상세</span>

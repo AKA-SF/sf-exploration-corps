@@ -24,6 +24,8 @@ export default function LogResult() {
   const [logData, setLogData] = useState(null);
   const [loadState, setLoadState] = useState('loading');
   const [loadedKey, setLoadedKey] = useState('');
+  const [publishChoice, setPublishChoice] = useState('');
+  const [publishStatus, setPublishStatus] = useState('');
   const recordKey = getExplorationLogRecordKey(user?.id, id);
 
   useEffect(() => {
@@ -68,6 +70,21 @@ export default function LogResult() {
     userId: user?.id,
   });
 
+  const setVisibility = async visibility => {
+    if (!user || !logData) return;
+    setPublishStatus('saving');
+    try {
+      const client = await getSupabaseClient();
+      if (!client) throw new Error('개인 기록 저장소에 연결할 수 없습니다.');
+      const updated = await createExplorationLogRepository(client).setOwnExplorationLogVisibility({ id: logData.id, userId: user.id, visibility });
+      setLogData(updated);
+      setPublishChoice('');
+      setPublishStatus('success');
+    } catch {
+      setPublishStatus('error');
+    }
+  };
+
   if (effectiveLoadState === 'loading') {
     return <PageTransition className="result-container"><section className="result-state panel" role="status">저장한 기록을 확인하고 있습니다.</section></PageTransition>;
   }
@@ -102,7 +119,7 @@ export default function LogResult() {
 
       <article className="result-record panel">
         <div className="result-record-meta">
-          <span><LockKeyhole aria-hidden="true" /> 나만 보기</span>
+          <span><LockKeyhole aria-hidden="true" /> {logData.visibility === 'ANON_NETWORK' ? '익명 네트워크' : logData.visibility === 'PUBLIC_SIGNAL' ? '공개 신호' : '나만 보기'}</span>
           <time dateTime={logData.createdAt}>{formatSavedDate(logData.createdAt)}</time>
         </div>
         <h2>{logData.title}</h2>
@@ -128,9 +145,16 @@ export default function LogResult() {
         <Radio aria-hidden="true" />
         <div>
           <h2 id="result-publish-title">네트워크에 공개</h2>
-          <p>공개할 때는 표시할 이름과 스포일러 범위를 다시 확인하게 됩니다. 공개 기능은 다음 개편 단계에서 연결됩니다.</p>
+          <p>{logData.visibility === 'PRIVATE_ARCHIVE' ? '공개 범위를 선택한 뒤 네트워크에 보낼 수 있습니다. 닉네임 공개를 선택하면 내 정보의 표시 이름이 함께 보입니다.' : '현재 네트워크에 공개되어 있습니다. 필요하면 나만 보기로 전환할 수 있습니다.'}</p>
         </div>
-        <button disabled type="button">공개 준비 중</button>
+        {logData.visibility === 'PRIVATE_ARCHIVE' ? <button aria-expanded={Boolean(publishChoice)} onClick={() => setPublishChoice(publishChoice ? '' : 'choose')} type="button">공개 범위 선택</button> : <button disabled={publishStatus === 'saving'} onClick={() => void setVisibility('PRIVATE_ARCHIVE')} type="button">나만 보기로 전환</button>}
+        {logData.visibility === 'PRIVATE_ARCHIVE' && publishChoice && <div className="result-publish-options" role="radiogroup" aria-label="이 기록의 공개 범위">
+          <label><input checked={publishChoice === 'ANON_NETWORK'} name="visibility" onChange={() => setPublishChoice('ANON_NETWORK')} type="radio" /> 익명으로 공개</label>
+          <label><input checked={publishChoice === 'PUBLIC_SIGNAL'} name="visibility" onChange={() => setPublishChoice('PUBLIC_SIGNAL')} type="radio" /> 닉네임과 함께 공개</label>
+          <p>공개 후에는 다른 사람이 기록을 볼 수 있습니다. 개인정보와 스포일러를 다시 확인하세요.</p>
+          <button disabled={publishChoice === 'choose' || publishStatus === 'saving'} onClick={() => void setVisibility(publishChoice)} type="button">{publishChoice === 'ANON_NETWORK' ? '익명으로 공개' : '닉네임과 함께 공개'}</button>
+        </div>}
+        <p role={publishStatus === 'error' ? 'alert' : 'status'}>{publishStatus === 'success' ? '공개 상태를 변경했습니다.' : publishStatus === 'error' ? '공개 상태를 변경하지 못했습니다. 기존 상태는 유지됩니다.' : ''}</p>
       </section>
 
       <nav className="result-actions" aria-label="기록 저장 후 이동">

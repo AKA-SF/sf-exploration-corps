@@ -81,7 +81,7 @@ test('Network2 empty state teaches the exploration loop and public boundary with
   assert.doesNotMatch(network, /sampleSignal|demoSignal|fakeSignal/);
 });
 
-test('classified public signals require consent before spoiler content is rendered', async () => {
+test('classified public signals are redacted before rendering', async () => {
   const home = await read('src/pages/HomeV2.jsx');
   const network = await read('src/pages/Network.jsx');
   const detail = await read('src/pages/NetworkDetail.jsx');
@@ -91,9 +91,18 @@ test('classified public signals require consent before spoiler content is render
   assert.match(home, /분류된 탐사 신호/);
   assert.match(network, /log\.spoiler === 'CLASSIFIED_SIGNAL'/);
   assert.match(network, /스포일러가 포함된 분류 신호입니다/);
-  assert.match(detail, /setSpoilerRevealed/);
-  assert.match(detail, /스포일러 신호 보기/);
   assert.match(detail, /contentVisible/);
+  assert.match(detail, /공개 네트워크에서는 원문을 전송하지 않습니다/);
+  assert.doesNotMatch(detail, /setSpoilerRevealed|스포일러 신호 보기/);
   assert.match(map, /CLASSIFIED_SIGNAL/);
   assert.match(map, /분류된 탐사 신호/);
+});
+
+test('network detail rejects malformed IDs before any public-signal lookup', async () => {
+  const detail = await read('src/pages/NetworkDetail.jsx');
+
+  assert.match(detail, /isValidExplorationLogId/);
+  assert.match(detail, /if \(!hasValidLogId\) return undefined;/);
+  assert.match(detail, /detailStatus = hasValidLogId \? status : 'invalid'/);
+  assert.match(detail, /잘못된 탐사 신호 주소입니다/);
 });

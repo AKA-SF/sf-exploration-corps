@@ -30,7 +30,8 @@ test('buildHomeFeed returns a compact deterministic homepage snapshot', () => {
 
   assert.equal(feed.syncedAt, '2026-08-04T00:00:00.000Z');
   assert.equal(feed.featuredWorks.length, 4);
-  assert.equal(feed.latestSignals.length, 3);
+  assert.equal(feed.latestSignals.length, 4);
+  assert.deepEqual(feed.latestSignals.map(item => item.code), ['L-1', 'L-2', 'L-3', 'L-4']);
   assert.equal(feed.latestMedia.length, 2);
   assert.equal(feed.featuredConcepts.length, 1);
   assert.deepEqual(feed.latestDiscoveries.map(item => item.id), ['D-1', 'D-2', 'D-3', 'D-4']);

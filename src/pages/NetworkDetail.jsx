@@ -17,14 +17,19 @@ const EXPERIENCE_LABELS = {
   scale: '세계관 규모',
 };
 
+const isValidExplorationLogId = id => typeof id === 'string'
+  && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+
 const NetworkDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [log, setLog] = useState(null);
   const [status, setStatus] = useState('loading');
-  const [spoilerRevealedId, setSpoilerRevealedId] = useState(null);
+
+  const hasValidLogId = isValidExplorationLogId(id);
 
   useEffect(() => {
+    if (!hasValidLogId) return undefined;
     let isMounted = true;
 
     async function loadPublicLog() {
@@ -43,7 +48,7 @@ const NetworkDetail = () => {
 
     void loadPublicLog();
     return () => { isMounted = false; };
-  }, [id]);
+  }, [hasValidLogId, id]);
 
   const metrics = useMemo(() => (
     log
@@ -55,17 +60,21 @@ const NetworkDetail = () => {
       : []
   ), [log]);
 
-  if (status !== 'ready') {
-    const message = status === 'loading'
+  const detailStatus = hasValidLogId ? status : 'invalid';
+
+  if (detailStatus !== 'ready') {
+    const message = detailStatus === 'loading'
       ? 'PUBLIC_SIGNAL_LOADING'
-      : status === 'not-found'
+      : detailStatus === 'invalid'
+        ? '잘못된 탐사 신호 주소입니다.'
+      : detailStatus === 'not-found'
         ? '공개되지 않았거나 존재하지 않는 탐사 신호입니다.'
         : '공개 신호를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.';
     return (
       <PageTransition className="network-detail-container">
         <div className="error-panel mono" role="status">
-          <span className={status === 'loading' ? 'text-cyan' : 'text-amber'}>{message}</span>
-          {status !== 'loading' && (
+          <span className={detailStatus === 'loading' ? 'text-cyan' : 'text-amber'}>{message}</span>
+          {detailStatus !== 'loading' && (
             <button onClick={() => navigate('/network')} className="btn-secondary">ABORT_CONNECTION</button>
           )}
         </div>
@@ -74,7 +83,7 @@ const NetworkDetail = () => {
   }
 
   const sender = log.visibility === 'PUBLIC_SIGNAL' ? (log.nickname || 'PUBLIC_EXPLORER') : 'ANONYMOUS_SIGNAL';
-  const contentVisible = log.spoiler !== 'CLASSIFIED_SIGNAL' || spoilerRevealedId === id;
+  const contentVisible = log.spoiler !== 'CLASSIFIED_SIGNAL';
 
   return (
     <PageTransition className="network-detail-container">
@@ -111,7 +120,7 @@ const NetworkDetail = () => {
             <Activity size={16} className="text-amber" />
             <div>
               <p className="mono">스포일러가 포함된 신호입니다.</p>
-              <button className="btn-secondary" onClick={() => setSpoilerRevealedId(id)} type="button">스포일러 신호 보기</button>
+              <p>공개 네트워크에서는 원문을 전송하지 않습니다.</p>
             </div>
           </div>
         )}

@@ -99,7 +99,7 @@ test.describe('발견 → 기록 → 연결 핵심 여정', () => {
     await mockHomeFeed(page);
     await page.goto('/');
     const nav = page.getByRole('navigation', { name: '주요 메뉴' });
-    await expect(nav.getByRole('link')).toHaveCount(4);
+    await expect(nav.getByRole('link')).toHaveCount(5);
     await nav.getByRole('link', { name: /네트워크/ }).click();
     await expect(page).toHaveURL(/\/network$/);
     await expect(page.getByRole('heading', { name: '탐사 네트워크' })).toBeVisible();
@@ -240,6 +240,7 @@ test.describe('모바일·접근성 차단 기준', () => {
 
     await page.goto('/log');
     await expect(page.locator('.site-mode-toggle')).toBeHidden();
+    await page.locator('.log-optional-fields summary').click();
     const logGeometry = await page.locator('.log-entry-container').evaluate(element => ({
       columns: getComputedStyle(element.querySelector('.log-form')).gridTemplateColumns.split(' ').length,
       overflow: document.documentElement.scrollWidth - document.documentElement.clientWidth,
@@ -265,7 +266,7 @@ test.describe('모바일·접근성 차단 기준', () => {
       });
       const bottomGeometry = await page.locator('.page-container').evaluate(container => {
         container.scrollTop = container.scrollHeight;
-        const controls = document.querySelector('.log-control-grid').getBoundingClientRect();
+        const controls = document.querySelector('.log-optional-content').getBoundingClientRect();
         const sticky = document.querySelector('.mobile-log-submit-bar').getBoundingClientRect();
         const nav = document.querySelector('.navbar').getBoundingClientRect();
         return {
@@ -278,8 +279,8 @@ test.describe('모바일·접근성 차단 기준', () => {
       expect(bottomGeometry.controlsBottom).toBeLessThanOrEqual(bottomGeometry.stickyTop + 1);
       expect(bottomGeometry.stickyBottom).toBeLessThanOrEqual(bottomGeometry.navTop + 1);
     } else {
-      expect(logGeometry.columns).toBe(2);
-      expect(logGeometry.width).toBeGreaterThan(1000);
+      expect(logGeometry.columns).toBe(1);
+      expect(logGeometry.width).toBeLessThanOrEqual(840);
       await expect(page.locator('.desktop-log-submit-bar')).toBeVisible();
       await expect(page.locator('.mobile-log-submit-bar')).toBeHidden();
       await expect(page.locator('button[type="submit"]:visible')).toHaveCount(1);
@@ -294,6 +295,7 @@ test.describe('모바일·접근성 차단 기준', () => {
   test('모바일 탐사 로그의 오류와 마지막 focus 대상이 제출 bar 위에 유지되고 portal이 원본 form을 제출한다', async ({ page }, testInfo) => {
     test.skip(!testInfo.project.name.includes('mobile'), '모바일 제출 portal 전용 검사');
     await page.goto('/log');
+    await page.locator('.log-optional-fields summary').click();
 
     const mobileButton = page.locator('.mobile-log-submit-bar button[type="submit"]');
     const accessibility = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze();
@@ -311,7 +313,7 @@ test.describe('모바일·접근성 차단 기준', () => {
       element.append(alert);
     });
 
-    const lastControl = page.locator('.log-control-grid button').last();
+    const lastControl = page.locator('.log-spoiler-choice input');
     await lastControl.focus();
     await lastControl.scrollIntoViewIfNeeded();
     const clearance = await page.locator('.page-container').evaluate(container => {
@@ -332,7 +334,8 @@ test.describe('모바일·접근성 차단 기준', () => {
     expect(clearance.focusedBottom).toBeLessThanOrEqual(clearance.stickyTop + 1);
     expect(clearance.stickyBottom).toBeLessThanOrEqual(clearance.navTop + 1);
 
-    await page.getByPlaceholder('작품명을 입력하세요...').fill('portal 제출 확인');
+    await page.getByPlaceholder('작품명을 입력하세요').fill('portal 제출 확인');
+    await page.getByPlaceholder('이 작품에서 아직 남아 있는 생각이나 감정을 적어보세요').fill('제출 동작을 확인합니다.');
     await lastControl.focus();
     await page.keyboard.press('Tab');
     await expect(mobileButton).toBeFocused();

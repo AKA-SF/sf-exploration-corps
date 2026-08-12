@@ -11,6 +11,7 @@ const initialState = {
 
 export function useOwnExplorationLogs(user) {
   const [state, setState] = useState(initialState);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     if (!user?.id) return undefined;
@@ -44,12 +45,13 @@ export function useOwnExplorationLogs(user) {
     return () => {
       isMounted = false;
     };
-  }, [user?.id]);
+  }, [reloadToken, user?.id]);
 
   const hasCurrentUserData = Boolean(user?.id && state.loadedUserId === user?.id);
   return {
     error: hasCurrentUserData ? state.error : '',
     logs: hasCurrentUserData ? state.logs : [],
+    reload: () => setReloadToken(token => token + 1),
     status: user?.id && !hasCurrentUserData ? 'loading' : state.status,
   };
 }

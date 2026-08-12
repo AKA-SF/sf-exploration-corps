@@ -11,7 +11,7 @@ import { loadConceptsSnapshot } from './concepts.js';
 import { loadMediaSnapshot } from './media.js';
 import { hydrateSelectedWorkCovers, loadWorksSnapshot } from './works.js';
 
-const HOME_FEED_CACHE_KEY = 'home-feed:v8-daily-concept';
+const HOME_FEED_CACHE_KEY = 'home-feed:v9-four-latest-signals';
 const HOME_FEED_TTL_MS = 5 * 60 * 1000;
 const DAILY_DISCOVERY_TTL_MS = 48 * 60 * 60 * 1000;
 
@@ -64,7 +64,7 @@ async function loadHomeFeedSources({ discoveryDate, refresh }) {
     loadWorksSnapshot({ refresh }),
     loadMediaSnapshot({ refresh }),
     loadConceptsSnapshot({ refresh }),
-    supabaseRpcRequest('get_visible_exploration_logs', { body: { p_limit: 3 } }),
+    supabaseRpcRequest('get_visible_exploration_logs', { body: { p_limit: 4 } }),
     supabaseRpcRequest('get_published_sf_discoveries', { body: { p_limit: 4, p_offset: 0 } }),
   ]);
   const [worksResult, mediaResult, conceptsResult, signalsResult, discoveriesResult] = sources;

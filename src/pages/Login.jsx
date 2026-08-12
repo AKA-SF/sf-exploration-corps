@@ -36,6 +36,12 @@ export default function Login() {
     setForm(current => ({ ...current, [name]: value }));
   };
 
+  const switchMode = nextMode => {
+    setMode(nextMode);
+    setStatus('idle');
+    setMessage('');
+  };
+
   const submitAuth = async event => {
     event.preventDefault();
     setStatus('submitting');
@@ -119,6 +125,25 @@ export default function Login() {
           </p>
         </div>
 
+        <div className="login-mode-tabs" role="tablist" aria-label="계정 접근 방식">
+          <button
+            aria-controls="login-auth-form"
+            aria-selected={mode === 'signin'}
+            className="login-mode-tab"
+            onClick={() => switchMode('signin')}
+            role="tab"
+            type="button"
+          >이메일 로그인</button>
+          <button
+            aria-controls="login-auth-form"
+            aria-selected={mode === 'signup'}
+            className="login-mode-tab"
+            onClick={() => switchMode('signup')}
+            role="tab"
+            type="button"
+          >이메일로 가입</button>
+        </div>
+
         {!isConfigured && (
           <aside className="login-preview-callout" role="status">
             <strong>현재 Preview는 계정 연결 전입니다.</strong>
@@ -127,7 +152,7 @@ export default function Login() {
           </aside>
         )}
 
-        <form className="login-form" onSubmit={submitAuth}>
+        <form className="login-form" id="login-auth-form" onSubmit={submitAuth}>
           {mode === 'signup' && (
             <label>
               <span>닉네임</span>
@@ -185,17 +210,6 @@ export default function Login() {
           </p>
         </form>
 
-        <button
-          className="login-mode-switch"
-          onClick={() => {
-            setMode(current => (current === 'signin' ? 'signup' : 'signin'));
-            setStatus('idle');
-            setMessage('');
-          }}
-          type="button"
-        >
-          {mode === 'signup' ? '이미 계정이 있어요' : '새 탐사 대원 등록'}
-        </button>
       </section>
       </div>
     </PageTransition>

@@ -1,9 +1,11 @@
-import { useMemo, useState } from 'react';
-import { ArrowRight, Inbox, LockKeyhole, LogOut, PenLine, UserRound } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ArrowRight, Inbox, LockKeyhole, LogOut, PenLine, Trash2, UserRound } from 'lucide-react';
 import { Link, Navigate } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
 import { readExplorationDraft } from '../features/exploration-logs/explorationDraftStorage';
+import { createExplorationLogRepository } from '../features/exploration-logs/explorationLogRepository';
+import { getSupabaseClient } from '../lib/getSupabaseClient';
 import AccountSettingsPanel from './profile/AccountSettingsPanel';
 import { useOwnExplorationLogs } from './profile/hooks/useOwnExplorationLogs';
 import './Profile.css';
@@ -30,6 +32,11 @@ function isLocalProfilePreview() {
   return localHosts.has(window.location.hostname) && preview === 'profile';
 }
 
+function getFocusableElements(container) {
+  return [...(container?.querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])') ?? [])]
+    .filter(element => !element.hasAttribute('disabled'));
+}
+
 export default function Profile() {
   const { isConfigured, loading, signOut, user } = useAuth();
   const isPreview = isLocalProfilePreview();
@@ -39,14 +46,53 @@ export default function Profile() {
     [isPreview, loading, user?.id],
   );
   const hasDraft = Boolean(draft?.title || draft?.memo);
-  const { error, logs, status } = useOwnExplorationLogs(isPreview ? null : user);
+  const { error, logs, reload, status } = useOwnExplorationLogs(isPreview ? null : user);
+  const [pendingDeleteId, setPendingDeleteId] = useState('');
+  const [recordMessage, setRecordMessage] = useState('');
+  const deleteCancelRef = useRef(null);
+  const deleteDialogRef = useRef(null);
+  const deleteTriggerRef = useRef(null);
   const visibleLogs = isPreview ? [] : logs;
   const visibleStatus = isPreview ? 'ready' : status;
-  const displayName = isPreview
-    ? '프리뷰 탐사자'
-    : nameOverride?.userId === user?.id
-      ? nameOverride.nickname
-      : getAccountName(user);
+
+  useEffect(() => {
+    if (!pendingDeleteId) return undefined;
+    deleteCancelRef.current?.focus();
+    const onKeyDown = event => {
+      if (event.key === 'Escape') {
+        setPendingDeleteId('');
+        deleteTriggerRef.current?.focus();
+        return;
+      }
+      if (event.key === 'Tab') {
+        const focusable = getFocusableElements(deleteDialogRef.current);
+        const first = focusable[0];
+        const last = focusable.at(-1);
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [pendingDeleteId]);
+
+  const deleteRecord = async id => {
+    try {
+      const client = await getSupabaseClient();
+      if (!client) throw new Error('개인 기록 저장소에 연결할 수 없습니다.');
+      await createExplorationLogRepository(client).deleteOwnExplorationLog({ id, userId: user.id });
+      setPendingDeleteId('');
+      setRecordMessage('기록을 삭제했습니다.');
+      reload();
+    } catch {
+      setRecordMessage('기록을 삭제하지 못했습니다. 다시 시도해주세요.');
+    }
+  };
 
   if (!isPreview && !loading && !user) return <Navigate to="/login" replace />;
 
@@ -68,6 +114,12 @@ export default function Profile() {
       </PageTransition>
     );
   }
+
+  const displayName = isPreview
+    ? '프리뷰 탐사자'
+    : nameOverride?.userId && nameOverride.userId === user.id
+      ? nameOverride.nickname
+      : getAccountName(user);
 
   return (
     <PageTransition className="profile-container profile-home">
@@ -119,16 +171,18 @@ export default function Profile() {
           </div>
           {visibleStatus === 'loading' && <p className="profile-state" role="status">최근 기록을 불러오고 있습니다.</p>}
           {visibleStatus === 'error' && <p className="profile-state" role="alert">{error}</p>}
+          {recordMessage && <p className="profile-state" role="status">{recordMessage}</p>}
           {visibleStatus === 'ready' && visibleLogs.length === 0 && (
             <div className="profile-empty-action"><p>아직 저장한 기록이 없습니다.</p><Link to="/log">첫 기록 남기기</Link></div>
           )}
           {visibleLogs.length > 0 && (
             <div className="profile-record-list">
               {visibleLogs.map(log => (
-                <Link key={log.id} to={`/result/${log.id}`}>
-                  <div><strong>{log.title}</strong><p>{log.memo}</p></div>
-                  <time dateTime={log.createdAt}>{formatRecordDate(log.createdAt)}</time>
-                </Link>
+                <article key={log.id} className="profile-record-item">
+                  <Link to={`/result/${log.id}`}><div><strong>{log.title}</strong><p>{log.memo}</p></div><time dateTime={log.createdAt}>{formatRecordDate(log.createdAt)}</time></Link>
+                  <div className="profile-record-actions"><span>{log.visibility === 'ANON_NETWORK' ? '익명 네트워크' : log.visibility === 'PUBLIC_SIGNAL' ? '공개 신호' : '나만 보기'}</span><Link to={`/log/${log.id}`}>기록 수정</Link><button aria-label={`${log.title} 기록 삭제`} onClick={event => { deleteTriggerRef.current = event.currentTarget; setPendingDeleteId(log.id); }} type="button"><Trash2 aria-hidden="true" />삭제</button></div>
+                  {pendingDeleteId === log.id && <div aria-label="기록 삭제 확인" aria-modal="true" className="profile-delete-dialog" ref={deleteDialogRef} role="dialog"><strong>이 기록을 삭제할까요?</strong><p>“{log.title}”은 복구할 수 없으며 공개된 신호도 네트워크에서 사라집니다.</p><div><button onClick={() => { setPendingDeleteId(''); deleteTriggerRef.current?.focus(); }} ref={deleteCancelRef} type="button">취소</button><button className="is-danger" onClick={() => void deleteRecord(log.id)} type="button">기록 삭제</button></div></div>}
+                </article>
               ))}
             </div>
           )}

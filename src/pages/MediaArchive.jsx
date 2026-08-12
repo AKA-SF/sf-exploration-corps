@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { ArrowLeft, ExternalLink, Newspaper, Play, Search, Sparkles } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
+import ResilientImage from '../components/ResilientImage';
 import { useActivityToast } from '../context/activityToastContextValue';
 import { useAuth } from '../context/authContextValue';
 import { recordUserActivity } from '../lib/activityLogger';
@@ -168,13 +169,12 @@ export default function MediaArchive() {
             target="_blank"
           >
             <div className="media-archive-thumb">
-              {item.thumbnail ? (
-                <img
-                  src={item.thumbnail}
-                  alt={`${item.title} ${item.medium === 'Article' ? '기사 대표 이미지' : '썸네일'}`}
-                  loading="lazy"
-                />
-              ) : item.medium === 'Article' ? <Newspaper aria-hidden="true" /> : <Play aria-hidden="true" />}
+              <ResilientImage
+                alt={`${item.title} ${item.medium === 'Article' ? '기사 대표 이미지' : '썸네일'}`}
+                fallback={item.medium === 'Article' ? <Newspaper aria-hidden="true" /> : <Play aria-hidden="true" />}
+                loading="lazy"
+                src={item.thumbnail}
+              />
             </div>
             <div className="media-archive-body">
               <span>{item.code} / {item.medium}</span>

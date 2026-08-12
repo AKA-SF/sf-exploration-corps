@@ -23,6 +23,7 @@ const LogResult = lazy(() => import('./pages/LogResult'));
 const Profile = lazy(() => import('./pages/Profile'));
 const CrewMessage = lazy(() => import('./pages/CrewMessage'));
 const Login = lazy(() => import('./pages/Login'));
+const NotFound = lazy(() => import('./pages/NotFound'));
 
 const Network = lazy(() => import('./pages/Network'));
 const NetworkDetail = lazy(() => import('./pages/NetworkDetail'));
@@ -115,10 +116,11 @@ function App() {
                   <Route path="/questions" element={<Questions />} />
                   <Route path="/questions/:questionId" element={<Questions />} />
                   <Route path="/log" element={<LogEntry />} />
+                  <Route path="/log/:id" element={<LogEntry />} />
                   <Route path="/result/:id" element={<LogResult />} />
                   <Route path="/network" element={<Network />} />
                   <Route path="/network/:id" element={<NetworkDetail />} />
-                  <Route path="/badges" element={<Navigate to="/profile?tab=progress" replace />} />
+                  <Route path="/badges" element={<Navigate to="/profile" replace />} />
                   <Route path="/profile" element={<Profile />} />
                   <Route path="/crew/:crewCode/message" element={<CrewMessage />} />
                   <Route path="/login" element={<Login />} />
@@ -126,6 +128,7 @@ function App() {
                   <Route path="/admin/discoveries" element={<AdminAccessBoundary><AdminDiscoveries /></AdminAccessBoundary>} />
                   {AdminVisualPreview && <Route path="/admin/__visual-preview" element={<AdminVisualPreview />} />}
                   {EditorialDraftPreview && <Route path="/__editorial-preview" element={<EditorialDraftPreview />} />}
+                  <Route path="*" element={<NotFound />} />
                 </Routes>
               </Suspense>
             </div>

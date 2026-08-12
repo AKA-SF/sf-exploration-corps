@@ -47,3 +47,21 @@ test('계정 전환 중에는 이전 사용자의 기록을 노출하지 않는�
   assert.match(hook, /loadedUserId === user\?\.id/);
   assert.match(hook, /logs: hasCurrentUserData \? state\.logs : \[\]/);
 });
+
+test('비로그인 내 정보는 사용자 표시 이름을 계산하기 전에 로그인으로 이동한다', async () => {
+  const profile = await read('src/pages/Profile.jsx');
+  const authRedirectIndex = profile.indexOf('if (!isPreview && !loading && !user)');
+  const displayNameIndex = profile.indexOf('const displayName');
+
+  assert.notEqual(authRedirectIndex, -1);
+  assert.notEqual(displayNameIndex, -1);
+  assert.ok(authRedirectIndex < displayNameIndex);
+  assert.match(profile, /nameOverride\?\.userId && nameOverride\.userId === user\.id/);
+});
+
+test('기존 배지 주소는 제거된 진행도 탭 없이 내 정보로 이동한다', async () => {
+  const app = await read('src/App.jsx');
+
+  assert.match(app, /path="\/badges" element=\{<Navigate to="\/profile" replace \/>\}/);
+  assert.doesNotMatch(app, /\/profile\?tab=progress/);
+});

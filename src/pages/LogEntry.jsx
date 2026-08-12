@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { FilePlus, Heart, Lightbulb, LockKeyhole, Tag, Target } from 'lucide-react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import PageTransition from '../components/PageTransition';
 import { useAuth } from '../context/authContextValue';
 import {
@@ -91,7 +91,7 @@ function TagSelectionField({
   );
 }
 
-function LogEntryEditor({ initialDraft, user }) {
+function LogEntryEditor({ initialDraft, logId, sourceVisibility, user }) {
   const navigate = useNavigate();
   const location = useLocation();
   const prefilled = location.state || {};
@@ -171,12 +171,16 @@ function LogEntryEditor({ initialDraft, user }) {
     try {
       const client = await getSupabaseClient();
       if (!client) throw new Error('개인 기록 저장소에 연결할 수 없습니다.');
-      const savedLog = await submitExplorationLog({
-        input: { ...formData, visibility: 'PRIVATE_ARCHIVE' },
-        repository: createExplorationLogRepository(client),
-        submissionId,
-        userId: user.id,
-      });
+      const repository = createExplorationLogRepository(client);
+      const savedLog = logId
+        ? await repository.updateOwnExplorationLog({ id: logId, input: formData, userId: user.id })
+        : await submitExplorationLog({
+          input: { ...formData, visibility: 'PRIVATE_ARCHIVE' },
+          repository,
+          submissionId,
+          userId: user.id,
+        });
+      if (!savedLog) throw new Error('이 기록을 찾을 수 없거나 수정 권한이 없습니다.');
       clearExplorationDraft(user.id);
       navigate(`/result/${savedLog.id}`);
     } catch (error) {
@@ -187,7 +191,7 @@ function LogEntryEditor({ initialDraft, user }) {
 
   const canSubmit = Boolean(formData.title.trim() && formData.memo.trim() && !isSubmitting);
   const submitStatus = isSubmitting
-    ? '비공개 기록을 저장하고 있습니다.'
+    ? logId ? '수정한 기록을 나만 보기로 저장하고 있습니다.' : '비공개 기록을 저장하고 있습니다.'
     : !user
       ? '로그인하면 이 초안을 이어서 비공개로 저장합니다.'
       : canSubmit
@@ -199,13 +203,15 @@ function LogEntryEditor({ initialDraft, user }) {
       <PageTransition className={`log-entry-container ${isSubmitting ? 'submitting' : ''}`}>
         <header className="log-entry-header">
           <span className="mono"><FilePlus aria-hidden="true" /> PRIVATE FIELD NOTE</span>
-          <h1>30초 기록</h1>
+          <h1>{logId ? '기록 수정' : '30초 기록'}</h1>
           <p>작품에서 남은 한 가지를 적어두세요. 자세한 분류는 나중에 덧붙여도 됩니다.</p>
         </header>
 
         <aside className="log-privacy-note" aria-label="저장 공개 범위">
           <LockKeyhole aria-hidden="true" />
-          <div><strong>새 기록은 항상 나만 보기로 저장됩니다.</strong><p>네트워크 공개는 저장이 끝난 뒤 별도 단계에서 직접 선택합니다.</p></div>
+          {logId && sourceVisibility !== 'PRIVATE_ARCHIVE'
+            ? <div><strong>수정한 공개 기록을 저장하면 네트워크 공개가 해제되고 나만 보기로 전환됩니다.</strong><p>저장 후 내용을 다시 확인한 뒤, 결과 화면에서 공개 범위를 직접 선택할 수 있습니다.</p></div>
+            : <div><strong>새 기록은 항상 나만 보기로 저장됩니다.</strong><p>네트워크 공개는 저장이 끝난 뒤 별도 단계에서 직접 선택합니다.</p></div>}
         </aside>
 
         <form id={LOG_FORM_ID} className="log-form" onSubmit={handleSubmit}>
@@ -269,8 +275,39 @@ function LogEntryEditor({ initialDraft, user }) {
 
 function LogEntry() {
   const { loading, user } = useAuth();
+  const { id } = useParams();
   if (loading) return <PageTransition className="log-entry-container"><section className="panel" role="status">계정 상태를 확인하고 있습니다.</section></PageTransition>;
+  if (id) return <EditLogEntry id={id} user={user} />;
   return <ResolvedLogEntry key={user?.id || 'anonymous'} user={user} />;
+}
+
+function EditLogEntry({ id, user }) {
+  const [record, setRecord] = useState(null);
+  const [state, setState] = useState('loading');
+
+  useEffect(() => {
+    if (!user) return undefined;
+    let mounted = true;
+    async function load() {
+      try {
+        const client = await getSupabaseClient();
+        if (!client) throw new Error('개인 기록 저장소에 연결할 수 없습니다.');
+        const ownRecord = await createExplorationLogRepository(client).getOwnExplorationLog({ id, userId: user.id });
+        if (!mounted) return;
+        setRecord(ownRecord);
+        setState(ownRecord ? 'ready' : 'not-found');
+      } catch {
+        if (mounted) setState('error');
+      }
+    }
+    void load();
+    return () => { mounted = false; };
+  }, [id, user]);
+
+  if (!user) return <PageTransition className="log-entry-container"><section className="panel" role="alert">로그인한 사용자만 자신의 기록을 수정할 수 있습니다.</section></PageTransition>;
+  if (state === 'loading') return <PageTransition className="log-entry-container"><section className="panel" role="status">기록을 불러오고 있습니다.</section></PageTransition>;
+  if (state !== 'ready') return <PageTransition className="log-entry-container"><section className="panel" role="alert">기록을 찾을 수 없거나 수정 권한이 없습니다.</section></PageTransition>;
+  return <LogEntryEditor initialDraft={{ ...record, type: record.logType }} logId={id} sourceVisibility={record.visibility} user={user} />;
 }
 
 function ResolvedLogEntry({ user }) {

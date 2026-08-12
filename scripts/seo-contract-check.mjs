@@ -84,6 +84,7 @@ const PRODUCTION_APP_ROUTE_PATHS = [
   '/questions',
   '/questions/:questionId',
   '/log',
+  '/log/:id',
   '/result/:id',
   '/network',
   '/network/:id',
@@ -101,6 +102,7 @@ const SPA_REWRITE_PATHS = [
   '/discover/:slug',
   '/questions/:questionId',
   '/log',
+  '/log/:id',
   '/result/:id',
   '/network/:id',
   '/badges',
@@ -221,7 +223,8 @@ test('build and hosting expose route metadata, redirects and private noindex hea
   assert.match(app, /path="\/home-v2" element=\{<Navigate to="\/" replace \/>\}/);
   assert.match(app, /path="\/media\/interviews" element=\{<Navigate to="\/media\/media" replace \/>\}/);
   const appRoutePaths = [...app.matchAll(/<Route path="([^"]+)"/g)].map(match => match[1]);
-  assert.deepEqual(appRoutePaths, [...PRODUCTION_APP_ROUTE_PATHS, ...DEVELOPMENT_ONLY_ROUTE_PATHS]);
+  assert.deepEqual(appRoutePaths.slice(0, -1), [...PRODUCTION_APP_ROUTE_PATHS, ...DEVELOPMENT_ONLY_ROUTE_PATHS]);
+  assert.equal(appRoutePaths.at(-1), '*', 'the branded fallback route must remain last');
 
   const redirects = new Map(vercel.redirects.map(rule => [rule.source, rule]));
   assert.deepEqual(redirects.get('/home-v2'), {
@@ -255,6 +258,7 @@ test('build and hosting expose route metadata, redirects and private noindex hea
     ['/profile', 'noindex, nofollow'],
     ['/login', 'noindex, nofollow'],
     ['/log', 'noindex, nofollow'],
+    ['/log/:path*', 'noindex, nofollow'],
     ['/badges', 'noindex, nofollow'],
     ['/__editorial-preview', 'noindex, nofollow'],
   ]);

@@ -17,6 +17,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { useAuth } from '../context/authContextValue';
+import ResilientImage from '../components/ResilientImage';
 import { readExplorationDraft } from '../features/exploration-logs/explorationDraftStorage';
 import SfDiscoveryDialog from '../features/sf-discoveries/SfDiscoveryDialog';
 import { discoverySourceLinkLabel } from '../features/sf-discoveries/sfDiscoveryPresentation';
@@ -86,11 +87,11 @@ const DISCOVERY_MEDIA_LABELS = {
   SERIES: '시리즈',
 };
 
-function SignalCard({ onOpen, signal }) {
+function SignalCard({ index, onOpen, signal }) {
   const emotions = isClassifiedSignal(signal) ? [] : signal?.emotions ?? [];
   return (
     <Link className="home-v2-signal" onClick={onOpen} to={`/network/${signal.id}`}>
-      <span className="home-v2-signal__pulse" aria-hidden="true" />
+      <span className="home-v2-signal__index mono" aria-hidden="true">SIGNAL {String(index + 1).padStart(2, '0')}</span>
       <span className="home-v2-signal__body">
         <span className="home-v2-signal__meta mono">
           {signalType(signal)} · {compactDate(signal?.createdAt || signal?.created_at)}
@@ -100,7 +101,7 @@ function SignalCard({ onOpen, signal }) {
           {emotions.slice(0, 3).map(emotion => <small key={emotion}>#{emotion}</small>)}
         </span>
       </span>
-      <ArrowRight aria-hidden="true" />
+      <span className="home-v2-signal__open">신호 보기 <ArrowRight aria-hidden="true" /></span>
     </Link>
   );
 }
@@ -175,7 +176,9 @@ function HomeV2() {
   const worksUnavailable = sourceStatus?.works === 'unavailable';
   const hasPartialSourceFailure = Object.values(sourceStatus ?? {}).includes('unavailable');
   const discoveryItem = feed?.featuredConcepts?.[0];
-  const discoverySourceMessage = conceptsUnavailable ? '개념 자료 연결이 지연되고 있습니다.' : '';
+  const discoverySourceMessage = conceptsUnavailable && mediaUnavailable
+    ? '개념·미디어 연결이 지연되고 있습니다.'
+    : conceptsUnavailable ? '개념 자료 연결이 지연되고 있습니다.' : '';
   const primaryAction = useMemo(() => {
     if (hasDraft) return { label: '작성 중인 기록 이어가기', to: '/log' };
     if (user) return { label: '새 탐사 시작하기', to: '/works/novels' };
@@ -348,9 +351,7 @@ function HomeV2() {
               <Link className="home-v2-work" key={work.code || work.id || index} onClick={() => trackProductEvent(HOME_EVENT_NAMES.RECOMMENDATION, { action: 'open', state: visitorState, surface: 'daily_discovery' })} to={`/works/novels?work=${encodeURIComponent(work.code || '')}`}>
                 <span className="home-v2-work__index mono">SIGNAL {String(index + 1).padStart(2, '0')}</span>
                 <div className="home-v2-work__cover">
-                  {work.image || work.cover
-                    ? <img alt="" loading="lazy" src={work.image || work.cover} />
-                    : <BookOpen aria-hidden="true" />}
+                  <ResilientImage alt="" fallback={<BookOpen aria-hidden="true" />} loading="lazy" src={work.image || work.cover} />
                 </div>
                 <div><strong>{workTitle(work)}</strong><span>{work.author || work.subtitle || work.category || 'SF ARCHIVE'}</span></div>
               </Link>
@@ -389,11 +390,9 @@ function HomeV2() {
             {latestDiscoveries.map(item => (
               <article className={`home-v2-news__card home-v2-news__card--${item.kind?.toLowerCase()}`} key={item.id}>
                 <button className="home-v2-news__open" onClick={() => setSelectedDiscovery(item)} type="button">
-                  {item.image_url && (
-                    <span className="home-v2-news__cover">
-                      <img alt={item.image_alt || `${item.title} 표지`} loading="lazy" src={item.image_url} />
-                    </span>
-                  )}
+                  <span className="home-v2-news__cover">
+                    <ResilientImage alt={item.image_alt || `${item.title} 표지`} fallback={<BookOpen aria-hidden="true" />} loading="lazy" src={item.image_url} />
+                  </span>
                   <span className="home-v2-news__kind mono">{DISCOVERY_KIND_LABELS[item.kind] || 'SF 정보'} · {DISCOVERY_MEDIA_LABELS[item.media_type] || '기타'}</span>
                   <h3>{item.title}</h3>
                   {(item.author_text || item.publisher_text) && (
@@ -451,21 +450,18 @@ function HomeV2() {
                 target="_blank"
               >
                 <span className="home-v2-media__thumb">
-                  {item.thumbnail
-                    ? (
-                      <img
-                        alt=""
-                        decoding="async"
-                        fetchPriority="low"
-                        height="180"
-                        loading="lazy"
-                        sizes="(max-width: 360px) 96px, (max-width: 720px) 116px, (max-width: 900px) 42vw, 250px"
-                        src={homeMediaThumbnail(item.thumbnail)}
-                        srcSet={`${homeMediaThumbnail(item.thumbnail)} 320w, ${homeMediaThumbnail(item.thumbnail, 'hqdefault')} 480w, ${homeMediaThumbnail(item.thumbnail, 'sddefault')} 640w`}
-                        width="320"
-                      />
-                    )
-                    : <Play aria-hidden="true" />}
+                  <ResilientImage
+                    alt=""
+                    decoding="async"
+                    fallback={<Play aria-hidden="true" />}
+                    fetchPriority="low"
+                    height="180"
+                    loading="lazy"
+                    sizes="(max-width: 360px) 96px, (max-width: 720px) 116px, (max-width: 900px) 42vw, 250px"
+                    src={homeMediaThumbnail(item.thumbnail)}
+                    srcSet={`${homeMediaThumbnail(item.thumbnail)} 320w, ${homeMediaThumbnail(item.thumbnail, 'hqdefault')} 480w, ${homeMediaThumbnail(item.thumbnail, 'sddefault')} 640w`}
+                    width="320"
+                  />
                 </span>
                 <span className="home-v2-media__body">
                   <span className="home-v2-media__meta mono">{item.category || 'SF 미디어'} · {item.medium || '자료'}</span>
@@ -492,8 +488,8 @@ function HomeV2() {
         ) : signals.length === 0 ? (
           <div className="home-v2-feed-state"><Radio aria-hidden="true" /><p><strong>아직 공개된 탐사 신호가 없습니다.</strong>첫 번째 신호를 공개해 탐사 네트워크를 시작할 수 있습니다.</p><Link to="/log">첫 신호 기록하기</Link></div>
         ) : (
-          <div className="home-v2-signal-list">
-            {signals.map(signal => <SignalCard key={signal.id} onOpen={() => trackProductEvent(HOME_EVENT_NAMES.RADAR_SIGNAL, { action: 'open', state: visitorState, surface: 'signal_list' })} signal={signal} />)}
+          <div className="home-v2-signal-grid">
+            {signals.slice(0, 4).map((signal, index) => <SignalCard index={index} key={signal.id} onOpen={() => trackProductEvent(HOME_EVENT_NAMES.RADAR_SIGNAL, { action: 'open', state: visitorState, surface: 'signal_grid' })} signal={signal} />)}
           </div>
         )}
       </section>

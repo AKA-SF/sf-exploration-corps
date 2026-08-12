@@ -50,6 +50,10 @@
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
     },
     {
+      "source": "/log/:path*",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
       "source": "/badges",
       "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
     },
@@ -72,6 +76,7 @@
     { "source": "/discover/:slug", "destination": "/index.html" },
     { "source": "/questions/:questionId", "destination": "/index.html" },
     { "source": "/log", "destination": "/index.html" },
+    { "source": "/log/:id", "destination": "/index.html" },
     { "source": "/result/:id", "destination": "/index.html" },
     { "source": "/network/:id", "destination": "/index.html" },
     { "source": "/badges", "destination": "/index.html" },

@@ -69,7 +69,7 @@
   .tag-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .custom-tag-control > div { grid-template-columns: 1fr; }
   .custom-tag-control button { width: 100%; }
-  .mobile-log-submit-bar { display: flex; position: fixed; right: 8px; bottom: calc(72px + env(safe-area-inset-bottom)); left: 8px; }
+  .mobile-log-submit-bar { display: flex; position: fixed; right: 8px; bottom: calc(var(--mobile-nav-height, 72px) + env(safe-area-inset-bottom)); left: 8px; }
   .sticky-readout { display: none; }
   .sticky-submit-btn { width: 100%; }
 }

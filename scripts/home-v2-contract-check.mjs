@@ -16,8 +16,22 @@ test('Home2 is the root route and loads one compact public feed', async () => {
   assert.match(home, /fetch\('\/api\/home-feed'/);
   assert.doesNotMatch(home, /\/api\/(works|media|concepts|exploration-log)/);
   assert.match(api, /get_published_sf_discoveries[\s\S]*p_limit:\s*4/);
+  assert.match(api, /get_visible_exploration_logs[\s\S]*p_limit:\s*4/);
   assert.match(feedBuilder, /latestDiscoveries:\s*normalizedDiscoveries\.slice\(0,\s*4\)/);
+  assert.match(feedBuilder, /latestSignals:\s*normalizedLogs\.slice\(0,\s*4\)/);
   assert.match(css, /\.home-v2-news__grid\s*\{[^}]*grid-template-columns:\s*repeat\(4,/);
+});
+
+test('Home2 presents the four latest public signals in an adaptive card grid', async () => {
+  const home = await read('src/pages/HomeV2.jsx');
+  const css = await read('src/pages/HomeV2.css');
+
+  assert.match(home, /signals\.slice\(0,\s*4\)\.map/);
+  assert.match(home, /home-v2-signal-grid/);
+  assert.match(home, /surface:\s*'signal_grid'/);
+  assert.match(css, /\.home-v2-signal-grid\s*\{[^}]*grid-template-columns:\s*repeat\(4,/);
+  assert.match(css, /@media \(max-width: 900px\)[\s\S]*home-v2-signal-grid[^}]*repeat\(2,/);
+  assert.match(css, /@media \(max-width: 720px\)[\s\S]*home-v2-signal-grid\s*\{[^}]*grid-template-columns:\s*1fr/);
 });
 
 test('legacy Home is removed and active features do not import from its directory', async () => {

@@ -20,6 +20,24 @@ const expectedReadingTokens = {
   placeholder: '#5d6f72',
 };
 
+const worksFixture = {
+  works: [{
+    code: 'SFA-001',
+    title: '검증용 소설',
+    subtitle: '작품 아카이브의 실제 카드 경로를 검증합니다.',
+    medium: '소설',
+    category: '소설',
+    tags: ['검증'],
+  }],
+};
+
+async function mockWorks(page) {
+  await page.route('**/api/works', route => route.fulfill({
+    contentType: 'application/json',
+    body: JSON.stringify(worksFixture),
+  }));
+}
+
 async function readCssTokens(page, selector, tokenMap) {
   return page.locator(selector).evaluate((element, entries) => {
     const style = getComputedStyle(element);
@@ -28,6 +46,7 @@ async function readCssTokens(page, selector, tokenMap) {
 }
 
 test('works archive uses the HomeV2 observatory palette and responsive controls', async ({ page }, testInfo) => {
+  await mockWorks(page);
   await page.goto('/works/novels');
 
   await expect(page.getByRole('heading', { name: '소설', exact: true })).toBeVisible();
@@ -75,6 +94,7 @@ test('works archive uses the HomeV2 observatory palette and responsive controls'
 
 test('works archive reading mode uses the cool mineral palette with a visible focus state', async ({ page }) => {
   await page.addInitScript(() => localStorage.setItem('sf-site-mode', 'reading'));
+  await mockWorks(page);
   await page.goto('/works/novels');
 
   const tokens = await readCssTokens(page, 'html', {
