@@ -9,7 +9,7 @@ import { ActivityToastProvider } from './context/ActivityToastContext';
 import { AuthProvider } from './context/AuthContext';
 import { MobileActionLayerProvider } from './context/MobileActionLayerContext';
 import { getStorageItem, setStorageItem } from './lib/browserStorage';
-import { applySeoMetadata, getSeoMetadata } from './lib/seo';
+import { applySeoMetadata, getSeoMetadata, readServerSeoMetadata, removeServerSeoMarker } from './lib/seo';
 
 const HomeV2 = lazy(() => import('./pages/HomeV2'));
 const SfDiscoveries = lazy(() => import('./pages/SfDiscoveries'));
@@ -48,7 +48,10 @@ function App() {
     && !['localhost', '127.0.0.1'].includes(window.location.hostname);
   const [siteMode, setSiteMode] = useState(() => getStorageItem('sf-site-mode', 'console'));
   const [mobileActionLayer, setMobileActionLayer] = useState(null);
-  const seoMetadata = useMemo(() => getSeoMetadata(location.pathname), [location.pathname]);
+  const seoMetadata = useMemo(
+    () => readServerSeoMetadata(location.pathname) ?? getSeoMetadata(location.pathname),
+    [location.pathname],
+  );
   const isAdminSurface = location.pathname.startsWith('/admin');
   const isHomeV2Surface = location.pathname === '/' || location.pathname === '/home-v2';
   const isDeviceSurface = false;
@@ -75,6 +78,7 @@ function App() {
 
   useEffect(() => {
     applySeoMetadata(seoMetadata);
+    removeServerSeoMarker();
   }, [seoMetadata]);
 
   useEffect(() => {

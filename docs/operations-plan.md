@@ -329,6 +329,13 @@ Hermes 로컬 cron 결과는 현재 이 CLI에 자동 알림되지 않는다. �
 
 ## 9. 기술 운영·모니터링
 
+### Supabase canonical baseline 및 migration 배포 계약
+
+- 새 환경은 저장소의 `supabase/schema.sql`을 공식 canonical baseline으로 먼저 bootstrap한 뒤 `supabase/migrations`를 파일명 순서대로 적용한다. migration-only fresh chain이나 Dashboard SQL dump 수동 실행을 bootstrap 대안으로 사용하지 않는다.
+- 기존 환경은 Supabase migration 상태와 마지막 적용 버전을 확인한 뒤 아직 적용되지 않은 새 migration만 순서대로 적용한다.
+- 원격 적용 전 preflight에서 `public.profiles`와 `profiles.id`, `profiles.nickname`, `profiles.public_code`, `profiles.title`, `public.generate_profile_public_code(uuid)`의 존재를 확인한다. 하나라도 없으면 baseline drift로 판정하고 적용을 중단한다.
+- 적용 후 `public.get_public_crew_profile(text)`의 revoke/grant 상태를 확인하고, anon/authenticated 역할 smoke test로 anon 실행 거부와 authenticated 정상 조회를 각각 검증한다.
+
 ### 매일 확인할 신호
 
 - Production 홈과 핵심 route HTTP 상태

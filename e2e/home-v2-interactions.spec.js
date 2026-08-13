@@ -98,6 +98,42 @@ test('오늘의 발견 작품 상세는 X 한 번으로 닫히고 route query를
   await expect(page.getByRole('dialog', { name: /한 번의 닫기/ })).toHaveCount(0);
 });
 
+test('작품 상세 modal은 키보드 포커스를 가두고 닫은 뒤 호출 버튼으로 복귀한다', async ({ page }) => {
+  await page.goto('/works/novels');
+  const trigger = page.getByRole('button', { name: '상세/댓글' });
+  await trigger.click();
+
+  const dialog = page.getByRole('dialog', { name: /한 번의 닫기/ });
+  const closeButton = dialog.getByRole('button', { name: '작품 상세 닫기' });
+  await expect(dialog).toBeVisible();
+  await expect(closeButton).toBeFocused();
+  await expect(page.locator('#root')).toHaveAttribute('inert', '');
+
+  await page.keyboard.press('Shift+Tab');
+  await expect(dialog.locator(':focus')).toHaveCount(1);
+  await page.keyboard.press('Tab');
+  await expect(closeButton).toBeFocused();
+
+  const accessibility = await new AxeBuilder({ page })
+    .include('.work-detail-modal')
+    .analyze();
+  expect(accessibility.violations.filter(violation => (
+    violation.impact === 'serious' || violation.impact === 'critical'
+  ))).toEqual([]);
+
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(page).toHaveURL(/\/works\/novels$/);
+  await expect(trigger).toBeFocused();
+  await expect(page.locator('#root')).not.toHaveAttribute('inert', '');
+
+  await page.goto('/works/novels?work=home-featured-work');
+  await expect(dialog).toBeVisible();
+  await page.keyboard.press('Escape');
+  await expect(dialog).toHaveCount(0);
+  await expect(page).toHaveURL(/\/works\/novels$/);
+});
+
 test('탐사 3단계 카드는 절반 높이의 전체 클릭 링크로 동작한다', async ({ page }) => {
   await page.goto('/');
   const cards = page.locator('.home-v2-flow li');

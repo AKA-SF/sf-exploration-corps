@@ -45,7 +45,7 @@ function replaceMetaContent(html, attribute, name, content) {
   return html.replace(pattern, `<meta ${attribute}="${name}" content="${escapeHtml(content)}" />`);
 }
 
-export function buildRouteHtml(template, metadata) {
+export function buildRouteHtml(template, metadata, { markerPath } = {}) {
   let html = template.replace(
     /<title>[\s\S]*?<\/title>/,
     `<title>${escapeHtml(metadata.title)}</title>`,
@@ -63,7 +63,14 @@ export function buildRouteHtml(template, metadata) {
   html = replaceMetaContent(html, 'property', 'og:image:type', 'image/png');
   html = replaceMetaContent(html, 'name', 'twitter:title', metadata.title);
   html = replaceMetaContent(html, 'name', 'twitter:description', metadata.description);
-  return replaceMetaContent(html, 'name', 'twitter:image', metadata.image);
+  html = replaceMetaContent(html, 'name', 'twitter:image', metadata.image);
+  if (markerPath) {
+    html = html.replace(
+      '</head>',
+      `  <meta name="sf-server-seo" content="${escapeHtml(markerPath)}" />\n</head>`,
+    );
+  }
+  return html;
 }
 
 export async function generateSeoAssets({

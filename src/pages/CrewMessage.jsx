@@ -10,6 +10,7 @@ import { getProfileNickname, getUserNickname } from '../lib/userIdentity';
 import './CrewMessage.css';
 
 const normalizeCrewCode = value => String(value ?? '').trim().toUpperCase();
+const isValidCrewCode = value => /^SFA-[A-Z0-9]{6}$/.test(value);
 
 async function loadOwnCrewProfile(user) {
   const { data } = await supabase
@@ -38,7 +39,9 @@ export default function CrewMessage() {
     let isMounted = true;
 
     async function loadRecipient() {
-      if (!supabase || !normalizedCode) {
+      if (loading || !isConfigured || !user || !supabase) return;
+
+      if (!isValidCrewCode(normalizedCode)) {
         setStatus('error');
         setMessage('대원 교신 좌표를 찾지 못했습니다.');
         return;
@@ -54,7 +57,7 @@ export default function CrewMessage() {
       if (error) {
         setStatus('error');
         setMessage(error.code === '42883'
-          ? '개인 쪽지 SQL 연결이 필요합니다. Supabase에서 crew_messages.sql을 실행해주세요.'
+          ? '대원 프로필 조회 기능이 아직 준비되지 않았습니다. 배포된 데이터베이스 마이그레이션을 확인해주세요.'
           : error.message);
         return;
       }
@@ -76,7 +79,7 @@ export default function CrewMessage() {
     return () => {
       isMounted = false;
     };
-  }, [normalizedCode]);
+  }, [isConfigured, loading, normalizedCode, user]);
 
   useEffect(() => {
     if (!user || !supabase) return undefined;

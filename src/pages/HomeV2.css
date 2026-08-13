@@ -70,7 +70,7 @@
 .home-v2-button:hover, .home-v2-button:focus-visible { transform: translateY(-2px); border-color: #ffffff; }
 .home-v2-button:focus-visible { outline: 3px solid #ffffff; outline-offset: 3px; }
 .home-v2-button:active { transform: scale(.96); }
-.home-v2-button--primary { color: #061010; border-color: var(--home-cyan); background: var(--home-cyan); box-shadow: 0 12px 35px rgba(60, 226, 217, .15); }
+.home-v2 .home-v2-button--primary { color: #061010; border-color: var(--home-cyan); background: var(--home-cyan); box-shadow: 0 12px 35px rgba(60, 226, 217, .15); }
 .home-v2-resume-dot { width: 8px; height: 8px; background: #05211f; border-radius: 50%; animation: home-v2-pulse 1.8s ease infinite; }
 .home-v2-continuation { max-width: 650px; margin-top: 22px; padding: 14px 16px; display: grid; gap: 4px; border-left: 2px solid var(--home-amber); background: rgba(255, 189, 89, .045); }
 .home-v2-continuation > span { color: var(--home-amber); font-size: 11px; }

@@ -63,6 +63,7 @@ Home은 모든 기능을 축소해 모아 놓는 메가 대시보드가 아니�
 - 표시 이름은 auth metadata와 `profiles.nickname`을 동일 DB 트랜잭션에서 갱신하고 부분 성공 상태를 만들지 않는다.
 - localhost 화면 검토 모드는 실제 계정·세션·개인 기록을 만들거나 표시하지 않는다.
 - Google OAuth는 Google Cloud client·Supabase provider·Production/Preview redirect allow list·신규 profile 생성 회귀가 함께 검증된 뒤 별도 승인으로 활성화한다.
+- 대원 교신 프로필 조회는 authenticated-only 최소 공개 필드 RPC와 canonical migration을 사용하며, 원격 migration·역할별 smoke test·Preview 검증이 끝나기 전에는 출시 완료로 판정하지 않는다.
 
 ### 모바일
 

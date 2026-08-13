@@ -29,7 +29,7 @@ export default function WorkDetailPanel({
   ];
 
   return (
-    <ModalShell ariaLabel={`${work.title} 댓글`}>
+    <ModalShell ariaLabel={`${work.title} 댓글`} onClose={onClose}>
       <article className={`work-detail-panel ${work.cover ? 'has-cover' : ''}`}>
         <header className="work-detail-head">
           <div>

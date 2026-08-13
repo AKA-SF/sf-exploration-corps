@@ -62,6 +62,12 @@ const routeMeta = [
     description: '커뮤니티 글, 작품 댓글, 무전 메시지를 실시간 신호망처럼 연결해 보여주는 SF 탐사단 네트워크입니다.',
   },
   {
+    match: pathname => pathname === '/log' || pathname.startsWith('/log/') || pathname.startsWith('/result/'),
+    title: '개인 탐사 기록 | SF 탐사단',
+    description: 'SF 탐사단 개인 탐사 기록 작성 및 결과 화면입니다.',
+    robots: 'noindex, nofollow',
+  },
+  {
     match: pathname => pathname === '/badges',
     title: '독서 업적 배지 | SF 탐사단',
     description: '독서 상태, 댓글, 커뮤니티 활동으로 해금되는 SF 탐사단의 독서 업적 배지 보관함입니다.',
@@ -131,6 +137,28 @@ export function getSeoMetadata(pathname) {
     siteName: SITE_NAME,
     title: meta.title,
   };
+}
+
+export function readServerSeoMetadata(pathname) {
+  if (typeof document === 'undefined') return null;
+  const path = normalizePath(pathname);
+  const marker = document.head.querySelector('meta[name="sf-server-seo"]');
+  if (!marker || normalizePath(marker.content) !== path) return null;
+
+  const content = selector => document.head.querySelector(selector)?.content;
+  return {
+    canonical: document.head.querySelector('link[rel="canonical"]')?.href,
+    description: content('meta[name="description"]'),
+    image: content('meta[property="og:image"]'),
+    robots: content('meta[name="robots"]'),
+    siteName: content('meta[property="og:site_name"]') ?? SITE_NAME,
+    title: document.title,
+  };
+}
+
+export function removeServerSeoMarker() {
+  if (typeof document === 'undefined') return;
+  document.head.querySelector('meta[name="sf-server-seo"]')?.remove();
 }
 
 export function applySeoMetadata(metadata) {

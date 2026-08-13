@@ -98,13 +98,16 @@ const PRODUCTION_APP_ROUTE_PATHS = [
 
 const DEVELOPMENT_ONLY_ROUTE_PATHS = ['/admin/__visual-preview', '/__editorial-preview'];
 
+const DYNAMIC_DETAIL_REWRITES = new Map([
+  ['/discover/:slug', '/api/public-detail?type=discover&identifier=:slug'],
+  ['/questions/:questionId', '/api/public-detail?type=questions&identifier=:questionId'],
+  ['/network/:id', '/api/public-detail?type=network&identifier=:id'],
+]);
+
 const SPA_REWRITE_PATHS = [
-  '/discover/:slug',
-  '/questions/:questionId',
   '/log',
   '/log/:id',
   '/result/:id',
-  '/network/:id',
   '/badges',
   '/profile',
   '/crew/:crewCode/message',
@@ -214,7 +217,8 @@ test('build and hosting expose route metadata, redirects and private noindex hea
   const vercel = JSON.parse(vercelSource);
 
   assert.match(packageJson.scripts.build, /node scripts\/generate-seo-assets\.mjs/);
-  assert.equal(packageJson.scripts['test:seo'], 'node --test scripts/seo-contract-check.mjs');
+  assert.match(packageJson.scripts['test:seo'], /node --test scripts\/seo-contract-check\.mjs/);
+  assert.match(packageJson.scripts['test:seo'], /scripts\/dynamic-seo-contract-check\.mjs/);
   assert.match(packageJson.scripts['test:release'], /npm run test:seo/);
   assert.match(indexHtml, /"alternateName": "SF EXPLORER"/);
   assert.match(indexHtml, /og-image\.png/);
@@ -241,11 +245,18 @@ test('build and hosting expose route metadata, redirects and private noindex hea
   const publicRewriteSources = PUBLIC_ROUTE_CONTRACT.filter(route => route.path !== '/').map(route => route.path);
   const rewriteSources = vercel.rewrites.map(rule => rule.source);
   assert.equal(new Set(rewriteSources).size, rewriteSources.length, 'rewrite sources must be unique');
-  assert.deepEqual(rewriteSources, [...publicRewriteSources, ...SPA_REWRITE_PATHS]);
+  assert.deepEqual(rewriteSources, [
+    ...publicRewriteSources,
+    ...DYNAMIC_DETAIL_REWRITES.keys(),
+    ...SPA_REWRITE_PATHS,
+  ]);
 
   const rewrites = new Map(vercel.rewrites.map(rule => [rule.source, rule.destination]));
   PUBLIC_SEO_ROUTES.filter(route => route.path !== '/').forEach(route => {
     assert.equal(rewrites.get(route.path), `/seo${route.path}.html`);
+  });
+  DYNAMIC_DETAIL_REWRITES.forEach((destination, source) => {
+    assert.equal(rewrites.get(source), destination);
   });
   SPA_REWRITE_PATHS.forEach(source => assert.equal(rewrites.get(source), '/index.html'));
   DEVELOPMENT_ONLY_ROUTE_PATHS.forEach(source => assert.equal(rewrites.has(source), false));

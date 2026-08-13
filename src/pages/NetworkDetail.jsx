@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { Activity, BarChart2, ChevronLeft, RadioReceiver } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -25,6 +25,8 @@ const NetworkDetail = () => {
   const navigate = useNavigate();
   const [log, setLog] = useState(null);
   const [status, setStatus] = useState('loading');
+  const signalsListRef = useRef(null);
+  const [signalsListOverflows, setSignalsListOverflows] = useState(false);
 
   const hasValidLogId = isValidExplorationLogId(id);
 
@@ -61,6 +63,20 @@ const NetworkDetail = () => {
   ), [log]);
 
   const detailStatus = hasValidLogId ? status : 'invalid';
+
+  useEffect(() => {
+    const signalsList = signalsListRef.current;
+    if (!signalsList || detailStatus !== 'ready') return undefined;
+
+    const updateOverflow = () => {
+      setSignalsListOverflows(signalsList.scrollHeight > signalsList.clientHeight);
+    };
+    updateOverflow();
+
+    const observer = new ResizeObserver(updateOverflow);
+    observer.observe(signalsList);
+    return () => observer.disconnect();
+  }, [detailStatus, log?.emotions, log?.ideas]);
 
   if (detailStatus !== 'ready') {
     const message = detailStatus === 'loading'
@@ -161,10 +177,16 @@ const NetworkDetail = () => {
 
       {contentVisible && (
         <div className="response-signals panel">
-          <h3 className="mono text-xs text-muted section-title">
+          <h3 id="signal-tags-heading" className="mono text-xs text-muted section-title">
             <RadioReceiver size={14} /> 감정·아이디어 태그 <span className="text-cyan">/ SIGNAL_TAGS</span>
           </h3>
-          <div className="signals-list">
+          <div
+            ref={signalsListRef}
+            className="signals-list"
+            role={signalsListOverflows ? 'region' : undefined}
+            aria-labelledby={signalsListOverflows ? 'signal-tags-heading' : undefined}
+            tabIndex={signalsListOverflows ? 0 : undefined}
+          >
             {[...(log.emotions || []), ...(log.ideas || [])].map(tag => (
               <span key={tag} className="signal-item mono text-sm">{tag}</span>
             ))}

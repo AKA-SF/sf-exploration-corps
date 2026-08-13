@@ -2,6 +2,11 @@
   "framework": "vite",
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "functions": {
+    "api/public-detail.js": {
+      "includeFiles": "dist/index.html"
+    }
+  },
   "crons": [
     {
       "path": "/api/aladin?mode=sync-new-releases&limit=20",
@@ -73,12 +78,12 @@
     { "source": "/exploration-log", "destination": "/seo/exploration-log.html" },
     { "source": "/questions", "destination": "/seo/questions.html" },
     { "source": "/network", "destination": "/seo/network.html" },
-    { "source": "/discover/:slug", "destination": "/index.html" },
-    { "source": "/questions/:questionId", "destination": "/index.html" },
+    { "source": "/discover/:slug", "destination": "/api/public-detail?type=discover&identifier=:slug" },
+    { "source": "/questions/:questionId", "destination": "/api/public-detail?type=questions&identifier=:questionId" },
+    { "source": "/network/:id", "destination": "/api/public-detail?type=network&identifier=:id" },
     { "source": "/log", "destination": "/index.html" },
     { "source": "/log/:id", "destination": "/index.html" },
     { "source": "/result/:id", "destination": "/index.html" },
-    { "source": "/network/:id", "destination": "/index.html" },
     { "source": "/badges", "destination": "/index.html" },
     { "source": "/profile", "destination": "/index.html" },
     { "source": "/crew/:crewCode/message", "destination": "/index.html" },
