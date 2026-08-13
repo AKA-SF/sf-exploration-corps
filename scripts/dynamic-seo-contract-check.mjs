@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
-import { readFile } from 'node:fs/promises';
+import { readdir, readFile } from 'node:fs/promises';
 import test from 'node:test';
 
-import { createPublicDetailHandler } from '../api/public-detail.js';
+import { createPublicDetailHandler } from '../api/_publicDetail.js';
 import { getSeoMetadata } from '../src/lib/seo.js';
 
 const SHELL = `<!doctype html><html><head>
@@ -142,14 +142,18 @@ test('missing, invalid, and upstream failures are non-indexable real HTTP errors
   assert.match(failed.headers['Cache-Control'], /no-store/);
 });
 
-test('hosting routes dynamic public details through the Node HTML handler and packages the built shell', async () => {
+test('hosting routes dynamic public details through an existing Node function and stays within the Hobby limit', async () => {
   const vercel = JSON.parse(await readFile(new URL('../vercel.json', import.meta.url), 'utf8'));
   const rewrites = new Map(vercel.rewrites.map(rule => [rule.source, rule.destination]));
+  const apiFiles = await readdir(new URL('../api/', import.meta.url));
+  const publicFunctions = apiFiles.filter(name => name.endsWith('.js') && !name.startsWith('_'));
 
-  assert.equal(rewrites.get('/discover/:slug'), '/api/public-detail?type=discover&identifier=:slug');
-  assert.equal(rewrites.get('/questions/:questionId'), '/api/public-detail?type=questions&identifier=:questionId');
-  assert.equal(rewrites.get('/network/:id'), '/api/public-detail?type=network&identifier=:id');
-  assert.equal(vercel.functions['api/public-detail.js'].includeFiles, 'dist/index.html');
+  assert.equal(rewrites.get('/discover/:slug'), '/api/discoveries?mode=public-detail&type=discover&identifier=:slug');
+  assert.equal(rewrites.get('/questions/:questionId'), '/api/discoveries?mode=public-detail&type=questions&identifier=:questionId');
+  assert.equal(rewrites.get('/network/:id'), '/api/discoveries?mode=public-detail&type=network&identifier=:id');
+  assert.equal(vercel.functions['api/discoveries.js'].includeFiles, 'dist/index.html');
+  assert.ok(publicFunctions.length <= 12, `expected at most 12 Vercel functions, found ${publicFunctions.length}`);
+  assert.ok(!publicFunctions.includes('public-detail.js'));
 });
 
 test('private routes keep hydrated robots metadata aligned with raw X-Robots headers', () => {

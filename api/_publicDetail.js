@@ -1,6 +1,5 @@
 import { readFile } from 'node:fs/promises';
 
-import { loadPublishedDiscovery } from './discoveries.js';
 import { supabaseRestRequest, supabaseRpcRequest } from './_supabaseRest.js';
 import { buildRouteHtml } from '../scripts/generate-seo-assets.mjs';
 
@@ -25,6 +24,12 @@ const TYPE_CONTRACT = {
 
 function firstRow(rows) {
   return Array.isArray(rows) ? rows[0] ?? null : rows ?? null;
+}
+
+export async function loadPublishedDiscovery(identifier) {
+  return firstRow(await supabaseRpcRequest('get_published_sf_discovery', {
+    body: { p_slug: String(identifier ?? '').trim() },
+  }));
 }
 
 export async function loadPublicQuestion(identifier) {

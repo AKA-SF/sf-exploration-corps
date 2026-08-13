@@ -99,9 +99,9 @@ const PRODUCTION_APP_ROUTE_PATHS = [
 const DEVELOPMENT_ONLY_ROUTE_PATHS = ['/admin/__visual-preview', '/__editorial-preview'];
 
 const DYNAMIC_DETAIL_REWRITES = new Map([
-  ['/discover/:slug', '/api/public-detail?type=discover&identifier=:slug'],
-  ['/questions/:questionId', '/api/public-detail?type=questions&identifier=:questionId'],
-  ['/network/:id', '/api/public-detail?type=network&identifier=:id'],
+  ['/discover/:slug', '/api/discoveries?mode=public-detail&type=discover&identifier=:slug'],
+  ['/questions/:questionId', '/api/discoveries?mode=public-detail&type=questions&identifier=:questionId'],
+  ['/network/:id', '/api/discoveries?mode=public-detail&type=network&identifier=:id'],
 ]);
 
 const SPA_REWRITE_PATHS = [

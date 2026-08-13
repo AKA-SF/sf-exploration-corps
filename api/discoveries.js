@@ -1,6 +1,7 @@
 import { verifySameOrigin } from './_adminAccess.js';
 import { requireAuthenticatedUser } from './_adminAuth.js';
 import { supabaseRpcRequest } from './_supabaseRest.js';
+import publicDetailHandler from './_publicDetail.js';
 
 const ALLOWED_KINDS = new Set(['NEW_RELEASE', 'UPCOMING', 'EDITOR_PICK']);
 const ALLOWED_MEDIA_TYPES = new Set(['NOVEL', 'FILM', 'SERIES', 'GAME', 'ANIMATION', 'OTHER']);
@@ -85,6 +86,11 @@ async function createDiscoveryComment(request, response) {
 }
 
 export default async function handler(request, response) {
+  const requestUrl = new URL(request.url ?? '/api/discoveries', 'https://sf-explorer.net');
+  if (requestUrl.searchParams.get('mode') === 'public-detail') {
+    return publicDetailHandler(request, response);
+  }
+
   if (request.method === 'POST') return createDiscoveryComment(request, response);
   if (request.method !== 'GET') {
     setNoStore(response);
@@ -92,7 +98,6 @@ export default async function handler(request, response) {
     return response.status(405).json({ error: 'Method not allowed' });
   }
 
-  const requestUrl = new URL(request.url ?? '/api/discoveries', 'https://sf-explorer.net');
   const slug = requestUrl.searchParams.get('slug');
   const commentsFor = requestUrl.searchParams.get('commentsFor');
 

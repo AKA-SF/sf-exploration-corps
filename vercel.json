@@ -3,7 +3,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "functions": {
-    "api/public-detail.js": {
+    "api/discoveries.js": {
       "includeFiles": "dist/index.html"
     }
   },
@@ -78,9 +78,9 @@
     { "source": "/exploration-log", "destination": "/seo/exploration-log.html" },
     { "source": "/questions", "destination": "/seo/questions.html" },
     { "source": "/network", "destination": "/seo/network.html" },
-    { "source": "/discover/:slug", "destination": "/api/public-detail?type=discover&identifier=:slug" },
-    { "source": "/questions/:questionId", "destination": "/api/public-detail?type=questions&identifier=:questionId" },
-    { "source": "/network/:id", "destination": "/api/public-detail?type=network&identifier=:id" },
+    { "source": "/discover/:slug", "destination": "/api/discoveries?mode=public-detail&type=discover&identifier=:slug" },
+    { "source": "/questions/:questionId", "destination": "/api/discoveries?mode=public-detail&type=questions&identifier=:questionId" },
+    { "source": "/network/:id", "destination": "/api/discoveries?mode=public-detail&type=network&identifier=:id" },
     { "source": "/log", "destination": "/index.html" },
     { "source": "/log/:id", "destination": "/index.html" },
     { "source": "/result/:id", "destination": "/index.html" },

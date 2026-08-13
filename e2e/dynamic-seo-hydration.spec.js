@@ -4,7 +4,7 @@ import path from 'node:path';
 
 import { expect, test } from '@playwright/test';
 
-import { createPublicDetailHandler } from '../api/public-detail.js';
+import { createPublicDetailHandler } from '../api/_publicDetail.js';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const DETAIL_SLUG = 'hydration-detail';
