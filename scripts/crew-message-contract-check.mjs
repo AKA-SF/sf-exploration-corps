@@ -6,6 +6,7 @@ const read = path => readFile(new URL(`../${path}`, import.meta.url), 'utf8');
 
 const crewMessageSource = await read('src/pages/CrewMessage.jsx');
 const migrationSource = await read('supabase/migrations/20260813100000_secure_crew_profile_rpc.sql');
+const repairMigrationSource = await read('supabase/migrations/20260813093000_repair_crew_profile_prerequisites.sql');
 const schemaSource = await read('supabase/schema.sql');
 const operationsSource = await read('docs/operations-plan.md');
 const roadmapSource = await read('docs/product-roadmap.md');
@@ -50,6 +51,16 @@ test('operations runbook fixes schema baseline and migrations as the canonical S
   assert.match(operationsSource, /profiles\.public_code[^\n]*profiles\.title[^\n]*generate_profile_public_code\(uuid\)/);
   assert.ok(preflightOffset > migrationsOffset && grantsOffset > preflightOffset && smokeOffset > grantsOffset, 'preflight, grants, and role smoke checks must follow canonical apply order');
   assert.match(operationsSource, /Dashboard SQL dump 수동 실행을 bootstrap 대안으로 사용하지 않는다/);
+});
+
+test('existing environments repair only the crew profile prerequisites before the secure RPC', () => {
+  assert.match(repairMigrationSource, /alter table public\.profiles\s+add column if not exists public_code text/i);
+  assert.match(repairMigrationSource, /alter table public\.profiles\s+add column if not exists title text not null default '탐사보조원'/i);
+  assert.match(repairMigrationSource, /create or replace function public\.generate_profile_public_code\(p_user_id uuid\)/i);
+  assert.match(repairMigrationSource, /create unique index if not exists profiles_public_code_key/i);
+  assert.match(repairMigrationSource, /create trigger profiles_ensure_public_code/i);
+  assert.match(repairMigrationSource, /update public\.profiles[\s\S]*?where public_code is null/i);
+  assert.doesNotMatch(repairMigrationSource, /create table|activity_logs|crew_messages/i);
 });
 
 test('product roadmap keeps crew messaging behind migration and role smoke release gates', () => {
